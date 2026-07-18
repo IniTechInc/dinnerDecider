@@ -22,3 +22,13 @@ xcuserdata/
 # Model files (large; never commit)
 *.gguf
 *.litertlm
+training/photos_inbox/
+training/dataset/
+training/harness/base_model/
+training/harness/checkpoints/
+training/harness/out/
+training/harness/venv/
+training/harness/llama.cpp/
+training/harness/smoke_data/
+training/harness/__pycache__/
+*.safetensors
