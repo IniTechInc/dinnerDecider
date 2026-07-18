@@ -1,37 +1,31 @@
-name: dinnerDecider
+name: DinnerDecider
 options:
-  bundleIdPrefix: com.initech
+  bundleIdPrefix: com.philwoolley
   deploymentTarget:
     iOS: "18.0"
-  defaultConfig: Debug
-  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+  xcodeVersion: "26.3"
 
-# KAN-7: LocalLLMClient as local package (MLX dependency stripped to avoid submodule issues)
 packages:
   LocalLLMClient:
-    path: LocalLLMClient
+    url: https://github.com/tattn/LocalLLMClient.git
+    exactVersion: "0.5.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: AXW4GKUTKZ
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  dinnerDecider:
+  DinnerDecider:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - Sources/dinnerDecider
-    resources:
-      - path: Sources/dinnerDecider/Resources
-        optional: true
-    info:
-      path: Sources/dinnerDecider/Supporting Files/Info.plist
-      properties:
-        CFBundleDisplayName: dinnerDecider
-        NSCameraUsageDescription: "dinnerDecider photographs your fridge and pantry to identify food items on-device."
-        NSPhotoLibraryUsageDescription: "dinnerDecider imports photos of your food to identify items on-device."
-        NSPhotoLibraryAddUsageDescription: "dinnerDecider saves scan photos to your library."
-        UILaunchScreen: {}
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
-          UISceneConfigurations: {}
+      - DinnerDecider
     dependencies:
       - package: LocalLLMClient
         product: LocalLLMClient
@@ -39,24 +33,53 @@ targets:
         product: LocalLLMClientLlama
     settings:
       base:
-        SWIFT_VERSION: "5.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.initech.dinnerDecider
-        DEVELOPMENT_TEAM: ""
-        CODE_SIGN_STYLE: Automatic
-        ENABLE_PREVIEWS: YES
-        CLANG_ENABLE_EXPLICIT_MODULES: NO
-        SWIFT_ENABLE_EXPLICIT_MODULES: NO
-        OTHER_SWIFT_FLAGS: "-cxx-interoperability-mode=default"
-    scheme:
-      testTargets:
-        - dinnerDeciderTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.philwoolley.dinnerdecider
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_OBJC_INTEROP_MODE: objcxx
+        CODE_SIGN_ENTITLEMENTS: DinnerDecider/DinnerDecider.entitlements
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Apple Development: woolley.pj@gmail.com (38P6V2YYLU)"
+        PROVISIONING_PROFILE_SPECIFIER: DinnerDecider Development
+    info:
+      path: DinnerDecider/Info.plist
+      properties:
+        CFBundleDisplayName: DinnerDecider
+        NSCameraUsageDescription: DinnerDecider uses the camera to photograph your fridge and pantry so it can identify your food.
+        NSPhotoLibraryUsageDescription: DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
 
-  dinnerDeciderTests:
+  DinnerDeciderTests:
     type: bundle.unit-test
     platform: iOS
-    sources: Tests/dinnerDeciderTests
+    deploymentTarget: "18.0"
+    sources:
+      - DinnerDeciderTests
     dependencies:
-      - target: dinnerDecider
+      - target: DinnerDecider
     settings:
       base:
-        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.philwoolley.dinnerdecider.tests
+        SWIFT_OBJC_INTEROP_MODE: objcxx
+
+schemes:
+  DinnerDecider:
+    build:
+      targets:
+        DinnerDecider: all
+        DinnerDeciderTests: [test]
+    test:
+      targets:
+        - DinnerDeciderTests
+    run:
+      config: Debug
