@@ -16,6 +16,12 @@ iOS app: photograph your fridge, Gemma 4 E4B identifies items 100% on-device, bu
 
 - Phil's standing instruction (July 18): commit and push to main along the way as each work chunk lands. No need to ask per-commit.
 
+## Design language (approved by Phil, July 18)
+
+- Palette: terracotta #E4573D (primary), sage #7FA27A (secondary), amber #F2B23C (accent), cream #FFF6E8 / charcoal #1F1D1B surfaces, greige #CFC7BD neutral. Destructive actions stay system red. Tokens live in DinnerDecider/DesignSystem/Theme.swift.
+- Typography: DM Serif Display (large headings + recipe names only, never below title2) + DM Sans (body/UI). Bundled OFL fonts in Resources/Fonts.
+- App icon: heart-tomato in sage viewfinder brackets on cream (chosen concept 13), dark + tinted variants in the appiconset.
+
 ## Build system
 
 - `project.yml` is the source of truth; `.xcodeproj` is generated (git-ignored). After adding/removing files or settings: `xcodegen generate`.
