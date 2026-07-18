@@ -76,7 +76,8 @@ struct ModelSetupView: View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(number)")
                 .font(.caption.weight(.bold))
-                .frame(width: 22, height: 22)
+                .frame(minWidth: 22, minHeight: 22)
+                .padding(3)
                 .background(Circle().fill(.tint.opacity(0.15)))
             Text(text)
                 .font(.subheadline)

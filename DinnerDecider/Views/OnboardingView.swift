@@ -111,10 +111,12 @@ struct OnboardingView: View {
             if page < slides.count - 1 {
                 Button("Skip") { onDone() }
                     .font(.dmSubheadline)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 24)
+        .padding(.horizontal, Spacing.xl)
+        .padding(.bottom, Spacing.xl)
     }
 }
 

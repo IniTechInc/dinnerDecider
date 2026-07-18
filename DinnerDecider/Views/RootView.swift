@@ -8,8 +8,10 @@ struct RootView: View {
 
     var body: some View {
         TabView {
+            // Outline symbols so iOS fills the selected tab automatically,
+            // giving a consistent outlined/filled selection cue across tabs.
             CaptureView()
-                .tabItem { Label("Scan", systemImage: "camera.fill") }
+                .tabItem { Label("Scan", systemImage: "camera") }
 
             InventoryView()
                 .tabItem { Label("Inventory", systemImage: "list.bullet") }
@@ -18,7 +20,7 @@ struct RootView: View {
                 .tabItem { Label("Recipes", systemImage: "fork.knife") }
 
             SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .tint(.brandPrimary)
         .fullScreenCover(isPresented: $showOnboarding) {

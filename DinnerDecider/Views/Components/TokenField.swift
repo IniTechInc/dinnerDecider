@@ -51,16 +51,21 @@ struct TokenField: View {
                 remove(token)
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundStyle(Color.brandPrimary)
+                    .frame(minWidth: 32, minHeight: 32)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel("Remove \(token)")
         }
         .font(.subheadline)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.leading, 12)
+        .padding(.trailing, 4)
+        .padding(.vertical, 4)
         .background(Color.brandPrimary.opacity(0.15), in: Capsule())
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(token)
+        .accessibilityHint("Double tap to remove")
     }
 
     private func commitDraft() {

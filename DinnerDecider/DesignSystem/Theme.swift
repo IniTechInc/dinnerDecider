@@ -141,14 +141,30 @@ extension View {
     }
 }
 
-/// Corner radius scale.
+/// Corner radius scale. The brand direction is warm and organic, so cards use
+/// generous 16-20pt radii with continuous (squircle) corners. Prefer
+/// `RoundedRectangle(cornerRadius:style:.continuous)` at call sites.
 enum Radius {
     /// 8pt. Chips, small controls.
     static let small: CGFloat = 8
-    /// 12pt. Cards, banners, standard containers.
+    /// 12pt. Compact containers.
     static let medium: CGFloat = 12
-    /// 16pt. Large cards, thumbnails.
-    static let large: CGFloat = 16
+    /// 16pt. Cards, banners, thumbnails (default card radius).
+    static let card: CGFloat = 16
+    /// 20pt. Large hero cards.
+    static let large: CGFloat = 20
+}
+
+/// Runs `body` inside `withAnimation`, but drops the animation entirely when the
+/// user has asked for reduced motion. Central helper so every animated moment in
+/// the app respects the Reduce Motion accessibility setting the same way.
+@discardableResult
+func withMotion<Result>(
+    _ reduceMotion: Bool,
+    _ animation: Animation? = .default,
+    _ body: () -> Result
+) -> Result {
+    withAnimation(reduceMotion ? nil : animation, body)
 }
 
 /// Spacing scale (multiples of 4).

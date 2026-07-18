@@ -63,6 +63,7 @@ final class AppModel: ObservableObject {
     /// True once at least one successful recipe generation has completed, so the
     /// UI can tell "never generated" apart from "generated, nothing matched".
     @Published var hasGeneratedRecipes = false
+    private var recipeTask: Task<Void, Never>?
 
     private let defaults: UserDefaults
 
@@ -147,7 +148,9 @@ final class AppModel: ObservableObject {
                 let ocrText = await Task.detached { OCRService.recognizeText(in: cropped) }.value
                 if let identified = try? await llm.identifyItem(image: cropped, ocrText: ocrText) {
                     results.append(identified)
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                    // Gentle stream-in spring, but honour Reduce Motion.
+                    let reduceMotion = UIAccessibility.isReduceMotionEnabled
+                    withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.7)) {
                         scannedItems = InventoryLogic.dedupe(results)
                     }
                 }
@@ -174,6 +177,23 @@ final class AppModel: ObservableObject {
 
     // MARK: - Recipes
 
+    /// Kick off recipe generation in a cancellable task so the loading state can
+    /// always be backed out of (see `cancelRecipeGeneration`).
+    func requestRecipes(fromItemNames names: [String]) {
+        guard !isGeneratingRecipes else { return }
+        recipeTask?.cancel()
+        recipeTask = Task { [weak self] in
+            await self?.generateRecipes(fromItemNames: names)
+        }
+    }
+
+    /// Stop an in-progress recipe generation and return to the previous state.
+    func cancelRecipeGeneration() {
+        recipeTask?.cancel()
+        recipeTask = nil
+        isGeneratingRecipes = false
+    }
+
     /// Ask the model for recipes from the current inventory and preferences.
     /// Surfaces `recipeError` when the reply is unreadable so the UI can retry.
     func generateRecipes(fromItemNames names: [String]) async {
@@ -190,6 +210,12 @@ final class AppModel: ObservableObject {
             raw = "Sure! Here are some ideas: { this response is not valid json at all"
         } else {
             raw = (try? await llm.generateText(prompt: prompt)) ?? ""
+        }
+
+        // User cancelled while the model was thinking: leave state untouched.
+        if Task.isCancelled {
+            isGeneratingRecipes = false
+            return
         }
 
         if let bundle = LLMResponseParser.decode(RecipeBundleResponse.self, from: raw) {

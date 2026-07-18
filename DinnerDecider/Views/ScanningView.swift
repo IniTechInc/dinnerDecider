@@ -29,6 +29,7 @@ struct ScanningView: View {
     @EnvironmentObject private var appModel: AppModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var inventory: [InventoryItem]
 
     @State private var didStart = false
@@ -160,7 +161,9 @@ struct ScanningView: View {
             Section {
                 ForEach(appModel.scannedItems, id: \.self) { item in
                     IdentifiedRow(item: item)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .transition(reduceMotion
+                            ? .opacity
+                            : .move(edge: .top).combined(with: .opacity))
                 }
                 HStack(spacing: 12) {
                     ProgressView()
@@ -352,16 +355,11 @@ private struct ReviewRow: View {
                 }
             }
             Spacer()
-            if item.needsReview {
-                Label("Check", systemImage: "questionmark.circle.fill")
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(Color.brandAccent)
-                    .accessibilityLabel("Low confidence, please check")
-            }
             ConfidenceBadge(confidence: item.confidence)
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -369,26 +367,38 @@ private struct ReviewRow: View {
     }
 }
 
-/// A little confidence chip, colour coded.
+/// A little confidence chip. Level is conveyed by icon and number, not colour
+/// alone: a sealed check for confident reads, a question mark for uncertain ones.
 struct ConfidenceBadge: View {
     let confidence: Double
 
     private var percent: Int { Int((confidence * 100).rounded()) }
-    // Sage reads as "confident"; amber as "worth a glance". Below 0.5 the row
-    // also shows an amber Check flag, keeping caution a single colour.
+    private var isConfident: Bool { confidence >= 0.75 }
+    // Sage reads as "confident"; amber as "worth a glance".
     private var color: Color {
-        confidence >= 0.75 ? .brandSecondary : .brandAccent
+        isConfident ? .brandSecondary : .brandAccent
+    }
+    private var symbol: String {
+        isConfident ? "checkmark.seal.fill" : "questionmark.circle.fill"
     }
 
     var body: some View {
-        Text("\(percent)%")
-            .font(.dmCaptionMedium)
-            .monospacedDigit()
-            .foregroundStyle(color)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.15), in: Capsule())
-            .accessibilityLabel("\(percent) percent confident")
+        HStack(spacing: 3) {
+            Image(systemName: symbol)
+                .imageScale(.small)
+                .accessibilityHidden(true)
+            Text("\(percent)%")
+                .monospacedDigit()
+        }
+        .font(.dmCaptionMedium)
+        .foregroundStyle(color)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(color.opacity(0.15), in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(isConfident
+            ? "\(percent) percent confident"
+            : "\(percent) percent confident, worth checking")
     }
 }
 

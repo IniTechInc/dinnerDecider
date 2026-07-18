@@ -4,6 +4,7 @@ import SwiftUI
 /// Three segments of value: Make now, Almost there, Shopping list.
 struct RecipesView: View {
     @EnvironmentObject private var appModel: AppModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \InventoryItem.name) private var items: [InventoryItem]
 
     private enum Segment: String, CaseIterable, Identifiable {
@@ -18,13 +19,8 @@ struct RecipesView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Segment", selection: $segment) {
-                    ForEach(Segment.allCases) { segment in
-                        Text(segment.rawValue).tag(segment)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
+                segmentPicker
+                    .padding()
 
                 content
             }
@@ -34,10 +30,8 @@ struct RecipesView: View {
                 if segment != .shopping {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            Task {
-                                Haptics.tap()
-                                await appModel.generateRecipes(fromItemNames: items.map(\.name))
-                            }
+                            Haptics.tap()
+                            appModel.requestRecipes(fromItemNames: items.map(\.name))
                         } label: {
                             if appModel.isGeneratingRecipes {
                                 ProgressView()
@@ -49,6 +43,22 @@ struct RecipesView: View {
                     }
                 }
             }
+        }
+    }
+
+    // Segmented labels truncate at accessibility text sizes, so fall back to a
+    // menu picker there where every label stays readable.
+    @ViewBuilder
+    private var segmentPicker: some View {
+        let picker = Picker("Recipe list", selection: $segment) {
+            ForEach(Segment.allCases) { segment in
+                Text(segment.rawValue).tag(segment)
+            }
+        }
+        if dynamicTypeSize.isAccessibilitySize {
+            picker.pickerStyle(.menu)
+        } else {
+            picker.pickerStyle(.segmented)
         }
     }
 
@@ -81,7 +91,7 @@ struct RecipesView: View {
                 Text("Scan or add items, then tap Generate to get recipe ideas.")
             }
         } else if appModel.isGeneratingRecipes {
-            ThinkingView()
+            ThinkingView { appModel.cancelRecipeGeneration() }
         } else if let error = appModel.recipeError {
             recipeErrorView(error)
         } else if recipes.isEmpty {
@@ -91,7 +101,8 @@ struct RecipesView: View {
                 Text(emptyText)
             } actions: {
                 Button {
-                    Task { await appModel.generateRecipes(fromItemNames: items.map(\.name)) }
+                    Haptics.tap()
+                    appModel.requestRecipes(fromItemNames: items.map(\.name))
                 } label: {
                     Label("Generate ideas", systemImage: "sparkles")
                 }
@@ -116,10 +127,8 @@ struct RecipesView: View {
             Text(message)
         } actions: {
             Button {
-                Task {
-                    Haptics.tap()
-                    await appModel.generateRecipes(fromItemNames: items.map(\.name))
-                }
+                Haptics.tap()
+                appModel.requestRecipes(fromItemNames: items.map(\.name))
             } label: {
                 Label("Try again", systemImage: "arrow.clockwise")
             }
@@ -130,8 +139,13 @@ struct RecipesView: View {
 
 // MARK: - Thinking (loading) view
 
-/// Playful rotating copy while Gemma "thinks".
+/// Playful rotating copy while Gemma "thinks". Always cancellable, and its
+/// motion is gated by the Reduce Motion accessibility setting.
 private struct ThinkingView: View {
+    var onCancel: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let messages = [
         "Peeking into your pantry...",
         "Tasting a few ideas...",
@@ -143,29 +157,47 @@ private struct ThinkingView: View {
     private let timer = Timer.publish(every: 1.6, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Spacing.lg) {
             Spacer()
-            Image(systemName: "sparkles")
-                .font(.system(size: 44))
-                .foregroundStyle(.tint)
-                .symbolEffect(.pulse, options: .repeating)
-                .accessibilityHidden(true)
+            sparkle
             ProgressView()
             Text(messages[index])
                 .font(.dmHeadline)
                 .foregroundStyle(.secondary)
                 .contentTransition(.opacity)
                 .id(index)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Thinking up recipes")
             Spacer()
+            Button("Cancel", role: .cancel) {
+                Haptics.tap()
+                onCancel()
+            }
+            .padding(.bottom, Spacing.xl)
         }
         .frame(maxWidth: .infinity)
         .onReceive(timer) { _ in
+            guard !reduceMotion else {
+                index = (index + 1) % messages.count
+                return
+            }
             withAnimation {
                 index = (index + 1) % messages.count
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Thinking up recipes")
+    }
+
+    @ViewBuilder
+    private var sparkle: some View {
+        let base = Image(systemName: "sparkles")
+            .font(.system(size: 44))
+            .foregroundStyle(.tint)
+            .accessibilityHidden(true)
+        if reduceMotion {
+            base
+        } else {
+            base.symbolEffect(.pulse, options: .repeating)
+        }
     }
 }
 
@@ -263,7 +295,8 @@ private struct RecipeDetailView: View {
                         Text("\(index + 1)")
                             .font(.subheadline.bold())
                             .foregroundStyle(.white)
-                            .frame(width: 24, height: 24)
+                            .frame(minWidth: 24, minHeight: 24)
+                            .padding(4)
                             .background(Circle().fill(.tint))
                             .accessibilityHidden(true)
                         Text(step)
@@ -431,6 +464,8 @@ private struct ShoppingListView: View {
             Button(action: add) {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .disabled(newItem.trimmingCharacters(in: .whitespaces).isEmpty)
             .accessibilityLabel("Add to shopping list")

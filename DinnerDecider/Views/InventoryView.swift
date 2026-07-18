@@ -15,6 +15,7 @@ struct InventoryView: View {
     @State private var selection = Set<PersistentIdentifier>()
     @State private var editMode: EditMode = .inactive
     @State private var staplesExpanded = false
+    @State private var showBulkDeleteConfirm = false
 
     private var sort: InventorySort {
         InventorySort(rawValue: sortRaw) ?? .category
@@ -195,7 +196,7 @@ struct InventoryView: View {
     private var bulkDeleteBar: some View {
         if editMode == .active && !selection.isEmpty {
             Button(role: .destructive) {
-                deleteSelected()
+                showBulkDeleteConfirm = true
             } label: {
                 Label("Delete \(selection.count) selected", systemImage: "trash")
                     .frame(maxWidth: .infinity)
@@ -205,6 +206,18 @@ struct InventoryView: View {
             .controlSize(.large)
             .padding()
             .background(.thinMaterial)
+            .confirmationDialog(
+                "Delete \(selection.count) \(selection.count == 1 ? "item" : "items")?",
+                isPresented: $showBulkDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete \(selection.count) \(selection.count == 1 ? "item" : "items")", role: .destructive) {
+                    deleteSelected()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This removes them from your inventory. You cannot undo this.")
+            }
         }
     }
 
@@ -287,6 +300,7 @@ struct ItemEditorView: View {
     @State private var category: FoodCategory
     @State private var quantity: Int
     @State private var isStaple: Bool
+    @State private var showDeleteConfirm = false
 
     init(item: InventoryItem?) {
         self.item = item
@@ -321,9 +335,7 @@ struct ItemEditorView: View {
                 if isEditing {
                     Section {
                         Button(role: .destructive) {
-                            if let item { modelContext.delete(item) }
-                            Haptics.tap()
-                            dismiss()
+                            showDeleteConfirm = true
                         } label: {
                             Label("Delete item", systemImage: "trash")
                         }
@@ -332,6 +344,20 @@ struct ItemEditorView: View {
             }
             .navigationTitle(isEditing ? "Edit item" : "Add item")
             .navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog(
+                "Delete \(trimmedName.isEmpty ? "this item" : trimmedName)?",
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let item { modelContext.delete(item) }
+                    Haptics.success()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This removes it from your inventory. You cannot undo this.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

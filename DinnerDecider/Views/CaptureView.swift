@@ -5,6 +5,7 @@ import SwiftUI
 /// scan them all in a single session.
 struct CaptureView: View {
     @EnvironmentObject private var appModel: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var pickedImages: [UIImage] = []
     @State private var photoItems: [PhotosPickerItem] = []
@@ -18,7 +19,7 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: Spacing.xl) {
                     modelStatusBanner
 
                     imagePreview
@@ -36,7 +37,7 @@ struct CaptureView: View {
                     // retained: keeps pageable memory low while the model holds
                     // its large wired Metal allocation during a scan.
                     let prepared = ImageDownscaler.forCapture(image)
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.75)) {
                         pickedImages.append(prepared)
                     }
                     Haptics.tap()
@@ -76,13 +77,13 @@ struct CaptureView: View {
     }
 
     private var thumbnails: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(pickedImages.count == 1 ? "1 photo ready" : "\(pickedImages.count) photos ready")
-                .font(.subheadline.weight(.semibold))
+                .font(.dmSectionHeader)
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: Spacing.md) {
                     ForEach(Array(pickedImages.enumerated()), id: \.offset) { index, image in
                         thumbnail(image, index: index)
                     }
@@ -97,10 +98,10 @@ struct CaptureView: View {
             .resizable()
             .scaledToFill()
             .frame(width: 120, height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 Button {
-                    withAnimation {
+                    withMotion(reduceMotion) {
                         _ = pickedImages.remove(at: index)
                     }
                     Haptics.tap()
@@ -109,7 +110,8 @@ struct CaptureView: View {
                         .font(.title3)
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.white, .black.opacity(0.5))
-                        .padding(6)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Remove photo \(index + 1)")
             }
@@ -184,29 +186,38 @@ struct CaptureView: View {
                 Spacer()
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
             .padding()
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
             .padding(.horizontal)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
         .accessibilityHint("Opens model setup")
     }
 
     /// Small badge that always shows which inference engine is actually running.
+    /// Distinguished by icon and text (not colour alone) so it reads clearly for
+    /// everyone and to VoiceOver.
     private var inferenceModeBadge: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.xs) {
             Image(systemName: appModel.isUsingMock ? "cpu" : "sparkles")
+                .accessibilityHidden(true)
             Text(appModel.isUsingMock ? "Demo mode (sample data)" : "On-device Gemma 4")
         }
         .font(.dmCaptionMedium)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 3)
         .background(
             (appModel.isUsingMock ? Color.brandAccent : Color.brandSecondary).opacity(0.15),
             in: Capsule()
         )
         .foregroundStyle(appModel.isUsingMock ? Color.brandAccent : Color.brandSecondary)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(appModel.isUsingMock
+            ? "Running in demo mode with sample data"
+            : "Running on-device Gemma 4")
     }
 
     // MARK: - Actions
@@ -243,7 +254,7 @@ struct CaptureView: View {
                 }
             }
             await MainActor.run {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.75)) {
                     pickedImages.append(contentsOf: loaded)
                 }
                 photoItems = []
