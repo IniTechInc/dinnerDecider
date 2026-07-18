@@ -1,0 +1,141 @@
+{
+  "run_label": "stock-IQ3_XXS",
+  "mode": "pipeline",
+  "photos": 7,
+  "mean_recall": 0.2124819624819625,
+  "mean_precision": 0.2392857142857143,
+  "f1": 0.2250886939459965,
+  "per_photo": [
+    {
+      "expected": 10,
+      "predicted": 8,
+      "matched": 4,
+      "recall": 0.4,
+      "precision": 0.5,
+      "filename": "phil_01.jpg",
+      "predicted_names": [
+        "Sweet Relish",
+        "Spread",
+        "Barbecue Sauce",
+        "Coconut Aminos",
+        "milk",
+        "null",
+        "flavored beverage",
+        "bread"
+      ],
+      "box_source": "saliency+rect"
+    },
+    {
+      "expected": 10,
+      "predicted": 6,
+      "matched": 1,
+      "recall": 0.1,
+      "precision": 0.16666666666666666,
+      "filename": "phil_02.jpg",
+      "predicted_names": [
+        "Cheese",
+        "Spice",
+        "yogurt",
+        "unidentified item",
+        "frozen pizza",
+        "Unidentified Food Item"
+      ],
+      "box_source": "saliency+rect"
+    },
+    {
+      "expected": 10,
+      "predicted": 7,
+      "matched": 0,
+      "recall": 0.0,
+      "precision": 0.0,
+      "filename": "phil_03.jpg",
+      "predicted_names": [
+        "chocolate bar",
+        "bread",
+        "chocolate spread",
+        "Old Fashioned Chocolate",
+        "Tomato Sauce",
+        "yogurt",
+        "creamer"
+      ],
+      "box_source": "saliency+rect"
+    },
+    {
+      "expected": 6,
+      "predicted": 10,
+      "matched": 3,
+      "recall": 0.5,
+      "precision": 0.3,
+      "filename": "phil_04.jpg",
+      "predicted_names": [
+        "Barbecue sauce",
+        "Sauce",
+        "milk",
+        "Cheddar",
+        "peanut butter",
+        "jam",
+        "tomato paste",
+        "unknown",
+        "Butter",
+        "yogurt"
+      ],
+      "box_source": "saliency+rect"
+    },
+    {
+      "expected": 11,
+      "predicted": 6,
+      "matched": 2,
+      "recall": 0.18181818181818182,
+      "precision": 0.3333333333333333,
+      "filename": "phil_05.jpg",
+      "predicted_names": [
+        "cheese",
+        "juice",
+        "Old Fashioned Chocolate",
+        "bread",
+        "Peanut butter",
+        "pasta"
+      ],
+      "box_source": "saliency+rect"
+    },
+    {
+      "expected": 9,
+      "predicted": 8,
+      "matched": 2,
+      "recall": 0.2222222222222222,
+      "precision": 0.25,
+      "filename": "phil_06.jpg",
+      "predicted_names": [
+        "oatmeal",
+        "peanut butter",
+        "Snack Mix",
+        "Syringes with Needles",
+        "cracker",
+        "bread",
+        "yogurt",
+        "hydration product"
+      ],
+      "box_source": "saliency+rect"
+    },
+    {
+      "expected": 12,
+      "predicted": 8,
+      "matched": 1,
+      "recall": 0.08333333333333333,
+      "precision": 0.125,
+      "filename": "phil_07.jpg",
+      "predicted_names": [
+        "Granola",
+        "peanut butter",
+        "powder",
+        "Milk",
+        "Mountain Landscape Poster/Book",
+        "almond powder",
+        "yogurt",
+        "Pickles"
+      ],
+      "box_source": "saliency+rect"
+    }
+  ],
+  "timestamp": "2026-07-18 13:23:29"
+}
