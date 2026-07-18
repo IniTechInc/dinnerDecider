@@ -20,7 +20,9 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 
 | # | Date (MDT) | Device | Reported build | Summary | Status | Fixed in |
 |---|-----------|--------|----------------|---------|--------|----------|
-| 1 | 2026-07-18 13:40 | iPhone 16 Pro Max | unknown (1 or 2, pre-build-3) | Crash right as image analysis starts during a scan | 🔧 In progress | - |
+| 1 | 2026-07-18 13:40 | iPhone 16 Pro Max | unknown (1 or 2, pre-build-3) | Crash right as image analysis starts during a scan | 🔧 In progress | build 4 (verify on device) |
+| 2 | 2026-07-18 14:05 | iPhone 16 Pro Max, iOS 26.5.2 | 3 | Scan counted 9 items analyzing, then "Nothing spotted" (screenshot: clearly visible labeled milk jugs) | 🔧 In progress | build 4 (verify on device) |
+| 3 | 2026-07-18 ~13:55 | iPhone 16 Pro Max | 3 | Recipe quality: invented "cheesy Italian dip" from ketchup + cheddar; wants real recipes + missing-item marking + shopping list flow | 🔧 In progress | build 4 (prompt fix; UI existed) |
 
 ---
 
@@ -32,15 +34,31 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 - **Comment:** "it crashed again at the part that it was starting to analyze the image"
 - **Root cause:** suspected marginal wired-memory OOM (vm-pageshortage jetsam) at the moment the vision projector encodes the image, per handoff escalation plan. If Phil was on build 1, the ModelLifecycle use-after-free (fixed in build 2) is still a candidate. Awaiting: build number, crash style (vanish vs freeze), Analytics Data log.
 - **Fix, staged ladder:**
-  - Build 3 (already live, attached to Team Internal): ModelLifecycle state machine + IQ3_XXS + context 1536. Phil retesting on it now = the verdict test.
-  - Build 4 (uploading): context 1536 -> 1024, less wired KV cache. Held unattached as a spare.
-  - Build 5 (prepped, not built): vendored LocalLLMClient fork in `Vendor/LocalLLMClient` with mmproj `use_gpu=false`, saves ~534MB wired; slower image encode. Ship only if 3 and 4 both crash.
-- **Status:** 🔧 In progress
+  - Build 3 (live, attached to Team Internal): ModelLifecycle state machine + IQ3_XXS + context 1536. Result: no crash but scan produced zero items (see #2); load-crash still reported once at ~1:55 PM.
+  - Build 4 (shipping): lifecycle sessions fix (see #2), context 1024, accuracy improvements. Attach on VALID.
+  - Build 5 (prepped, not built): vendored LocalLLMClient fork in `Vendor/LocalLLMClient` with mmproj `use_gpu=false`, saves ~534MB wired; slower image encode. Ship only if build 4 still jetsams at load.
+- **Status:** 🔧 In progress (crash-at-load may be environmental low-memory jetsam; close apps / reboot before scans)
+
+### #2: Scan runs all crops, finds nothing (ROOT CAUSE FOUND)
+- **Feedback ID:** `AF7U_ZA007GV0K9VouADLYM` (screenshot: `scratchpad/tf_feedback_scan_empty.jpg`, milk jugs clearly visible, "Nothing spotted")
+- **Reported:** 2026-07-18 20:05 UTC, iPhone 16 Pro Max, iOS 26.5.2, build 3
+- **Comment:** "The image recognition didn't work at all. It counted 9 items that it was analyzing but then said nothing is recognized."
+- **Root cause:** after the multi-GB model load the system reliably delivers a memory warning. The moments between per-crop inferences are lifecycle state `.ready`, where the pressure handler treated the model as idle and freed it. Every remaining identify then threw modelNotLoaded, silently caught, scan ended "Nothing spotted". Also explains build 1's crash-at-analyze (its handler freed the client mid-inference, use-after-free).
+- **Fix:** commit 45b99c3. Scans and recipe runs are one lifecycle "session": `.warning` ignored during a session, `.critical` deferred to session end. Repro tests in ModelLifecycleTests.
+- **Status:** 🔧 In progress, ships in build 4, verify on device
+- **Follow-up (P2):** if identifies fail systemically mid-scan, the UI should say "something went wrong" instead of the misleading "Nothing spotted" empty state.
+
+### #3: Real recipes + shopping list flow (chat request)
+- **Request:** real recognizable recipes (not inventory-invented fakes), mark have/missing per ingredient, add-missing-to-shopping-list button, persistent shopping list.
+- **Already existed:** per-ingredient hasIt marking, missingItems, "Add to shopping list" button, persistent list (SwiftData).
+- **Fix:** prompt rewritten (45b99c3): demand real well-known dishes with genuine ingredients, honest hasIt against inventory, up to 3 missing items in almostThere. makeNow inventory-only rule removed.
+- **Status:** 🔧 In progress, ships in build 4; recipe quality needs on-device judgment (P1 for demo)
 
 ---
 
 ## Open follow-ups / decisions tied to feedback
 
-- ❓ Which build was Phil on when it crashed (TestFlight showed 1, 2, or 3)?
-- ❓ Crash style: app vanished to home screen (jetsam) or froze first?
-- ❓ Analytics Data screenshot (Settings > Privacy & Security > Analytics & Improvements > Analytics Data, JetsamEvent-* or DinnerDecider-* around 1:35-1:40 PM).
+- ❓ Settings > Model on Phil's phone: confirm "Weights file" is Auto or UD-IQ3_XXS, NOT the 5.1GB Q4_0 (a manual pin survives updates and would jetsam every load).
+- Recommended: delete orphaned `gemma-4-E4B-it-Q4_0.gguf` in Files app (frees 4.3GB, removes pin risk).
+- Demo hygiene: reboot phone / close other apps before scanning; the load itself can still jetsam on a memory-starved phone.
+- ❓ Analytics Data crash log (JetsamEvent-* vs DinnerDecider-*) still wanted to confirm the ~1:55 PM load-crash was a memory kill.
