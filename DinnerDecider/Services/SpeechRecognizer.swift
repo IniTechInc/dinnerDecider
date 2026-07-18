@@ -60,6 +60,10 @@ final class SpeechRecognizer: ObservableObject {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.addsPunctuation = true
+        // Demo runs in airplane mode: force on-device recognition, never Apple's servers.
+        if speechRecognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        }
         self.recognitionRequest = request
 
         let inputNode = audioEngine.inputNode
