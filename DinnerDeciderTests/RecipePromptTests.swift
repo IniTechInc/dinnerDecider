@@ -51,4 +51,15 @@ final class RecipePromptTests: XCTestCase {
         )
         XCTAssertFalse(prompt.contains("\u{2014}"))
     }
+
+    /// Field feedback: inventory-only generation produced fake dishes ("cheesy
+    /// Italian dip" from ketchup + cheddar). The prompt must demand real dishes
+    /// with genuine ingredients and honest hasIt marking against the inventory.
+    func testPromptDemandsRealDishesWithHonestInventoryMarking() {
+        let prompt = AppModel.recipePrompt(itemNames: ["Eggs"], prefs: prefs())
+        XCTAssertTrue(prompt.contains("real, well-known dishes"))
+        XCTAssertTrue(prompt.contains("Never invent a dish"))
+        XCTAssertTrue(prompt.contains("hasIt true only if it is in the inventory"))
+        XCTAssertFalse(prompt.contains("uses only inventory items"))
+    }
 }

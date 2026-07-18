@@ -168,4 +168,82 @@ final class ModelLifecycleTests: XCTestCase {
         XCTAssertEqual(lifecycle.state, .unloaded)
         XCTAssertFalse(lifecycle.pendingUnload)
     }
+
+    // MARK: - Scan/recipe sessions (field bug: model freed between crops)
+
+    /// Repro for the "9 items analyzed, nothing recognized" TestFlight report:
+    /// after the 3.5GB load the system reliably posts a memory warning, and the
+    /// moments BETWEEN per-crop inferences are `.ready`, so the old rules freed
+    /// the model mid-scan and every remaining identify failed silently. During
+    /// an active session a warning at `.ready` must be ignored.
+    func testWarningBetweenInferencesDuringSessionDoesNotUnload() {
+        var lifecycle = ModelLifecycle()
+        lifecycle.beginSession()
+        _ = lifecycle.beginLoad()
+        lifecycle.finishLoad(success: true)
+        XCTAssertTrue(lifecycle.beginInference())   // crop 1
+        lifecycle.finishInference()                 // between crops: .ready
+
+        let decision = lifecycle.handleMemoryPressure(.warning)
+
+        XCTAssertEqual(decision, .nothingToDo)
+        XCTAssertEqual(lifecycle.state, .ready)
+        XCTAssertFalse(lifecycle.pendingUnload)
+    }
+
+    func testCriticalBetweenInferencesDuringSessionDefersToSessionEnd() {
+        var lifecycle = ModelLifecycle()
+        lifecycle.beginSession()
+        _ = lifecycle.beginLoad()
+        lifecycle.finishLoad(success: true)
+
+        XCTAssertEqual(lifecycle.handleMemoryPressure(.critical), .deferred)
+        XCTAssertEqual(lifecycle.state, .ready)
+        XCTAssertTrue(lifecycle.pendingUnload)
+
+        // Mid-session drain (called after every inference) must NOT free it.
+        XCTAssertEqual(lifecycle.drainPendingUnload(), .nothingToDo)
+        XCTAssertEqual(lifecycle.state, .ready)
+
+        // Session over: the deferred critical unload finally runs.
+        XCTAssertEqual(lifecycle.endSession(), .proceed)
+        XCTAssertEqual(lifecycle.state, .unloading)
+    }
+
+    func testWarningAtReadyOutsideSessionStillUnloads() {
+        var lifecycle = ModelLifecycle()
+        _ = lifecycle.beginLoad()
+        lifecycle.finishLoad(success: true)
+
+        // Idle with no scan/recipe running: freeing on a warning is correct.
+        XCTAssertEqual(lifecycle.handleMemoryPressure(.warning), .proceed)
+        XCTAssertEqual(lifecycle.state, .unloading)
+    }
+
+    func testNestedSessionsOnlyEndWhenAllEnd() {
+        var lifecycle = ModelLifecycle()
+        lifecycle.beginSession()    // scan
+        lifecycle.beginSession()    // recipes overlap
+        _ = lifecycle.beginLoad()
+        lifecycle.finishLoad(success: true)
+
+        XCTAssertEqual(lifecycle.endSession(), .nothingToDo)
+        // One session still active: warnings stay ignored.
+        XCTAssertEqual(lifecycle.handleMemoryPressure(.warning), .nothingToDo)
+        XCTAssertEqual(lifecycle.state, .ready)
+
+        _ = lifecycle.endSession()
+        XCTAssertEqual(lifecycle.handleMemoryPressure(.warning), .proceed)
+    }
+
+    func testEndSessionWithoutPendingUnloadKeepsModelResident() {
+        var lifecycle = ModelLifecycle()
+        lifecycle.beginSession()
+        _ = lifecycle.beginLoad()
+        lifecycle.finishLoad(success: true)
+
+        // No pressure during the scan: model stays warm for the next scan.
+        XCTAssertEqual(lifecycle.endSession(), .nothingToDo)
+        XCTAssertEqual(lifecycle.state, .ready)
+    }
 }

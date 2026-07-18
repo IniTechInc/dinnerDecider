@@ -184,6 +184,14 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Close a scan/recipe session; runs any unload a `.critical` event deferred
+    /// while the session was busy.
+    private func endModelSession() {
+        if case .proceed = lifecycle.endSession() {
+            performUnload()
+        }
+    }
+
     /// Real service if the model is on the device, mock otherwise.
     /// On the simulator the Metal GPU backend for the mmproj (vision projector)
     /// cannot allocate XPC shared-memory buffers (`MTLSimDevice` limitation),
@@ -263,6 +271,12 @@ final class AppModel: ObservableObject {
     }
 
     private func runScan(_ images: [UIImage]) async {
+        // The whole scan is one model session: memory warnings between the
+        // per-crop inferences must never free the client mid-scan (the "9 items
+        // analyzed, nothing recognized" field bug). Ends on every exit path,
+        // including cancellation.
+        lifecycle.beginSession()
+        defer { endModelSession() }
         await loadModelIfNeeded()
         var results: [IdentifiedItem] = []
 
@@ -398,6 +412,9 @@ final class AppModel: ObservableObject {
         guard !isGeneratingRecipes else { return }
         recipeError = nil
         isGeneratingRecipes = true
+        // One session for the whole generation, same rules as a scan.
+        lifecycle.beginSession()
+        defer { endModelSession() }
         await loadModelIfNeeded()
 
         let prompt = Self.recipePrompt(itemNames: names, prefs: RecipePreferences.current(defaults), mood: moodText)
@@ -452,10 +469,17 @@ final class AppModel: ObservableObject {
             lines.append(portion)
         }
         lines.append(
+            "Suggest real, well-known dishes only, with their genuine standard ingredients. "
+                + "Never invent a dish or force a dish to use only the inventory. "
+                + "Assume salt, pepper, water and cooking oil are always on hand."
+        )
+        lines.append(
             "Respond ONLY with JSON of the form "
                 + "{\"makeNow\":[{\"name\":\"\",\"ingredients\":[{\"name\":\"\",\"hasIt\":true}],"
                 + "\"steps\":[\"\"],\"timeMinutes\":0,\"missingItems\":[]}],\"almostThere\":[...]}. "
-                + "makeNow uses only inventory items. almostThere needs at most 2 extra items listed in missingItems."
+                + "For every ingredient set hasIt true only if it is in the inventory. "
+                + "makeNow is for dishes whose ingredients are all in the inventory. "
+                + "almostThere is for dishes missing up to 3 ingredients; list each missing one in missingItems."
         )
         return lines.joined(separator: "\n")
     }

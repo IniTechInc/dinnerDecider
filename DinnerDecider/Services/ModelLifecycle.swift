@@ -59,6 +59,19 @@ struct ModelLifecycle: Equatable {
     /// only an explicit unload request or a `.critical` event does.
     private(set) var pendingUnload = false
 
+    /// How many user-visible model sessions (a scan over N crops, a recipe
+    /// generation) are in flight. The moments BETWEEN the individual inferences
+    /// of a session are `.ready`, but freeing the model there guts the rest of
+    /// the session: after the multi-GB load the system reliably posts a memory
+    /// warning, the old rules freed the client mid-scan, and every remaining
+    /// crop failed silently ("9 items analyzed, nothing recognized"). While a
+    /// session is active, `.warning` is ignored and `.critical` defers to the
+    /// end of the whole session.
+    private(set) var activeSessionCount = 0
+
+    /// True while at least one scan or recipe generation is running.
+    var sessionActive: Bool { activeSessionCount > 0 }
+
     /// Whether an operation the client must survive is currently running.
     var isBusy: Bool { state == .loading || state == .inferring || state == .unloading }
 
@@ -137,8 +150,19 @@ struct ModelLifecycle: Equatable {
         case .unloaded, .unloading:
             return .nothingToDo
         case .ready:
-            state = .unloading
-            return .proceed
+            guard sessionActive else {
+                state = .unloading
+                return .proceed
+            }
+            // Resident but mid-session (between crops / before the next call):
+            // same rules as any busy phase, the session must keep its client.
+            switch level {
+            case .warning:
+                return .nothingToDo
+            case .critical:
+                pendingUnload = true
+                return .deferred
+            }
         case .loading, .inferring:
             switch level {
             case .warning:
@@ -155,12 +179,28 @@ struct ModelLifecycle: Equatable {
         pendingUnload = false
     }
 
-    /// Honor a deferred unload once we are back to idle-and-resident. Returns
-    /// `.proceed` when the caller should now perform the real unload.
+    /// Honor a deferred unload once we are back to idle-and-resident AND no
+    /// session is running (a mid-session drain would gut the remaining crops).
+    /// Returns `.proceed` when the caller should now perform the real unload.
     mutating func drainPendingUnload() -> UnloadDecision {
-        guard pendingUnload, state == .ready else { return .nothingToDo }
+        guard pendingUnload, state == .ready, !sessionActive else { return .nothingToDo }
         pendingUnload = false
         state = .unloading
         return .proceed
+    }
+
+    // MARK: - Sessions
+
+    /// Mark the start of a user-visible model session (scan / recipe run).
+    mutating func beginSession() {
+        activeSessionCount += 1
+    }
+
+    /// Mark the end of a session. When the last session ends, any unload that
+    /// was deferred during it (a `.critical` event) finally runs.
+    mutating func endSession() -> UnloadDecision {
+        activeSessionCount = max(0, activeSessionCount - 1)
+        guard !sessionActive else { return .nothingToDo }
+        return drainPendingUnload()
     }
 }
