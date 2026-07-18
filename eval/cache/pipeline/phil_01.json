@@ -1,0 +1,126 @@
+{
+  "box_source": "saliency+rect",
+  "crops": [
+    {
+      "index": 0,
+      "box": [
+        0.0,
+        0.0,
+        0.1910247802734375,
+        0.34658203125000003
+      ],
+      "ocr": "",
+      "content": ""
+    },
+    {
+      "index": 1,
+      "box": [
+        0.07349853515625,
+        0.0,
+        0.7912353515625,
+        1.0
+      ],
+      "ocr": "Slim Spaceplus- accesstoicebin la4rlife T* ji4EINZ REL",
+      "content": "{\n  \"name\": \"Sweet Relish\",\n  \"brand\": \"Heinz\",\n  \"category\": \"condiment\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 2,
+      "box": [
+        0.48483205735683443,
+        0.7772385239601135,
+        0.28086976408958436,
+        0.1934280872344971
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Spread\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.8\n}"
+    },
+    {
+      "index": 3,
+      "box": [
+        0.42357939928770066,
+        0.07174005210399628,
+        0.1748216360807419,
+        0.17012299895286562
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Barbecue Sauce\",\n  \"brand\": \"Sweet Baby's\",\n  \"category\": \"condiment\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "index": 4,
+      "box": [
+        0.5755082368850708,
+        0.060659397020936014,
+        0.18803691864013672,
+        0.14164696708321572
+      ],
+      "ocr": "JwEI!IZ RELIS11",
+      "content": "{\n  \"name\": \"Sweet Relish\",\n  \"brand\": \"Heinz\",\n  \"category\": \"condiment\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 5,
+      "box": [
+        0.4299253910779953,
+        0.4096370279788971,
+        0.11530999541282654,
+        0.1386468529701233
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Coconut Aminos\",\n  \"brand\": \"Coconut Secret\",\n  \"category\": \"condiment\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 6,
+      "box": [
+        0.520637360215187,
+        0.505429458618164,
+        0.1380256474018097,
+        0.07734284400939942
+      ],
+      "ocr": "lairlife",
+      "content": "{\n  \"name\": \"milk\",\n  \"brand\": \"Fairlife\",\n  \"category\": \"dairy\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 7,
+      "box": [
+        0.441902719438076,
+        0.1030208058655262,
+        0.13859985768795013,
+        0.05953416973352432
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Barbecue Sauce\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 8,
+      "box": [
+        0.19569226503372192,
+        0.9072468042373657,
+        0.13825709819793702,
+        0.06175141334533692
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"null\",\n  \"brand\": null,\n  \"category\": \"other\",\n  \"confidence\": 0.1\n}"
+    },
+    {
+      "index": 9,
+      "box": [
+        0.32900712341070176,
+        0.4091243535280228,
+        0.08593895137310029,
+        0.07105849385261535
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"flavored beverage\",\n  \"brand\": null,\n  \"category\": \"beverage\",\n  \"confidence\": 0.4\n}"
+    },
+    {
+      "index": 10,
+      "box": [
+        0.3331273466348648,
+        0.07267378941178322,
+        0.08185601830482483,
+        0.04222867041826248
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"bread\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.9\n}"
+    }
+  ]
+}

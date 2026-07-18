@@ -1,0 +1,104 @@
+{
+  "box_source": "saliency+rect",
+  "crops": [
+    {
+      "index": 0,
+      "box": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "ocr": "tl iiGK",
+      "content": "{\n  \"name\": \"Cheese\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 1,
+      "box": [
+        0.15722769424319266,
+        0.4832951217889786,
+        0.1661232277750969,
+        0.16921160817146302
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Spice\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 2,
+      "box": [
+        0.7876480340957641,
+        0.5284486085176467,
+        0.18301210403442383,
+        0.07790268063545228
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"yogurt\",\n  \"brand\": \"null\",\n  \"category\": \"dairy\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 3,
+      "box": [
+        0.36210176199674604,
+        0.10083460547029972,
+        0.1781956881284714,
+        0.07198074236512185
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"unidentified item\",\n  \"brand\": null,\n  \"category\": \"other\",\n  \"confidence\": 0.1\n}"
+    },
+    {
+      "index": 4,
+      "box": [
+        0.26297803670167924,
+        0.6941121369600296,
+        0.12965231239795685,
+        0.06371405720710754
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"frozen pizza\",\n  \"brand\": \"null\",\n  \"category\": \"frozen\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 5,
+      "box": [
+        0.6011048048734665,
+        0.507332393527031,
+        0.14030389189720155,
+        0.05469731688499451
+      ],
+      "ocr": "",
+      "content": ""
+    },
+    {
+      "index": 6,
+      "box": [
+        0.4535845726728439,
+        0.39398639649152756,
+        0.06903471350669861,
+        0.07527594268321991
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"frozen pizza\",\n  \"brand\": null,\n  \"category\": \"frozen\",\n  \"confidence\": 0.6\n}"
+    },
+    {
+      "index": 7,
+      "box": [
+        0.2074369877576828,
+        0.5128502994775772,
+        0.06997756361961364,
+        0.06958439946174622
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Unidentified Food Item\",\n  \"brand\": null,\n  \"category\": \"other\",\n  \"confidence\": 0.2\n}"
+    },
+    {
+      "index": 8,
+      "box": [
+        0.4603361219167709,
+        0.5317502796649933,
+        0.06820964217185975,
+        0.04321380853652954
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"yogurt\",\n  \"brand\": \"null\",\n  \"category\": \"dairy\",\n  \"confidence\": 0.9\n}"
+    }
+  ]
+}

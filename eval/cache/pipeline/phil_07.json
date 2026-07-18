@@ -1,0 +1,126 @@
+{
+  "box_source": "saliency+rect",
+  "crops": [
+    {
+      "index": 0,
+      "box": [
+        0.0952392578125,
+        0.0,
+        0.833447265625,
+        1.0
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Granola\",\n  \"brand\": \"CLIF\",\n  \"category\": \"snack\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 1,
+      "box": [
+        0.46620817184448243,
+        0.09168556667864322,
+        0.333538031578064,
+        0.19318835511803628
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"peanut butter\",\n  \"brand\": \"null\",\n  \"category\": \"pantry\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 2,
+      "box": [
+        0.42718240022659304,
+        0.6360676527023316,
+        0.19090111255645753,
+        0.23875958919525148
+      ],
+      "ocr": "fj",
+      "content": "{\n  \"name\": \"powder\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.8\n}"
+    },
+    {
+      "index": 3,
+      "box": [
+        0.033655136823654175,
+        0.8378732651472092,
+        0.1656728982925415,
+        0.16212673485279083
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Milk\",\n  \"brand\": \"Horizon\",\n  \"category\": \"dairy\",\n  \"confidence\": 0.98\n}"
+    },
+    {
+      "index": 4,
+      "box": [
+        0.5216840893030167,
+        0.12172477543354035,
+        0.2453106462955475,
+        0.137749719619751
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Mountain Landscape Poster/Book\",\n  \"brand\": null,\n  \"category\": \"other\",\n  \"confidence\": 0.8\n}"
+    },
+    {
+      "index": 5,
+      "box": [
+        0.21362822726368905,
+        0.21667226180434226,
+        0.13823836594820024,
+        0.1545918330550194
+      ],
+      "ocr": "",
+      "content": ""
+    },
+    {
+      "index": 6,
+      "box": [
+        0.36423267275094984,
+        0.43242377191782,
+        0.1571237474679947,
+        0.09516343176364898
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"almond powder\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "index": 7,
+      "box": [
+        0.3911996141076088,
+        0.5082234621047974,
+        0.11374799311161042,
+        0.05030300617218018
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"yogurt\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "index": 8,
+      "box": [
+        0.604951024055481,
+        0.551154500246048,
+        0.06613743305206299,
+        0.07489227056503296
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Pickles\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 9,
+      "box": [
+        0.3617545709013939,
+        0.6741735696792602,
+        0.06052275598049164,
+        0.05354564189910889
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Milk\",\n  \"brand\": \"Horizon\",\n  \"category\": \"dairy\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "index": 10,
+      "box": [
+        0.6535031110048294,
+        0.26224271953105927,
+        0.06495972275733948,
+        0.04674074053764343
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"peanut"
+    }
+  ]
+}

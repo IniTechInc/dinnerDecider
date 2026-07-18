@@ -1,0 +1,137 @@
+{
+  "box_source": "saliency+rect",
+  "crops": [
+    {
+      "index": 0,
+      "box": [
+        0.2317626953125,
+        0.0,
+        0.577001953125,
+        1.0
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Barbecue sauce\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 1,
+      "box": [
+        0.41950409263372423,
+        0.07198397628962994,
+        0.30702382028102876,
+        0.3989778868854046
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Sauce\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 2,
+      "box": [
+        0.541938242316246,
+        0.4894654780626297,
+        0.2071966588497162,
+        0.2038683235645294
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"milk\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "index": 3,
+      "box": [
+        0.4168527841567993,
+        0.12227710261940956,
+        0.1226132869720459,
+        0.17743754535913467
+      ],
+      "ocr": "I",
+      "content": "{\n  \"name\": \"Cheddar\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.95\n}"
+    },
+    {
+      "index": 4,
+      "box": [
+        0.48060884773731233,
+        0.8409305274486542,
+        0.22673166394233704,
+        0.06444095373153687
+      ],
+      "ocr": "",
+      "content": ""
+    },
+    {
+      "index": 5,
+      "box": [
+        0.10196534804999828,
+        0.6105870872735977,
+        0.09166299030184746,
+        0.11921048760414124
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"peanut butter\",\n  \"brand\": \"null\",\n  \"category\": \"pantry\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 6,
+      "box": [
+        0.48690801709890363,
+        0.2547145366668701,
+        0.09971395432949066,
+        0.08082165718078614
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"jam\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.8\n}"
+    },
+    {
+      "index": 7,
+      "box": [
+        0.5239359170198441,
+        0.15926360785961152,
+        0.058612996339797975,
+        0.1098656713962555
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"tomato paste\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 0.3\n}"
+    },
+    {
+      "index": 8,
+      "box": [
+        0.4988944321870804,
+        0.6066427797079086,
+        0.08964119553565979,
+        0.09209889769554139
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"unknown\",\n  \"brand\": null,\n  \"category\": \"other\",\n  \"confidence\": 0.0\n}"
+    },
+    {
+      "index": 9,
+      "box": [
+        0.4435977518558502,
+        0.19828545674681664,
+        0.07639023065567017,
+        0.05666156858205795
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Butter\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.4\n}"
+    },
+    {
+      "index": 10,
+      "box": [
+        0.37208523899316787,
+        0.6508140653371811,
+        0.09132120907306672,
+        0.03921560645103455
+      ],
+      "ocr": "\u2022",
+      "content": "{\n  \"name\": \"yogurt\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 11,
+      "box": [
+        0.5690793752670288,
+        0.6526302546262741,
+        0.08014504909515381,
+        0.03600582480430603
+      ],
+      "ocr": "\u2022",
+      "content": "{\n  \"name\": \"Sauce\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 0.4\n}"
+    }
+  ]
+}

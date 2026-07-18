@@ -2,7 +2,7 @@
 
 **Build with Gemma: JustBuild hackathon, On-Device AI with Gemma 4 track**
 
-Team: IniTech (Phil Woolley, Blain Thomas, olsonjb)
+Team: IniTech (Phil Woolley, olsonjb)
 Repo: https://github.com/IniTechInc/dinnerDecider (public)
 Demo video: [PLACEHOLDER: demo video link, if required by submission form]
 
@@ -84,9 +84,7 @@ The recognition numbers in Section 4 show a clear ceiling: even the shipped two-
 
 **The training harness.** A local LoRA fine-tune on Apple Silicon: transformers 5.14.1 (Gemma 4 support verified), PEFT LoRA at rank 16 on the text side only, with the vision and audio towers frozen (the harness asserts this at startup). The output converts to a Q3_K_S GGUF that drops into the app as a file swap, keeping the verified stock mmproj since vision is frozen. The full chain is architecture-verified end to end; the actual training run is gated on a 16GB base-model download that was still in flight at submission.
 
-**A parallel path.** A teammate ran a LoRA fine-tune (rank 16) on an NVIDIA DGX Spark. The teammate reports recall improving from **42.1% to 60.3% on synthetic whole-frame scenes**. That checkpoint is a candidate for the app pending GGUF conversion; we report it as the teammate's own measurement, not yet reproduced in our harness.
-
-Because the app talks to the model through a single service seam, whichever fine-tuned GGUF lands first is a drop-in swap, not a code change.
+Because the app talks to the model through a single service seam, the fine-tuned GGUF is a drop-in swap when it lands, not a code change.
 
 ---
 
@@ -112,7 +110,7 @@ Two zero-training techniques do the work, both grounded in peer-reviewed researc
 
 On top of those, the as-shipped system runs a **second, whole-image recall pass** and unions its results with the crop pass, then applies a confidence filter (drop predictions below 0.15, keep an explicit "unknown") to suppress hallucinations. The two passes are complementary: the crop pass sees small items the whole-scene view throws away, and the whole-image pass catches items that fall between crop boundaries. Unioned, they roughly double what either does alone, which is why the shipped configuration is both passes together.
 
-**Absolute numbers need context, or they read as failure when they are not.** On dense, real-world kitchen scenes a small on-device model misses most items in a single pass. That is a fact about the benchmark's difficulty as much as the model: the same stock E4B scored 42% whole-frame recall on synthetic, uncluttered scenes (a teammate's measurement), versus 16.1% on our deliberately harsh real photos. We chose the harder benchmark on purpose, because it is what a real fridge looks like. This is exactly why the product is built around three things: (a) multi-pass recognition, which more than doubles single-pass recall; (b) a user confirm screen, where fixing a miss costs one tap; and (c) the fine-tune pipeline in Section 3, which targets these failure modes directly.
+**Absolute numbers need context, or they read as failure when they are not.** On dense, real-world kitchen scenes a small on-device model misses most items in a single pass. That is a fact about the benchmark's difficulty as much as the model: our ground truth counts every identifiable item in genuinely cluttered home kitchens, including items partially hidden in drawers and behind other food, roughly 68 items across 7 photos. Benchmarks built from staged or synthetic scenes produce far higher absolute numbers for the same model. We chose the harder benchmark on purpose, because it is what a real fridge looks like. This is exactly why the product is built around three things: (a) multi-pass recognition, which more than doubles single-pass recall; (b) a user confirm screen, where fixing a miss costs one tap; and (c) the fine-tune pipeline in Section 3, which targets these failure modes directly.
 
 **Honest limitations, not cherry-picked:**
 
@@ -214,5 +212,5 @@ Contingency: if live capture misbehaves under demo-room lighting, the photo-libr
 - llama.cpp Gemma 4 vision support: github.com/ggml-org/llama.cpp PR #21309; vision conversion fix (June 4, 2026): PR #24118
 - Crop sensitivity: "MLLMs Know Where to Look: Training-free Perception of Small Visual Details with Multimodal LLMs," arXiv 2502.17422, ICLR 2025
 - OCR fusion for fine-grained grocery recognition: Machine Vision and Applications, 2024, doi 10.1007/s00138-024-01549-9
-- Fine-tune harness: Hugging Face transformers 5.14.1 + PEFT (LoRA rank 16, text side only, vision frozen); parallel Unsloth Gemma 4 path on DGX Spark: unsloth.ai/docs/models/gemma-4/train
+- Fine-tune harness: Hugging Face transformers 5.14.1 + PEFT (LoRA rank 16, text side only, vision frozen)
 - Open Food Facts: openfoodfacts.org (Open Database License, ODbL v1.0)

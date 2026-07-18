@@ -1,0 +1,82 @@
+{
+  "box_source": "saliency+rect",
+  "crops": [
+    {
+      "index": 0,
+      "box": [
+        0.0,
+        0.0259857177734375,
+        1.0,
+        0.9740142822265625
+      ],
+      "ocr": "DARIGOLD",
+      "content": "{\n  \"name\": \"chocolate bar\",\n  \"brand\": \"DARIGOLD\",\n  \"category\": \"snack\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 1,
+      "box": [
+        0.7513150542974472,
+        0.884919849038124,
+        0.12426800131797791,
+        0.10246420502662659
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"bread\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 2,
+      "box": [
+        0.5467561304569244,
+        0.5199068248271942,
+        0.13485220670700074,
+        0.08629046678543091
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"chocolate spread\",\n  \"brand\": null,\n  \"category\": \"pantry\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 3,
+      "box": [
+        0.688515642285347,
+        0.5898354887962342,
+        0.08806357979774475,
+        0.09775669574737549
+      ],
+      "ocr": "DA",
+      "content": "{\n  \"name\": \"Old Fashioned Chocolate\",\n  \"brand\": \"DARIGOLD\",\n  \"category\": \"pantry\",\n  \"confidence\": 1.0\n}"
+    },
+    {
+      "index": 4,
+      "box": [
+        0.418297715485096,
+        0.41046060919761657,
+        0.09370096027851105,
+        0.0855800747871399
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"Tomato Sauce\",\n  \"brand\": null,\n  \"category\": \"condiment\",\n  \"confidence\": 0.9\n}"
+    },
+    {
+      "index": 5,
+      "box": [
+        0.6893652021884918,
+        0.40101111084222796,
+        0.06243623495101929,
+        0.08733889162540436
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"yogurt\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.85\n}"
+    },
+    {
+      "index": 6,
+      "box": [
+        0.4746717900037766,
+        0.5289146274328231,
+        0.07983378767967224,
+        0.06755751967430115
+      ],
+      "ocr": "",
+      "content": "{\n  \"name\": \"creamer\",\n  \"brand\": null,\n  \"category\": \"dairy\",\n  \"confidence\": 0.95\n}"
+    }
+  ]
+}
