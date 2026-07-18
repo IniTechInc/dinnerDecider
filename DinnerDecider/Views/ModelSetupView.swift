@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Shows on-device model status and how to install the files. The download path
-/// is a placeholder for now; copying files in via Finder works today.
 struct ModelSetupView: View {
-    private let locator = ModelFileLocator()
+    @State private var locator = ModelFileLocator()
+    @State private var isDownloading = false
+    @State private var downloadStep = ""
+    @State private var downloadError: String?
 
     var body: some View {
         List {
@@ -21,37 +22,91 @@ struct ModelSetupView: View {
             }
 
             Section {
-                Button {
-                    // Placeholder: background download from Hugging Face will be
-                    // wired in with the real runtime.
-                } label: {
-                    Label("Download model (coming soon)", systemImage: "arrow.down.circle")
+                if isDownloading {
+                    HStack(spacing: 12) {
+                        ProgressView()
+                        Text(downloadStep)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if locator.isModelPresent {
+                    Label("Model files ready", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Button {
+                        startDownload()
+                    } label: {
+                        Label("Download model (~4.5 GB)", systemImage: "arrow.down.circle")
+                    }
                 }
-                .disabled(true)
+                if let error = downloadError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             } header: {
                 Text("Download")
             } footer: {
-                Text("A one-time download from Hugging Face will land here. After that the app works fully offline.")
+                Text("Downloads Gemma 4 E4B weights + vision projector from Hugging Face. One-time download; the app then works fully offline.")
             }
 
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     instruction(number: 1, text: "Connect this iPhone to your Mac with a cable.")
                     instruction(number: 2, text: "Open Finder, select the iPhone, then the Files tab.")
-                    instruction(number: 3, text: "Drag the .gguf weights and mmproj-F16.gguf into DinnerDecider.")
+                    instruction(number: 3, text: "Drag gemma-4-E4B-it-Q4_0.gguf and mmproj-gemma-4-E4B-it-Q8_0.gguf into DinnerDecider.")
                     instruction(number: 4, text: "Reopen this screen to confirm both files show as ready.")
                 }
                 .padding(.vertical, 4)
             } header: {
                 Text("Copy files via Finder")
             } footer: {
-                Text("File Sharing is enabled, so model files dropped in via Finder are picked up automatically.")
+                Text("File Sharing is enabled, so files dropped in via Finder are picked up automatically.")
             }
         }
         .dinnerSurfaceBackground()
         .navigationTitle("Model Setup")
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    // MARK: - Download
+
+    private func startDownload() {
+        isDownloading = true
+        downloadError = nil
+        Task {
+            do {
+                try await downloadFile(
+                    urlString: "https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_0.gguf",
+                    filename: "gemma-4-E4B-it-Q4_0.gguf",
+                    label: "Downloading weights (~4.4 GB)…"
+                )
+                try await downloadFile(
+                    urlString: "https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/mmproj-gemma-4-E4B-it-Q8_0.gguf",
+                    filename: "mmproj-gemma-4-E4B-it-Q8_0.gguf",
+                    label: "Downloading vision projector…"
+                )
+                locator = ModelFileLocator()
+            } catch {
+                downloadError = "Download failed: \(error.localizedDescription)"
+            }
+            isDownloading = false
+        }
+    }
+
+    private func downloadFile(urlString: String, filename: String, label: String) async throws {
+        guard let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            throw URLError(.fileDoesNotExist)
+        }
+        let dest = docsURL.appendingPathComponent(filename)
+        guard !FileManager.default.fileExists(atPath: dest.path) else { return }
+        downloadStep = label
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        let (tempURL, _) = try await URLSession.shared.download(from: url)
+        try FileManager.default.moveItem(at: tempURL, to: dest)
+    }
+
+    // MARK: - Helpers
 
     private func statusRow(title: String, present: Bool, detail: String?) -> some View {
         HStack {
