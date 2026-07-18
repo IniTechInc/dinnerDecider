@@ -130,7 +130,8 @@ struct ScanningView: View {
                 return "\(photoPart)splitting the photo into items..."
             case .identifying:
                 let total = max(progress.itemsTotal, 1)
-                return "\(photoPart)identifying item \(min(progress.itemsDone + 1, total)) of \(total)..."
+                let cropPart = progress.currentCropLabel.map { " (\($0))" } ?? ""
+                return "\(photoPart)identifying item \(min(progress.itemsDone + 1, total)) of \(total)\(cropPart)..."
             }
         case .finished:
             return "Review the items, then add them to your inventory."
@@ -156,22 +157,42 @@ struct ScanningView: View {
         }
     }
 
+    // MARK: - Scanning progress helpers
+
+    /// The ScanProgress from the current phase, if scanning.
+    private var currentProgress: ScanProgress? {
+        if case let .scanning(p) = appModel.scanPhase { return p }
+        return nil
+    }
+
     private var scanningList: some View {
         List {
-            Section {
-                ForEach(appModel.scannedItems, id: \.self) { item in
-                    IdentifiedRow(item: item)
-                        .transition(reduceMotion
-                            ? .opacity
-                            : .move(edge: .top).combined(with: .opacity))
+            // Prominent progress card when no items have streamed in yet
+            if appModel.scannedItems.isEmpty {
+                Section {
+                    ScanProgressCard(progress: currentProgress)
                 }
-                HStack(spacing: 12) {
-                    ProgressView()
-                    Text(appModel.scannedItems.isEmpty ? "Looking for items..." : "Still looking...")
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                if !appModel.scannedItems.isEmpty {
+            } else {
+                // Items streaming in — show them with the active progress at the bottom
+                Section {
+                    ForEach(appModel.scannedItems, id: \.self) { item in
+                        IdentifiedRow(item: item)
+                            .transition(reduceMotion
+                                ? .opacity
+                                : .move(edge: .top).combined(with: .opacity))
+                    }
+                    // Inline spinner + crop label while still working
+                    HStack(spacing: 12) {
+                        ProgressView()
+                        if let label = currentProgress?.currentCropLabel {
+                            Text("Asking Gemma about \(label)...")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Still looking...")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
                     Text("Found so far")
                 }
             }
@@ -303,6 +324,47 @@ struct ScanningView: View {
         Haptics.success()
         appModel.resetScan()
         dismiss()
+    }
+}
+
+// MARK: - Scanning progress card
+
+/// Shown prominently when the scan is running but no items have appeared yet.
+/// Replaces the blank list with actionable status so the app never looks stuck.
+private struct ScanProgressCard: View {
+    let progress: ScanProgress?
+
+    private var primaryText: String {
+        guard let p = progress else { return "Getting ready..." }
+        switch p.stage {
+        case .cropping:
+            return "Finding items in photo..."
+        case .identifying:
+            if let label = p.currentCropLabel {
+                return "Asking Gemma about \(label)..."
+            }
+            let total = max(p.itemsTotal, 1)
+            return "Identifying item \(min(p.itemsDone + 1, total)) of \(total)..."
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.4)
+                .padding(.top, 8)
+            Text(primaryText)
+                .font(.body.weight(.medium))
+                .multilineTextAlignment(.center)
+            Text("This may take a moment")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(primaryText)
     }
 }
 

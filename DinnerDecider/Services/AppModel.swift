@@ -18,6 +18,9 @@ struct ScanProgress: Equatable {
     /// Items expected in the current photo (crops found).
     var itemsTotal: Int
     var stage: Stage
+    /// Human-readable label for the crop currently being analysed, e.g.
+    /// "crop 3 of 9". Nil during the cropping stage.
+    var currentCropLabel: String?
 }
 
 /// Where the scan pipeline currently is, for the Scanning screen.
@@ -108,7 +111,7 @@ final class AppModel: ObservableObject {
             return
         }
         scanPhase = .scanning(
-            ScanProgress(photoIndex: 0, photoCount: photos.count, itemsDone: 0, itemsTotal: 0, stage: .cropping)
+            ScanProgress(photoIndex: 0, photoCount: photos.count, itemsDone: 0, itemsTotal: 0, stage: .cropping, currentCropLabel: nil)
         )
         scanTask = Task { [weak self] in
             await self?.runScan(photos)
@@ -127,7 +130,8 @@ final class AppModel: ObservableObject {
                     photoCount: images.count,
                     itemsDone: 0,
                     itemsTotal: 0,
-                    stage: .cropping
+                    stage: .cropping,
+                    currentCropLabel: nil
                 )
             )
 
@@ -136,13 +140,15 @@ final class AppModel: ObservableObject {
 
             for (index, cropped) in cropResult.images.enumerated() {
                 if Task.isCancelled { return }
+                let cropLabel = total > 0 ? "crop \(index + 1) of \(total)" : nil
                 scanPhase = .scanning(
                     ScanProgress(
                         photoIndex: photoIndex,
                         photoCount: images.count,
                         itemsDone: index,
                         itemsTotal: total,
-                        stage: .identifying
+                        stage: .identifying,
+                        currentCropLabel: cropLabel
                     )
                 )
                 let ocrText = await Task.detached { OCRService.recognizeText(in: cropped) }.value
