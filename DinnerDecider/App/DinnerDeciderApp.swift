@@ -3,6 +3,7 @@ import SwiftUI
 
 @main
 struct DinnerDeciderApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var appModel = AppModel()
 
     init() {
