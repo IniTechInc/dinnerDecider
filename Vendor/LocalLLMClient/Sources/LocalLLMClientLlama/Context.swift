@@ -100,6 +100,16 @@ public final class Context: @unchecked Sendable {
         llama_memory_clear(kv, true)
     }
 
+    /// DinnerDecider fork: full between-request reset. `clear()` alone wipes
+    /// the KV memory but leaves `promptCaches` populated, so the next chat
+    /// request believes its prefix is still cached and skips decoding it.
+    /// Dropping both keeps every request self-contained and stops cached
+    /// image chunks accumulating across a multi-crop scan.
+    public func resetSession() {
+        clear()
+        promptCaches.removeAll()
+    }
+
     func addCache(for chunk: MessageChunk, position: llama_pos) {
         let endIndex = promptCaches.endIndex - 1
         switch (chunk, promptCaches.last?.chunk) {

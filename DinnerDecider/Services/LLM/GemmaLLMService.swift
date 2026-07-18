@@ -135,6 +135,11 @@ final class GemmaLLMService: LLMService {
 
     private func complete(prompt: String, attachments: [LLMAttachment]) async throws -> String {
         guard let client else { throw LLMServiceError.modelNotLoaded }
+        // Every request is independent (a fresh crop or a fresh recipe ask),
+        // so start each one from a clean context. Without this the wrapper
+        // keeps KV state and cached image chunks from every previous request,
+        // and that creep is what jetsammed multi-crop scans around item 4.
+        client.resetSession()
         let input = LLMInput.chat([.user(prompt, attachments: attachments)])
         var output = ""
         for try await token in try client.textStream(from: input) {
@@ -147,10 +152,9 @@ final class GemmaLLMService: LLMService {
     /// Reusable CIContext for image preprocessing. Creating one per-crop would
     /// allocate a new Metal GPU context each time, exhausting wired memory on
     /// top of the already ~3.5GB GPU-resident model and triggering jetsam.
-    /// Software renderer on purpose: the tone-curve pass on a <=896px crop is
-    /// milliseconds on CPU, and it keeps preprocessing entirely out of the
-    /// wired GPU budget the model is already straining.
-    private static let ciContext = CIContext(options: [.useSoftwareRenderer: true])
+    /// GPU renderer to exactly match the build-4 configuration, the last one
+    /// proven to recognize items on device.
+    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
     /// Downscale so the longest side is <= `maxImageSide`, normalize exposure, opaque, scale 1.
     private static func downscaled(_ cgImage: CGImage) -> UIImage {

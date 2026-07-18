@@ -8,12 +8,12 @@ public class MultimodalContext: @unchecked Sendable {
 
     package init(url: URL, context: Context, parameter: LlamaClient.Parameter) throws(LLMError) {
         var mparams = mtmd_context_params_default()
-        // DinnerDecider fork: keep the vision projector (mmproj) on CPU. On an
-        // 8GB iPhone the GPU copy of the mmproj costs ~534MB of WIRED Metal
-        // memory on top of the fully GPU-resident weights and KV cache, and a
-        // systemwide vm-pageshortage jetsam kills the app at scan start. Image
-        // encode gets slower on CPU; that beats crashing.
-        mparams.use_gpu = false
+        // DinnerDecider fork note: use_gpu=false was tried to save ~534MB of
+        // wired Metal memory, but the CPU vision path fails instantly on
+        // device (every identify returned nothing in TestFlight builds 5/7).
+        // GPU is the only path that recognizes; memory is managed instead by
+        // resetting the context between requests and capping calls per scan.
+        mparams.use_gpu = true
         mparams.print_timings = parameter.options.verbose
         if let numberOfThreads = parameter.numberOfThreads {
             mparams.n_threads = Int32(numberOfThreads)

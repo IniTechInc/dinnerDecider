@@ -32,6 +32,25 @@ enum ModelLoadPhase: Equatable {
     case reloadingAfterMemory
 }
 
+/// Hard cap on heavy model calls in one scan (whole-image pass and each crop
+/// cost one call). The wired-memory ceiling on an 8GB phone is real: build 4
+/// jetsammed on the fifth heavy call of a scan. Per-request context resets
+/// removed the per-call creep, and this budget bounds the worst case anyway.
+struct ScanCallBudget: Equatable {
+    private(set) var remaining: Int
+
+    init(limit: Int = 4) {
+        remaining = limit
+    }
+
+    /// Spend one call. Returns false when the budget is exhausted.
+    mutating func consume() -> Bool {
+        guard remaining > 0 else { return false }
+        remaining -= 1
+        return true
+    }
+}
+
 /// Where the scan pipeline currently is, for the Scanning screen.
 enum ScanPhase: Equatable {
     case idle
@@ -279,6 +298,8 @@ final class AppModel: ObservableObject {
         defer { endModelSession() }
         await loadModelIfNeeded()
         var results: [IdentifiedItem] = []
+        // Scan-wide: at most 4 heavy model calls total, across all photos.
+        var budget = ScanCallBudget()
 
         for (photoIndex, image) in images.enumerated() {
             if Task.isCancelled { return }
@@ -297,7 +318,8 @@ final class AppModel: ObservableObject {
             // Scoped in `do {}` so the full-resolution cgImage (~20-40MB) is
             // released before the crop loop allocates its own images. ---
             do {
-                if let cgImage = await Task.detached(operation: { CropService.normalizedCGImage(from: image) }).value {
+                if budget.consume(),
+                   let cgImage = await Task.detached(operation: { CropService.normalizedCGImage(from: image) }).value {
                     let fullOCR = await Task.detached { OCRService.recognizeText(in: cgImage) }.value
                     let wholeImageItems = try? await runInference {
                         try await self.llm.identifyAllItems(image: cgImage, ocrText: fullOCR)
@@ -319,9 +341,13 @@ final class AppModel: ObservableObject {
 
             if Task.isCancelled { return }
             let cropResult = await Task.detached { CropService.crops(from: image) }.value
-            let total = cropResult.images.count
+            // Only take as many crops as the scan budget still allows; the
+            // progress total reflects what will actually be analyzed.
+            let cappedCrops = Array(cropResult.images.prefix(budget.remaining))
+            let total = cappedCrops.count
 
-            for (index, cropped) in cropResult.images.enumerated() {
+            for (index, cropped) in cappedCrops.enumerated() {
+                guard budget.consume() else { break }
                 if Task.isCancelled { return }
                 scanPhase = .scanning(
                     ScanProgress(
