@@ -1,0 +1,56 @@
+name: dinnerDecider
+options:
+  bundleIdPrefix: com.initech
+  deploymentTarget:
+    iOS: "18.0"
+  defaultConfig: Debug
+  xcodeVersion: "16.0"
+
+# LocalLLMClient added in KAN-7 once llama.cpp submodule issue is resolved
+# packages:
+#   LocalLLMClient:
+#     url: https://github.com/tattn/LocalLLMClient
+#     from: "0.1.0"
+
+targets:
+  dinnerDecider:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - Sources/dinnerDecider
+    resources:
+      - path: Sources/dinnerDecider/Resources
+        optional: true
+    info:
+      path: Sources/dinnerDecider/Supporting Files/Info.plist
+      properties:
+        CFBundleDisplayName: dinnerDecider
+        NSCameraUsageDescription: "dinnerDecider photographs your fridge and pantry to identify food items on-device."
+        NSPhotoLibraryUsageDescription: "dinnerDecider imports photos of your food to identify items on-device."
+        NSPhotoLibraryAddUsageDescription: "dinnerDecider saves scan photos to your library."
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations: {}
+    dependencies: []
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.initech.dinnerDecider
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_PREVIEWS: YES
+    scheme:
+      testTargets:
+        - dinnerDeciderTests
+
+  dinnerDeciderTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: Tests/dinnerDeciderTests
+    dependencies:
+      - target: dinnerDecider
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
