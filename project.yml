@@ -40,6 +40,9 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_OBJC_INTEROP_MODE: objcxx
         CODE_SIGN_ENTITLEMENTS: DinnerDecider/DinnerDecider.entitlements
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Apple Development: woolley.pj@gmail.com (38P6V2YYLU)"
+        PROVISIONING_PROFILE_SPECIFIER: DinnerDecider Development
     info:
       path: DinnerDecider/Info.plist
       properties:

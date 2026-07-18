@@ -43,4 +43,39 @@ final class ModelFileLocatorTests: XCTestCase {
     func testReturnsNilForEmptyCandidates() {
         XCTAssertNil(ModelFileLocator.chooseModelFile(candidates: [], preferred: "anything.gguf"))
     }
+
+    // MARK: - Real model filename matching
+
+    func testChoosesRealQ4WeightsFile() {
+        let chosen = ModelFileLocator.chooseModelFile(
+            candidates: ["gemma-4-E4B-it-Q4_0.gguf", "mmproj-gemma-4-E4B-it-Q8_0.gguf"],
+            preferred: nil
+        )
+        XCTAssertEqual(chosen, "gemma-4-E4B-it-Q4_0.gguf")
+    }
+
+    // MARK: - Projector selection
+
+    func testPrefersQ8ProjectorWhenPresent() {
+        let chosen = ModelFileLocator.chooseMmprojFile(candidates: [
+            "mmproj-gemma-4-E4B-it-BF16.gguf",
+            "mmproj-gemma-4-E4B-it-Q8_0.gguf"
+        ])
+        XCTAssertEqual(chosen, "mmproj-gemma-4-E4B-it-Q8_0.gguf")
+    }
+
+    func testFallsBackToAnyProjectorWhenPreferredMissing() {
+        let chosen = ModelFileLocator.chooseMmprojFile(candidates: [
+            "mmproj-F16.gguf",
+            "gemma-4-E4B-it-Q4_0.gguf"
+        ])
+        XCTAssertEqual(chosen, "mmproj-F16.gguf")
+    }
+
+    func testReturnsNilWhenNoProjectorPresent() {
+        XCTAssertNil(ModelFileLocator.chooseMmprojFile(candidates: [
+            "gemma-4-E4B-it-Q4_0.gguf",
+            "README.txt"
+        ]))
+    }
 }

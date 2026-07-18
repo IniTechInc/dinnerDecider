@@ -10,6 +10,6 @@ struct DinnerDeciderApp: App {
             RootView()
                 .environmentObject(appModel)
         }
-        .modelContainer(for: InventoryItem.self)
+        .modelContainer(for: [InventoryItem.self, ShoppingListItem.self])
     }
 }

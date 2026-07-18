@@ -44,4 +44,45 @@ final class LLMResponseParserTests: XCTestCase {
         let extracted = LLMResponseParser.firstJSONObject(in: response)
         XCTAssertEqual(extracted, "{\"a\": {\"nested\": 1}}")
     }
+
+    // MARK: - Gemma 4 thinking-channel handling
+
+    func testStripReasoningKeepsAnswerAfterLastChannelMarker() {
+        let raw = "<|channel>thought\nThe box says OATMEAL so name is Oatmeal.\n<channel|>{\"name\": \"Oatmeal\"}"
+        let stripped = LLMResponseParser.stripReasoning(raw)
+        XCTAssertEqual(stripped, "{\"name\": \"Oatmeal\"}")
+    }
+
+    func testStripReasoningLeavesPlainTextUnchanged() {
+        let raw = "{\"name\": \"Oatmeal\"}"
+        XCTAssertEqual(LLMResponseParser.stripReasoning(raw), raw)
+    }
+
+    func testDecodesJSONAfterThinkingChannelPreamble() throws {
+        // The reasoning text deliberately contains brace-like example JSON that
+        // would fool a naive extractor; stripping the channel must discard it.
+        let response = """
+        <|channel>thought
+        Let me build the JSON. Something like {"name": "WRONG"} but let me reconsider the category.
+        <channel|>{"name": "Oatmeal", "brand": null, "category": "pantry", "confidence": 0.95}
+        """
+        let item = LLMResponseParser.decode(IdentifiedItem.self, from: response)
+        XCTAssertNotNil(item)
+        XCTAssertEqual(item?.name, "Oatmeal")
+        XCTAssertNil(item?.brand)
+        XCTAssertEqual(item?.category, "pantry")
+        XCTAssertEqual(item?.confidence ?? 0, 0.95, accuracy: 0.0001)
+    }
+
+    func testDecodesJSONWithThinkingChannelInsideCodeFence() throws {
+        let response = """
+        <|channel>thought
+        Reasoning about the recipe.
+        <channel|>```json
+        {"name": "Omelet"}
+        ```
+        """
+        let extracted = LLMResponseParser.firstJSONObject(in: response)
+        XCTAssertEqual(extracted, "{\"name\": \"Omelet\"}")
+    }
 }

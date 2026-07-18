@@ -1,16 +1,19 @@
 import PhotosUI
 import SwiftUI
 
-/// Entry screen: pick or shoot a photo of the fridge/pantry, then scan it.
+/// Entry screen: gather one or more photos of the fridge/pantry/shelves, then
+/// scan them all in a single session.
 struct CaptureView: View {
     @EnvironmentObject private var appModel: AppModel
 
-    @State private var pickedImage: UIImage?
-    @State private var photoItem: PhotosPickerItem?
+    @State private var pickedImages: [UIImage] = []
+    @State private var photoItems: [PhotosPickerItem] = []
     @State private var showCamera = false
     @State private var goToScanning = false
+    @State private var showCameraDeniedAlert = false
+    @State private var isLoadingPicks = false
 
-    private var locator = ModelFileLocator()
+    private let locator = ModelFileLocator()
 
     var body: some View {
         NavigationStack {
@@ -20,83 +23,143 @@ struct CaptureView: View {
 
                     imagePreview
 
-                    VStack(spacing: 12) {
-                        PhotosPicker(selection: $photoItem, matching: .images) {
-                            Label("Choose from Photos", systemImage: "photo.on.rectangle")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-
-                        if CameraPicker.isCameraAvailable {
-                            Button {
-                                showCamera = true
-                            } label: {
-                                Label("Take a Photo", systemImage: "camera")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                        }
-
-                        if pickedImage != nil {
-                            Button {
-                                goToScanning = true
-                            } label: {
-                                Label("Scan this photo", systemImage: "sparkles")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            .tint(.green)
-                        }
-                    }
-                    .padding(.horizontal)
+                    buttons
+                        .padding(.horizontal)
                 }
                 .padding(.vertical)
             }
             .navigationTitle("DinnerDecider")
             .sheet(isPresented: $showCamera) {
                 CameraPicker { image in
-                    pickedImage = image
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        pickedImages.append(image)
+                    }
+                    Haptics.tap()
                 }
                 .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $goToScanning) {
-                if let image = pickedImage {
-                    ScanningView(image: image)
-                }
+                ScanningView(images: pickedImages)
             }
-            .onChange(of: photoItem) { _, newItem in
-                Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        pickedImage = image
-                    }
-                }
+            .alert("Camera access is off", isPresented: $showCameraDeniedAlert) {
+                Button("Open Settings") { PermissionHelper.openSettings() }
+                Button("Not now", role: .cancel) {}
+            } message: {
+                Text("To take photos of your food, turn on camera access for DinnerDecider in Settings. You can also pick photos from your library instead.")
+            }
+            .onChange(of: photoItems) { _, newItems in
+                loadPicked(newItems)
             }
         }
     }
 
+    // MARK: - Sections
+
     private var imagePreview: some View {
         Group {
-            if let image = pickedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 320)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
-            } else {
+            if pickedImages.isEmpty {
                 ContentUnavailableView(
                     "Snap your fridge or pantry",
                     systemImage: "refrigerator",
-                    description: Text("Pick a photo and DinnerDecider will figure out what food you have.")
+                    description: Text("Add photos of your fridge, pantry, or shelves and DinnerDecider will figure out what food you have.")
                 )
-                .frame(maxHeight: 320)
+                .frame(maxHeight: 300)
+            } else {
+                thumbnails
             }
         }
     }
+
+    private var thumbnails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(pickedImages.count == 1 ? "1 photo ready" : "\(pickedImages.count) photos ready")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(Array(pickedImages.enumerated()), id: \.offset) { index, image in
+                        thumbnail(image, index: index)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func thumbnail(_ image: UIImage, index: Int) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 120, height: 150)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    withAnimation {
+                        _ = pickedImages.remove(at: index)
+                    }
+                    Haptics.tap()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, .black.opacity(0.5))
+                        .padding(6)
+                }
+                .accessibilityLabel("Remove photo \(index + 1)")
+            }
+            .accessibilityLabel("Selected photo \(index + 1)")
+    }
+
+    private var buttons: some View {
+        VStack(spacing: 12) {
+            PhotosPicker(
+                selection: $photoItems,
+                maxSelectionCount: 8,
+                matching: .images
+            ) {
+                Label(pickedImages.isEmpty ? "Choose from Photos" : "Add more from Photos", systemImage: "photo.on.rectangle")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+
+            if CameraPicker.isCameraAvailable {
+                Button {
+                    handleCameraTap()
+                } label: {
+                    Label("Take a Photo", systemImage: "camera")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+
+            if isLoadingPicks {
+                ProgressView()
+                    .padding(.top, 4)
+            }
+
+            if !pickedImages.isEmpty {
+                Button {
+                    Haptics.tap()
+                    goToScanning = true
+                } label: {
+                    Label(scanButtonTitle, systemImage: "sparkles")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.green)
+            }
+        }
+    }
+
+    private var scanButtonTitle: String {
+        pickedImages.count == 1 ? "Scan this photo" : "Scan \(pickedImages.count) photos"
+    }
+
+    // MARK: - Model banner
 
     private var modelStatusBanner: some View {
         NavigationLink {
@@ -105,12 +168,13 @@ struct CaptureView: View {
             HStack {
                 Image(systemName: locator.isModelPresent ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(locator.isModelPresent ? .green : .orange)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(locator.isModelPresent ? "Model ready" : "Model not installed")
                         .font(.subheadline.weight(.semibold))
                     Text(locator.isModelPresent ? "On-device AI is set up." : "Tap to set up on-device AI.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    inferenceModeBadge
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -121,6 +185,64 @@ struct CaptureView: View {
             .padding(.horizontal)
         }
         .buttonStyle(.plain)
+        .accessibilityHint("Opens model setup")
+    }
+
+    /// Small badge that always shows which inference engine is actually running.
+    private var inferenceModeBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: appModel.isUsingMock ? "cpu" : "sparkles")
+            Text(appModel.isUsingMock ? "Demo mode (sample data)" : "On-device Gemma 4")
+        }
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            (appModel.isUsingMock ? Color.orange : Color.green).opacity(0.15),
+            in: Capsule()
+        )
+        .foregroundStyle(appModel.isUsingMock ? Color.orange : Color.green)
+    }
+
+    // MARK: - Actions
+
+    private func handleCameraTap() {
+        switch PermissionHelper.cameraStatus {
+        case .authorized:
+            showCamera = true
+        case .notDetermined:
+            Task {
+                let granted = await PermissionHelper.requestCameraAccess()
+                if granted {
+                    showCamera = true
+                } else {
+                    showCameraDeniedAlert = true
+                }
+            }
+        case .denied:
+            showCameraDeniedAlert = true
+        }
+    }
+
+    private func loadPicked(_ items: [PhotosPickerItem]) {
+        guard !items.isEmpty else { return }
+        isLoadingPicks = true
+        Task {
+            var loaded: [UIImage] = []
+            for item in items {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    loaded.append(image)
+                }
+            }
+            await MainActor.run {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    pickedImages.append(contentsOf: loaded)
+                }
+                photoItems = []
+                isLoadingPicks = false
+            }
+        }
     }
 }
 

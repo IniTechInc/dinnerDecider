@@ -56,11 +56,20 @@ final class InventoryItem {
     var quantity: Int
     var dateAdded: Date
     var sourcePhotoID: String?
+    /// A staple you almost always have (salt, oil). Shown collapsed so it does
+    /// not clutter the main list. Defaults to false, which keeps SwiftData
+    /// lightweight migration happy for existing stores.
+    var isStaple: Bool = false
 
     /// Typed accessor over the raw category string.
     var category: FoodCategory {
         get { FoodCategory(rawValue: categoryRaw) ?? .other }
         set { categoryRaw = newValue.rawValue }
+    }
+
+    /// The merge key used to spot duplicates (name + brand, normalised).
+    var mergeKey: String {
+        InventoryLogic.mergeKey(name: name, brand: brand)
     }
 
     init(
@@ -69,7 +78,8 @@ final class InventoryItem {
         category: FoodCategory = .other,
         quantity: Int = 1,
         dateAdded: Date = .now,
-        sourcePhotoID: String? = nil
+        sourcePhotoID: String? = nil,
+        isStaple: Bool = false
     ) {
         self.name = name
         self.brand = brand
@@ -77,5 +87,6 @@ final class InventoryItem {
         self.quantity = quantity
         self.dateAdded = dateAdded
         self.sourcePhotoID = sourcePhotoID
+        self.isStaple = isStaple
     }
 }
