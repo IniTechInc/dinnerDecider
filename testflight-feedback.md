@@ -20,8 +20,9 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 
 | # | Date (MDT) | Device | Reported build | Summary | Status | Fixed in |
 |---|-----------|--------|----------------|---------|--------|----------|
-| 1 | 2026-07-18 13:40 | iPhone 16 Pro Max | unknown (1 or 2, pre-build-3) | Crash right as image analysis starts during a scan | 🔧 In progress | build 4 (verify on device) |
-| 2 | 2026-07-18 14:05 | iPhone 16 Pro Max, iOS 26.5.2 | 3 | Scan counted 9 items analyzing, then "Nothing spotted" (screenshot: clearly visible labeled milk jugs) | 🔧 In progress | build 4 (verify on device) |
+| 1 | 2026-07-18 13:40 | iPhone 16 Pro Max | unknown (1 or 2, pre-build-3) | Crash right as image analysis starts during a scan | 🔧 In progress | build 5 (memory levers) |
+| 2 | 2026-07-18 14:05 | iPhone 16 Pro Max, iOS 26.5.2 | 3 | Scan counted 9 items analyzing, then "Nothing spotted" (screenshot: clearly visible labeled milk jugs) | ✅ Session fix verified (build 4 did real inference); superseded by #4 | build 4 |
+| 4 | 2026-07-18 14:40 | iPhone 16 Pro Max | 4 | Crash while identifying item 4 of 9 (real inference confirmed working through item 3, then memory ceiling) | 🔧 In progress | build 5 (memory levers) |
 | 3 | 2026-07-18 ~13:55 | iPhone 16 Pro Max | 3 | Recipe quality: invented "cheesy Italian dip" from ketchup + cheddar; wants real recipes + missing-item marking + shopping list flow | 🔧 In progress | build 4 (prompt fix; UI existed) |
 
 ---
@@ -47,6 +48,13 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 - **Fix:** commit 45b99c3. Scans and recipe runs are one lifecycle "session": `.warning` ignored during a session, `.critical` deferred to session end. Repro tests in ModelLifecycleTests.
 - **Status:** 🔧 In progress, ships in build 4, verify on device
 - **Follow-up (P2):** if identifies fail systemically mid-scan, the UI should say "something went wrong" instead of the misleading "Nothing spotted" empty state.
+
+### #4: Build 4 crash at item 4 of 9 (memory ceiling during real inference)
+- **Source:** Phil, chat, ~2:40 PM MDT, build 4
+- **What it proves:** the #2 session fix works (model stayed resident, items 1-3 got real inference). The crash moved to the true wired-memory ceiling mid-scan.
+- **Fix (build 5):** vendored LocalLLMClient fork (Vendor/LocalLLMClient) with mmproj use_gpu=false (~534MB wired saved, slower image encode); batch 512 -> 256 (smaller compute buffer); CIContext exposure pass moved to software renderer. Escalation remaining if this fails: UD-IQ2_M quant.
+- **Awaiting:** crash log screenshot from Analytics Data to confirm JetsamEvent (asked 3x).
+- **Status:** 🔧 In progress
 
 ### #3: Real recipes + shopping list flow (chat request)
 - **Request:** real recognizable recipes (not inventory-invented fakes), mark have/missing per ingredient, add-missing-to-shopping-list button, persistent shopping list.
