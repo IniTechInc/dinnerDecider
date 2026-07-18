@@ -49,6 +49,8 @@ targets:
         CFBundleDisplayName: DinnerDecider
         NSCameraUsageDescription: DinnerDecider uses the camera to photograph your fridge and pantry so it can identify your food.
         NSPhotoLibraryUsageDescription: DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.
+        NSSpeechRecognitionUsageDescription: DinnerDecider uses speech recognition so you can say what you're in the mood for and get matching recipe suggestions.
+        NSMicrophoneUsageDescription: DinnerDecider uses the microphone to listen to your food cravings and suggest matching recipes.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         ITSAppUsesNonExemptEncryption: false

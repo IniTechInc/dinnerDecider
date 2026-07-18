@@ -7,6 +7,8 @@ struct RecipesView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \InventoryItem.name) private var items: [InventoryItem]
 
+    @StateObject private var speechRecognizer = SpeechRecognizer()
+
     private enum Segment: String, CaseIterable, Identifiable {
         case makeNow = "Make now"
         case almostThere = "Almost there"
@@ -21,6 +23,10 @@ struct RecipesView: View {
             VStack(spacing: 0) {
                 segmentPicker
                     .padding()
+
+                if segment != .shopping {
+                    moodBar
+                }
 
                 content
             }
@@ -43,6 +49,9 @@ struct RecipesView: View {
                     }
                 }
             }
+            .onChange(of: speechRecognizer.transcript) { _, newValue in
+                appModel.moodText = newValue
+            }
         }
     }
 
@@ -60,6 +69,54 @@ struct RecipesView: View {
         } else {
             picker.pickerStyle(.segmented)
         }
+    }
+
+    // MARK: - Mood input
+
+    private var moodBar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "quote.bubble")
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                TextField("I'm feeling like Italian tonight...", text: $appModel.moodText)
+                    .font(.dmBody)
+                    .submitLabel(.done)
+                if !appModel.moodText.isEmpty {
+                    Button {
+                        appModel.moodText = ""
+                        speechRecognizer.transcript = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear mood")
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.surfaceSecondary.opacity(0.6), in: RoundedRectangle(cornerRadius: 10))
+
+            Button {
+                Haptics.tap()
+                speechRecognizer.toggleListening()
+            } label: {
+                Image(systemName: speechRecognizer.isListening ? "mic.fill" : "mic")
+                    .font(.title3)
+                    .foregroundStyle(speechRecognizer.isListening ? Color.brandPrimary : Color.textPrimary)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(speechRecognizer.isListening ? Color.brandPrimary.opacity(0.15) : Color.surfaceSecondary.opacity(0.6))
+                    )
+                    .scaleEffect(speechRecognizer.isListening ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: speechRecognizer.isListening)
+            }
+            .accessibilityLabel(speechRecognizer.isListening ? "Stop listening" : "Tell me what you're in the mood for")
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
     }
 
     @ViewBuilder

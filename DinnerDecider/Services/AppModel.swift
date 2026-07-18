@@ -80,6 +80,11 @@ final class AppModel: ObservableObject {
     /// True once at least one successful recipe generation has completed, so the
     /// UI can tell "never generated" apart from "generated, nothing matched".
     @Published var hasGeneratedRecipes = false
+
+    /// Free-form mood or craving text from voice or keyboard input, e.g.
+    /// "I'm feeling like Italian tonight". Fed into the recipe prompt so the
+    /// model tailors its suggestions.
+    @Published var moodText: String = ""
     private var recipeTask: Task<Void, Never>?
 
     private let defaults: UserDefaults
@@ -372,7 +377,7 @@ final class AppModel: ObservableObject {
         isGeneratingRecipes = true
         await loadModelIfNeeded()
 
-        let prompt = Self.recipePrompt(itemNames: names, prefs: RecipePreferences.current(defaults))
+        let prompt = Self.recipePrompt(itemNames: names, prefs: RecipePreferences.current(defaults), mood: moodText)
         let raw: String
         if defaults.bool(forKey: PrefKey.debugSimulateFailure) {
             // Hidden debug switch: return a deliberately broken reply so the
@@ -401,12 +406,16 @@ final class AppModel: ObservableObject {
 
     /// Build a compact prompt: inventory as a comma list, not prose (per spec).
     /// Pure and testable: pass names + a preferences snapshot, no globals.
-    nonisolated static func recipePrompt(itemNames: [String], prefs: RecipePreferences) -> String {
+    nonisolated static func recipePrompt(itemNames: [String], prefs: RecipePreferences, mood: String = "") -> String {
         let inventory = itemNames.joined(separator: ", ")
 
         var lines: [String] = []
         lines.append("You are a helpful home cooking assistant.")
         lines.append("Inventory: \(inventory).")
+        let trimmedMood = mood.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedMood.isEmpty {
+            lines.append("The user says: \"\(trimmedMood)\". Tailor your recipe suggestions to match this mood or craving.")
+        }
         if prefs.diet != DietPreference.none.rawValue {
             lines.append("Diet: \(prefs.diet).")
         }
