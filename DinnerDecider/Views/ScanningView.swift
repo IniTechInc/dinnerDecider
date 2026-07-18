@@ -118,6 +118,11 @@ struct ScanningView: View {
     }
 
     private var statusText: String {
+        // The model was released under memory pressure and is reloading before
+        // this scan can proceed. Say so plainly instead of showing a bare spinner.
+        if appModel.isLoadingModel && appModel.didReleaseModelForMemory {
+            return "Warming up again (freed memory to keep things stable)..."
+        }
         switch appModel.scanPhase {
         case .idle:
             return "Getting ready..."

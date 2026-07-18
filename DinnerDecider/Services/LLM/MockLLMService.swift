@@ -32,6 +32,10 @@ final class MockLLMService: LLMService {
         isLoaded = true
     }
 
+    func unloadModel() {
+        isLoaded = false
+    }
+
     func identifyItem(image: CGImage, ocrText: String) async throws -> IdentifiedItem {
         // Simulate per-crop inference latency so the scanning UI streams in.
         try? await Task.sleep(nanoseconds: 350_000_000)

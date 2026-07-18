@@ -43,6 +43,11 @@ final class AppModel: ObservableObject {
     @Published var isModelLoaded = false
     @Published var isLoadingModel = false
 
+    /// True after the resident model was released under memory pressure and has
+    /// not yet been reloaded. Lets the scanning UI show a brief "Warming up again"
+    /// note instead of a bare spinner when the next scan has to reload the model.
+    @Published private(set) var didReleaseModelForMemory = false
+
     /// True when the app is running on the canned `MockLLMService` (no model
     /// files on the device) rather than the real on-device Gemma 4 runtime. The
     /// UI surfaces this as a small badge so it is always obvious which mode is
@@ -67,6 +72,12 @@ final class AppModel: ObservableObject {
 
     private let defaults: UserDefaults
 
+    /// Token for the UIKit memory-warning observer, removed on deinit.
+    private var memoryWarningObserver: NSObjectProtocol?
+    /// Low-level memory-pressure source, catching warning/critical events even
+    /// when UIKit does not post a notification.
+    private var memoryPressureSource: DispatchSourceMemoryPressure?
+
     /// Uses the real on-device Gemma 4 service when the model files are present,
     /// and automatically falls back to `MockLLMService` otherwise (e.g. in the
     /// simulator or before the model is installed) so the app stays fully
@@ -76,6 +87,48 @@ final class AppModel: ObservableObject {
         self.llm = resolved
         self.isUsingMock = resolved is MockLLMService
         self.defaults = defaults
+        registerForMemoryPressure()
+    }
+
+    deinit {
+        if let memoryWarningObserver {
+            NotificationCenter.default.removeObserver(memoryWarningObserver)
+        }
+        memoryPressureSource?.cancel()
+    }
+
+    // MARK: - Memory pressure
+
+    /// Listen for memory pressure from both UIKit and the kernel. Either path
+    /// funnels into `handleMemoryPressure()`, which is idempotent.
+    private func registerForMemoryPressure() {
+        memoryWarningObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleMemoryPressure() }
+        }
+
+        let source = DispatchSource.makeMemoryPressureSource(
+            eventMask: [.warning, .critical],
+            queue: .main
+        )
+        source.setEventHandler { [weak self] in
+            Task { @MainActor in self?.handleMemoryPressure() }
+        }
+        source.resume()
+        memoryPressureSource = source
+    }
+
+    /// Release the ~3.5GB wired on-device model so the system reclaims memory
+    /// rather than jetsamming us (the documented `vm-pageshortage` failure mode).
+    /// A no-op mid-scan-free state is cheap; the next scan reloads the model.
+    func handleMemoryPressure() {
+        guard isModelLoaded || llm.isLoaded else { return }
+        llm.unloadModel()
+        isModelLoaded = false
+        didReleaseModelForMemory = true
     }
 
     /// Real service if the model is on the device, mock otherwise.
@@ -91,6 +144,7 @@ final class AppModel: ObservableObject {
         try? await llm.loadModel()
         isModelLoaded = llm.isLoaded
         isLoadingModel = false
+        if isModelLoaded { didReleaseModelForMemory = false }
     }
 
     // MARK: - Scan pipeline

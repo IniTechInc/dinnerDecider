@@ -28,6 +28,11 @@ protocol LLMService {
     /// Load the model once and keep it resident. Safe to call again if loaded.
     func loadModel() async throws
 
+    /// Release the resident model and its (large, wired) buffers so the system
+    /// can reclaim memory under pressure. `isLoaded` flips back to false; the next
+    /// `loadModel()` transparently reloads. Safe to call when already unloaded.
+    func unloadModel()
+
     /// Identify a single cropped grocery image, aided by any OCR text found on it.
     func identifyItem(image: CGImage, ocrText: String) async throws -> IdentifiedItem
 

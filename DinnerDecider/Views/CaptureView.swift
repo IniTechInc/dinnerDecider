@@ -7,7 +7,7 @@ struct CaptureView: View {
     @EnvironmentObject private var appModel: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var pickedImages: [UIImage] = []
+    @State private var batch = PhotoBatch()
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var showCamera = false
     @State private var goToScanning = false
@@ -38,14 +38,14 @@ struct CaptureView: View {
                     // its large wired Metal allocation during a scan.
                     let prepared = ImageDownscaler.forCapture(image)
                     withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.75)) {
-                        pickedImages.append(prepared)
+                        batch.append(prepared)
                     }
                     Haptics.tap()
                 }
                 .ignoresSafeArea()
             }
             .navigationDestination(isPresented: $goToScanning) {
-                ScanningView(images: pickedImages)
+                ScanningView(images: batch.images)
             }
             .alert("Camera access is off", isPresented: $showCameraDeniedAlert) {
                 Button("Open Settings") { PermissionHelper.openSettings() }
@@ -63,7 +63,7 @@ struct CaptureView: View {
 
     private var imagePreview: some View {
         Group {
-            if pickedImages.isEmpty {
+            if batch.isEmpty {
                 ContentUnavailableView(
                     "Snap your fridge or pantry",
                     systemImage: "refrigerator",
@@ -78,14 +78,16 @@ struct CaptureView: View {
 
     private var thumbnails: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(pickedImages.count == 1 ? "1 photo ready" : "\(pickedImages.count) photos ready")
+            Text(batch.count == 1 ? "1 photo ready" : "\(batch.count) photos ready")
                 .font(.dmSectionHeader)
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.md) {
-                    ForEach(Array(pickedImages.enumerated()), id: \.offset) { index, image in
-                        thumbnail(image, index: index)
+                    // Identity-based (never offset-based) so removing one photo and
+                    // adding another can never leave a stale index behind.
+                    ForEach(batch.photos) { photo in
+                        thumbnail(photo)
                     }
                 }
                 .padding(.horizontal)
@@ -93,8 +95,9 @@ struct CaptureView: View {
         }
     }
 
-    private func thumbnail(_ image: UIImage, index: Int) -> some View {
-        Image(uiImage: image)
+    private func thumbnail(_ photo: BatchPhoto) -> some View {
+        let position = batch.position(of: photo)
+        return Image(uiImage: photo.image)
             .resizable()
             .scaledToFill()
             .frame(width: 120, height: 150)
@@ -102,7 +105,7 @@ struct CaptureView: View {
             .overlay(alignment: .topTrailing) {
                 Button {
                     withMotion(reduceMotion) {
-                        _ = pickedImages.remove(at: index)
+                        batch.remove(id: photo.id)
                     }
                     Haptics.tap()
                 } label: {
@@ -113,9 +116,9 @@ struct CaptureView: View {
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
-                .accessibilityLabel("Remove photo \(index + 1)")
+                .accessibilityLabel("Remove photo \(position)")
             }
-            .accessibilityLabel("Selected photo \(index + 1)")
+            .accessibilityLabel("Selected photo \(position)")
     }
 
     private var buttons: some View {
@@ -125,7 +128,7 @@ struct CaptureView: View {
                 maxSelectionCount: 8,
                 matching: .images
             ) {
-                Label(pickedImages.isEmpty ? "Choose from Photos" : "Add more from Photos", systemImage: "photo.on.rectangle")
+                Label(batch.isEmpty ? "Choose from Photos" : "Add more from Photos", systemImage: "photo.on.rectangle")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -147,7 +150,7 @@ struct CaptureView: View {
                     .padding(.top, 4)
             }
 
-            if !pickedImages.isEmpty {
+            if !batch.isEmpty {
                 Button {
                     Haptics.tap()
                     goToScanning = true
@@ -163,7 +166,7 @@ struct CaptureView: View {
     }
 
     private var scanButtonTitle: String {
-        pickedImages.count == 1 ? "Scan this photo" : "Scan \(pickedImages.count) photos"
+        batch.count == 1 ? "Scan this photo" : "Scan \(batch.count) photos"
     }
 
     // MARK: - Model banner
@@ -255,7 +258,7 @@ struct CaptureView: View {
             }
             await MainActor.run {
                 withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.75)) {
-                    pickedImages.append(contentsOf: loaded)
+                    batch.append(contentsOf: loaded)
                 }
                 photoItems = []
                 isLoadingPicks = false

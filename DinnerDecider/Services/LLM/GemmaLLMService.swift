@@ -66,6 +66,17 @@ final class GemmaLLMService: LLMService {
         isLoaded = true
     }
 
+    /// Drop the resident client so llama.cpp frees its weights, mmproj and KV
+    /// cache (several GB of WIRED Metal memory). Called on memory pressure to
+    /// avoid a systemwide `vm-pageshortage` jetsam; the next scan reloads it. An
+    /// in-flight `textStream` keeps its own strong reference to the client it was
+    /// started with, so nil-ing the property here cannot tear a running stream out
+    /// from under itself.
+    func unloadModel() {
+        client = nil
+        isLoaded = false
+    }
+
     // MARK: - Inference
 
     func identifyItem(image: CGImage, ocrText: String) async throws -> IdentifiedItem {
