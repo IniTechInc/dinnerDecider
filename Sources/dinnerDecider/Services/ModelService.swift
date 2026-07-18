@@ -78,6 +78,74 @@ final class ModelService: ObservableObject {
         return try parseGemmaResponse(response)
     }
 
+    // MARK: - KAN-17: Identify all food items in a full-scene image in a single Gemma call
+
+    /// Identify all food items in a full-scene image in a single Gemma call.
+    /// Simpler than per-crop pipeline — suitable for hackathon demo.
+    func identifyItems(image: UIImage) async throws -> [ScannedItem] {
+        guard let client = client else {
+            throw ModelServiceError.notLoaded
+        }
+
+        let systemPrompt = """
+        You are a food item identifier. Respond ONLY with a JSON array (no other text):
+        [{"name":"string","brand":"string or null","category":"produce|dairy|meat|pantry|snack|beverage|condiment|frozen|other","confidence":0.0-1.0}]
+        """
+
+        let input = LLMInput.chat([
+            .system(systemPrompt),
+            .user("List every food item visible in this image. Include brand names if visible.", attachments: [.image(image)])
+        ])
+
+        let stream = try client.textStream(from: input)
+        var response = ""
+        for try await chunk in stream {
+            response += chunk
+        }
+
+        return parseItemsArray(response)
+    }
+
+    private func parseItemsArray(_ json: String) -> [ScannedItem] {
+        guard let start = json.firstIndex(of: "["),
+              let end = json.lastIndex(of: "]"),
+              start <= end else {
+            return []
+        }
+        let arrayString = String(json[start...end])
+        guard let data = arrayString.data(using: .utf8) else { return [] }
+
+        struct GemmaOutput: Decodable {
+            let name: String
+            let brand: String?
+            let category: String
+            let confidence: Double
+        }
+        do {
+            let outputs = try JSONDecoder().decode([GemmaOutput].self, from: data)
+            return outputs.map { output in
+                let category = FoodCategory(rawValue: output.category) ?? .other
+                return ScannedItem(name: output.name, brand: output.brand, category: category, confidence: output.confidence)
+            }
+        } catch {
+            return []
+        }
+    }
+
+    // MARK: - KAN-28: Generate text from a plain chat input (no image)
+
+    /// Generate text from a plain chat input (no image). Used for recipe generation.
+    func generateText(system: String, user: String) async throws -> String {
+        guard let client = client else { throw ModelServiceError.notLoaded }
+        let input = LLMInput.chat([.system(system), .user(user)])
+        let stream = try client.textStream(from: input)
+        var result = ""
+        for try await chunk in stream {
+            result += chunk
+        }
+        return result
+    }
+
     // MARK: - KAN-40: JSON response parsing with retry/fallback
 
     func parseGemmaResponse(_ json: String) throws -> ScannedItem {

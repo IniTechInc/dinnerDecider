@@ -72,11 +72,61 @@ struct MakeNowView: View {
 
     private func generateRecipes() async {
         isLoading = true
-        // TODO: KAN-28 — call Gemma with inventory comma list + user prefs
-        // Placeholder
-        try? await Task.sleep(for: .seconds(1))
-        recipes = Recipe.placeholders
-        isLoading = false
+        defer { isLoading = false }
+
+        guard ModelService.shared.isLoaded else {
+            recipes = Recipe.placeholders
+            return
+        }
+
+        let itemList = inventory.prefix(20).map { item in
+            item.brand != nil ? "\(item.name) (\(item.brand!))" : item.name
+        }.joined(separator: ", ")
+
+        let system = """
+        You are a chef. Respond ONLY with a JSON array:
+        [{"name":"string","ingredients":[{"name":"string","have":true}],"steps":["string"],"timeMinutes":number,"missingItems":[]}]
+        """
+        let user = "Suggest 3 recipes I can make NOW with: \(itemList). Use only what I have."
+
+        do {
+            let response = try await ModelService.shared.generateText(system: system, user: user)
+            if let parsed = parseRecipes(response) {
+                recipes = parsed
+            } else {
+                recipes = Recipe.placeholders
+            }
+        } catch {
+            recipes = Recipe.placeholders
+        }
+    }
+
+    private func parseRecipes(_ json: String) -> [Recipe]? {
+        guard let start = json.firstIndex(of: "["),
+              let end = json.lastIndex(of: "]"),
+              start <= end else { return nil }
+        let arrayString = String(json[start...end])
+        guard let data = arrayString.data(using: .utf8) else { return nil }
+
+        struct RecipeOutput: Decodable {
+            struct IngredientOutput: Decodable { let name: String; let have: Bool }
+            let name: String
+            let ingredients: [IngredientOutput]
+            let steps: [String]
+            let timeMinutes: Int
+            let missingItems: [String]?
+        }
+
+        guard let outputs = try? JSONDecoder().decode([RecipeOutput].self, from: data) else { return nil }
+        return outputs.map { output in
+            Recipe(
+                name: output.name,
+                ingredients: output.ingredients.map { RecipeIngredient(name: $0.name, have: $0.have) },
+                steps: output.steps,
+                timeMinutes: output.timeMinutes,
+                missingItems: output.missingItems ?? []
+            )
+        }
     }
 }
 

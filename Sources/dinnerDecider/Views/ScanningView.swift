@@ -38,10 +38,9 @@ struct ScanningView: View {
 
     private var scanningProgressHeader: some View {
         VStack(spacing: 8) {
-            ProgressView(value: totalCrops > 0 ? Double(processedCrops) / Double(totalCrops) : nil)
-                .progressViewStyle(.linear)
-                .padding(.horizontal)
-            Text(totalCrops > 0 ? "Identifying item \(processedCrops) of \(totalCrops)…" : "Analyzing photo…")
+            ProgressView()
+                .progressViewStyle(.circular)
+            Text("Identifying food items…")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -101,23 +100,23 @@ struct ScanningView: View {
     }
 
     private func runPipeline() async {
-        // TODO: KAN-17/18/19/20/21 — wire up the real Vision + Gemma pipeline
-        // Placeholder: simulates the streaming scan experience
         isScanning = true
-        totalCrops = 4
+        totalCrops = 0
         processedCrops = 0
+        detectedItems = []
 
-        let placeholders: [ScannedItem] = [
-            ScannedItem(name: "Whole Milk", brand: "Organic Valley", category: .dairy, confidence: 0.94),
-            ScannedItem(name: "Large Eggs", brand: nil, category: .dairy, confidence: 0.88),
-            ScannedItem(name: "Chicken Breast", brand: "Trader Joe's", category: .meat, confidence: 0.82),
-            ScannedItem(name: "Cheddar Cheese", brand: "Tillamook", category: .dairy, confidence: 0.91),
-        ]
+        guard ModelService.shared.isLoaded else {
+            isScanning = false
+            return
+        }
 
-        for item in placeholders {
-            try? await Task.sleep(for: .milliseconds(600))
-            processedCrops += 1
-            detectedItems.append(item)
+        do {
+            let items = try await ModelService.shared.identifyItems(image: image)
+            withAnimation {
+                detectedItems = items.filter { $0.confidence > 0.3 }
+            }
+        } catch {
+            // Fall back to empty — user sees the empty state with retry prompt
         }
 
         isScanning = false

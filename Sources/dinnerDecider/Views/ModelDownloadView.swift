@@ -30,12 +30,13 @@ struct ModelDownloadView: View {
 
             if isDownloading {
                 VStack(spacing: 12) {
-                    ProgressView(value: downloadProgress)
-                        .progressViewStyle(.linear)
-                        .padding(.horizontal)
-                    Text("\(Int(downloadProgress * 100))%")
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    Text(statusMessage)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                 }
             } else {
                 Button("Download Model") {
@@ -65,17 +66,33 @@ struct ModelDownloadView: View {
     }
 
     private func startDownload() {
-        // TODO: KAN-9 — implement URLSession download with resume support
         isDownloading = true
-        statusMessage = "Downloading Gemma 4 E4B..."
-        // Placeholder: simulate progress
-        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
-            downloadProgress += 0.01
-            if downloadProgress >= 1.0 {
-                timer.invalidate()
+        Task {
+            do {
+                try await downloadFile(
+                    from: "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf",
+                    to: "gemma-4-E4B-it-Q4_K_M.gguf",
+                    label: "Downloading model (2.6 GB)…"
+                )
+                try await downloadFile(
+                    from: "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/mmproj-F16.gguf",
+                    to: "mmproj-F16.gguf",
+                    label: "Downloading vision projector…"
+                )
                 loadModel()
+            } catch {
+                statusMessage = "Download failed. Check connection."
+                isDownloading = false
             }
         }
+    }
+
+    private func downloadFile(from urlString: String, to filename: String, label: String) async throws {
+        let dest = modelsDirectory.appendingPathComponent(filename)
+        guard !FileManager.default.fileExists(atPath: dest.path) else { return }
+        statusMessage = label
+        let (tempURL, _) = try await URLSession.shared.download(from: URL(string: urlString)!)
+        try FileManager.default.moveItem(at: tempURL, to: dest)
     }
 
     private func loadModel() {
