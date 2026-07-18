@@ -60,11 +60,11 @@ final class GemmaLLMService: LLMService {
                 // lever 1 in the memory/OOM notes). See those notes before
                 // raising this again.
                 context: 1024,
-                // Halved from 512 after a device jetsam at crop 4 of 9 on build
-                // 4: the llama.cpp compute buffer scales with batch size and
-                // lives in the same wired Metal budget as the weights. Our
-                // prompts are a few hundred tokens; 256 costs nothing here.
-                batch: 256,
+                // MUST stay >= one image's vision-token chunk. parameter.batch
+                // is passed straight to the mtmd image evaluator and sizes
+                // llama_batch_init; at 256 (build 5) every image chunk failed to
+                // evaluate and scans found nothing. 512 is the proven value.
+                batch: 512,
                 temperature: 0.2,
                 topK: 40,
                 topP: 0.95
