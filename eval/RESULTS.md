@@ -8,7 +8,6 @@ Match rule: normalized fuzzy match (lowercase, brand/filler words stripped, sing
 |---|---|---:|---:|---:|---:|
 | stock-IQ3_XXS | Baseline (whole-scene prompt) | 7 | 16.1% | 26.3% | 20.0% |
 | stock-IQ3_XXS | Pipeline (crop + OCR fusion) | 7 | 21.2% | 23.9% | 22.5% |
-
 | stock-IQ3_XXS | Union (whole-image + crop passes, as shipped) | 7 | 33.5% | 27.2% | 30.0% |
 
 _Generated 2026-07-18 13:23:29._
