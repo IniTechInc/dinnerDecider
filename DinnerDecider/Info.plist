@@ -26,8 +26,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>DinnerDecider uses the camera to photograph your fridge and pantry so it can identify your food.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>DinnerDecider uses the microphone to listen to your food cravings and suggest matching recipes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>DinnerDecider uses speech recognition so you can say what you're in the mood for and get matching recipe suggestions.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>DMSerifDisplay-Regular.ttf</string>
