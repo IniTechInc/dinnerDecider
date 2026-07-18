@@ -12,6 +12,10 @@ iOS app: photograph your fridge, Gemma 4 E4B identifies items 100% on-device, bu
 - Dev cert: "Apple Development: woolley.pj@gmail.com (38P6V2YYLU)" = ASC cert `2AV3MGS2PM`
 - Phil's iPhone 16 Pro Max: UDID `00008140-000C218C34D8801C`, ASC device `8226C97VCD`, devicectl id `502D5057-2EAA-5CA3-9E0F-9ADDA99B891D`
 
+## Workflow
+
+- Phil's standing instruction (July 18): commit and push to main along the way as each work chunk lands. No need to ask per-commit.
+
 ## Build system
 
 - `project.yml` is the source of truth; `.xcodeproj` is generated (git-ignored). After adding/removing files or settings: `xcodegen generate`.
