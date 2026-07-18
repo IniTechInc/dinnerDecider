@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DinnerDecider Font Pairings</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600&family=DM+Serif+Display&family=DM+Sans:wght@400;500;700&family=Bricolage+Grotesque:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --terracotta: #E4573D;
+  --terracotta-deep: #D64B31;
+  --sage: #7FA27A;
+  --sage-soft: #E8F0E6;
+  --amber: #F2B23C;
+  --amber-soft: #FBEAC9;
+  --cream: #FFF6E8;
+  --offwhite: #FAF8F5;
+  --charcoal: #1F1D1B;
+  --charcoal-lift: #2A2724;
+  --greige: #CFC7BD;
+  --ink: #2B2320;
+  --ink-soft: #6E625B;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #EFEAE2;
+  font-family: -apple-system, system-ui, sans-serif;
+  color: var(--ink);
+  padding: 40px 24px 80px;
+}
+.page-head { max-width: 1080px; margin: 0 auto 8px; }
+.page-head h1 { font-size: 28px; letter-spacing: -0.02em; }
+.page-head p { color: var(--ink-soft); margin-top: 6px; font-size: 15px; max-width: 700px; }
+.swatch-row { display: flex; gap: 8px; margin-top: 14px; }
+.swatch { width: 34px; height: 34px; border-radius: 9px; border: 1px solid rgba(0,0,0,0.08); }
+
+.combo { max-width: 1080px; margin: 36px auto 0; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 16px rgba(43,35,32,0.08); }
+.combo-head { padding: 20px 26px 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid #EFEAE2; }
+.combo-num { background: var(--terracotta); color: white; font-weight: 700; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex: none; align-self: center; }
+.combo-name { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+.combo-fonts { color: var(--ink-soft); font-size: 14px; }
+.combo-note { width: 100%; font-size: 13px; color: var(--ink-soft); }
+
+.panes { display: grid; grid-template-columns: 1fr 1fr; }
+@media (max-width: 860px) { .panes { grid-template-columns: 1fr; } }
+.pane { padding: 26px; }
+.pane.light { background: var(--cream); }
+.pane.dark { background: var(--charcoal); color: #F5EFE6; }
+.pane-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55; margin-bottom: 14px; font-weight: 600; }
+
+.h-sample { font-size: 30px; line-height: 1.15; margin-bottom: 4px; }
+.sub-sample { font-size: 15px; margin: 6px 0 18px; opacity: 0.75; line-height: 1.45; }
+
+.card { background: var(--offwhite); border-radius: 16px; padding: 16px 18px; box-shadow: 0 1px 6px rgba(43,35,32,0.10); max-width: 420px; }
+.pane.dark .card { background: var(--charcoal-lift); box-shadow: none; border: 1px solid rgba(255,255,255,0.07); }
+.card-title { font-size: 18px; margin-bottom: 4px; }
+.card-meta { font-size: 13px; opacity: 0.65; margin-bottom: 10px; }
+.badges { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.pill { font-size: 12.5px; font-weight: 600; padding: 4px 11px; border-radius: 100px; }
+.pill.veg { background: var(--sage-soft); color: #4A6B46; }
+.pane.dark .pill.veg { background: rgba(127,162,122,0.25); color: #A9C4A5; }
+.pill.almost { background: var(--amber-soft); color: #8A5F13; }
+.pane.dark .pill.almost { background: rgba(242,178,60,0.22); color: #F2C46E; }
+.btn { display: inline-block; background: var(--terracotta-deep); color: white; border-radius: 12px; padding: 11px 20px; font-size: 16px; font-weight: 700; }
+.body-sample { font-size: 14.5px; line-height: 1.55; margin-top: 16px; max-width: 430px; opacity: 0.85; }
+
+/* Combo 1: Native Apple */
+.f1 .h-sample, .f1 .card-title, .f1 .btn, .f1 .combo-name-render { font-family: ui-rounded, -apple-system, system-ui, sans-serif; font-weight: 700; }
+.f1 .sub-sample, .f1 .body-sample, .f1 .card-meta, .f1 .pill { font-family: -apple-system, system-ui, sans-serif; }
+
+/* Combo 2: Fraunces + Inter */
+.f2 .h-sample, .f2 .card-title { font-family: 'Fraunces', serif; font-weight: 600; }
+.f2 .btn { font-family: 'Inter', sans-serif; font-weight: 600; }
+.f2 .sub-sample, .f2 .body-sample, .f2 .card-meta, .f2 .pill { font-family: 'Inter', sans-serif; }
+
+/* Combo 3: Nunito + Nunito Sans */
+.f3 .h-sample, .f3 .card-title, .f3 .btn { font-family: 'Nunito', sans-serif; font-weight: 800; }
+.f3 .sub-sample, .f3 .body-sample, .f3 .card-meta, .f3 .pill { font-family: 'Nunito Sans', sans-serif; }
+
+/* Combo 4: DM Serif Display + DM Sans */
+.f4 .h-sample, .f4 .card-title { font-family: 'DM Serif Display', serif; font-weight: 400; }
+.f4 .btn { font-family: 'DM Sans', sans-serif; font-weight: 700; }
+.f4 .sub-sample, .f4 .body-sample, .f4 .card-meta, .f4 .pill { font-family: 'DM Sans', sans-serif; }
+
+/* Combo 5: Bricolage Grotesque + Work Sans */
+.f5 .h-sample, .f5 .card-title, .f5 .btn { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; }
+.f5 .sub-sample, .f5 .body-sample, .f5 .card-meta, .f5 .pill { font-family: 'Work Sans', sans-serif; }
+
+.why { max-width: 1080px; margin: 40px auto 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; background: white; border-radius: 14px; padding: 18px 22px; }
+.why strong { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>DinnerDecider: 5 font pairings</h1>
+  <p>Each pairing shown on the adopted palette, light and dark, with the same real UI content. All five are legally bundleable in the app (options 2 to 5 are open licensed; option 1 ships with iOS). Pick a number.</p>
+  <div class="swatch-row">
+    <div class="swatch" style="background:#E4573D"></div>
+    <div class="swatch" style="background:#7FA27A"></div>
+    <div class="swatch" style="background:#F2B23C"></div>
+    <div class="swatch" style="background:#FFF6E8"></div>
+    <div class="swatch" style="background:#1F1D1B"></div>
+  </div>
+</div>
+
+<!-- 1 -->
+<div class="combo f1">
+  <div class="combo-head">
+    <span class="combo-num">1</span>
+    <span class="combo-name">Native Apple</span>
+    <span class="combo-fonts">SF Pro Rounded headings + SF Pro body</span>
+    <span class="combo-note">Zero bundling, perfect Dynamic Type, feels born on iOS. Note: this browser preview approximates SF Rounded; it renders exactly right in the real app. Safari shows it best.</span>
+  </div>
+  <div class="panes">
+    <div class="pane light">
+      <div class="pane-label">Light</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+      <div class="body-sample">Toast the orzo in olive oil until golden. Add the tomatoes and stock, then simmer for twelve minutes, stirring once.</div>
+    </div>
+    <div class="pane dark">
+      <div class="pane-label">Dark</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="combo f2">
+  <div class="combo-head">
+    <span class="combo-num">2</span>
+    <span class="combo-name">Warm Editorial</span>
+    <span class="combo-fonts">Fraunces headings + Inter body</span>
+    <span class="combo-note">Fraunces is a soft, slightly wonky serif that feels like a beloved cookbook. Inter keeps the UI crisp and neutral underneath it.</span>
+  </div>
+  <div class="panes">
+    <div class="pane light">
+      <div class="pane-label">Light</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+      <div class="body-sample">Toast the orzo in olive oil until golden. Add the tomatoes and stock, then simmer for twelve minutes, stirring once.</div>
+    </div>
+    <div class="pane dark">
+      <div class="pane-label">Dark</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="combo f3">
+  <div class="combo-head">
+    <span class="combo-num">3</span>
+    <span class="combo-name">Soft &amp; Friendly</span>
+    <span class="combo-fonts">Nunito headings + Nunito Sans body</span>
+    <span class="combo-note">Rounded terminals everywhere: the most huggable option, matches the heart-tomato icon's personality. Risk: can read slightly playful/childlike.</span>
+  </div>
+  <div class="panes">
+    <div class="pane light">
+      <div class="pane-label">Light</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+      <div class="body-sample">Toast the orzo in olive oil until golden. Add the tomatoes and stock, then simmer for twelve minutes, stirring once.</div>
+    </div>
+    <div class="pane dark">
+      <div class="pane-label">Dark</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="combo f4">
+  <div class="combo-head">
+    <span class="combo-num">4</span>
+    <span class="combo-name">Modern Cookbook</span>
+    <span class="combo-fonts">DM Serif Display headings + DM Sans body</span>
+    <span class="combo-note">High-contrast serif with real elegance; DM Sans is its designed companion. The most "food magazine" of the five.</span>
+  </div>
+  <div class="panes">
+    <div class="pane light">
+      <div class="pane-label">Light</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+      <div class="body-sample">Toast the orzo in olive oil until golden. Add the tomatoes and stock, then simmer for twelve minutes, stirring once.</div>
+    </div>
+    <div class="pane dark">
+      <div class="pane-label">Dark</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="combo f5">
+  <div class="combo-head">
+    <span class="combo-num">5</span>
+    <span class="combo-name">Characterful Grotesque</span>
+    <span class="combo-fonts">Bricolage Grotesque headings + Work Sans body</span>
+    <span class="combo-note">Contemporary with a wink: confident, startup-fresh, least traditional. Furthest from the earlier brand board's look.</span>
+  </div>
+  <div class="panes">
+    <div class="pane light">
+      <div class="pane-label">Light</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+      <div class="body-sample">Toast the orzo in olive oil until golden. Add the tomatoes and stock, then simmer for twelve minutes, stirring once.</div>
+    </div>
+    <div class="pane dark">
+      <div class="pane-label">Dark</div>
+      <div class="h-sample">What's for dinner?</div>
+      <div class="sub-sample">You have 23 items. Here are 3 recipes you can make right now.</div>
+      <div class="card">
+        <div class="card-title">One-Pan Tomato Orzo</div>
+        <div class="card-meta">30 min &bull; Easy &bull; Serves 2</div>
+        <div class="badges"><span class="pill veg">Vegetarian</span><span class="pill almost">2 items missing</span></div>
+        <span class="btn">Decide Dinner</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="why">
+  <strong>Why these five:</strong> they cover the useful spectrum for this app: native-neutral (1), warm editorial (2), soft friendly (3), classic cookbook (4), contemporary (5), and all are practical on iOS. One honest caution as your UX advisor: custom fonts on iOS cost a little Dynamic Type and accessibility polish compared to option 1, and with a hackathon deadline the safest play is option 1 for the whole UI, or a hybrid: custom display font for big headings and recipe names only, SF Pro for everything else. Options 2 and 4 work especially well as that hybrid.
+</div>
+
+</body>
+</html>

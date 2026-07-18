@@ -77,6 +77,7 @@ struct InventoryView: View {
                     list
                 }
             }
+            .dinnerSurfaceBackground()
             .navigationTitle("Inventory")
             .searchable(text: $search, prompt: "Search food")
             .toolbar { toolbarContent }
@@ -138,7 +139,7 @@ struct InventoryView: View {
             } label: {
                 Label(item.isStaple ? "Unstaple" : "Staple", systemImage: item.isStaple ? "star.slash" : "star")
             }
-            .tint(.yellow)
+            .tint(.brandAccent)
         }
     }
 
@@ -234,11 +235,12 @@ private struct InventoryRow: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.name)
+                            .font(.dmBody)
                             .foregroundStyle(.primary)
                             .lineLimit(2)
                         if let brand = item.brand, !brand.isEmpty {
                             Text(brand)
-                                .font(.caption)
+                                .font(.dmCaption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }

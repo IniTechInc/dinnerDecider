@@ -28,11 +28,16 @@ struct CaptureView: View {
                 }
                 .padding(.vertical)
             }
+            .dinnerSurfaceBackground()
             .navigationTitle("DinnerDecider")
             .sheet(isPresented: $showCamera) {
                 CameraPicker { image in
+                    // Downscale immediately so a full-resolution frame is never
+                    // retained: keeps pageable memory low while the model holds
+                    // its large wired Metal allocation during a scan.
+                    let prepared = ImageDownscaler.forCapture(image)
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                        pickedImages.append(image)
+                        pickedImages.append(prepared)
                     }
                     Haptics.tap()
                 }
@@ -146,11 +151,11 @@ struct CaptureView: View {
                     goToScanning = true
                 } label: {
                     Label(scanButtonTitle, systemImage: "sparkles")
+                        .font(.dmBodyBold)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .tint(.green)
             }
         }
     }
@@ -167,12 +172,12 @@ struct CaptureView: View {
         } label: {
             HStack {
                 Image(systemName: locator.isModelPresent ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                    .foregroundStyle(locator.isModelPresent ? .green : .orange)
+                    .foregroundStyle(locator.isModelPresent ? Color.brandSecondary : Color.brandAccent)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(locator.isModelPresent ? "Model ready" : "Model not installed")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.dmSectionHeader)
                     Text(locator.isModelPresent ? "On-device AI is set up." : "Tap to set up on-device AI.")
-                        .font(.caption)
+                        .font(.dmCaption)
                         .foregroundStyle(.secondary)
                     inferenceModeBadge
                 }
@@ -194,14 +199,14 @@ struct CaptureView: View {
             Image(systemName: appModel.isUsingMock ? "cpu" : "sparkles")
             Text(appModel.isUsingMock ? "Demo mode (sample data)" : "On-device Gemma 4")
         }
-        .font(.caption2.weight(.semibold))
+        .font(.dmCaptionMedium)
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(
-            (appModel.isUsingMock ? Color.orange : Color.green).opacity(0.15),
+            (appModel.isUsingMock ? Color.brandAccent : Color.brandSecondary).opacity(0.15),
             in: Capsule()
         )
-        .foregroundStyle(appModel.isUsingMock ? Color.orange : Color.green)
+        .foregroundStyle(appModel.isUsingMock ? Color.brandAccent : Color.brandSecondary)
     }
 
     // MARK: - Actions
@@ -232,7 +237,9 @@ struct CaptureView: View {
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
-                    loaded.append(image)
+                    // Downscale on import so we never keep full-resolution frames
+                    // resident (see ImageDownscaler for the memory rationale).
+                    loaded.append(ImageDownscaler.forCapture(image))
                 }
             }
             await MainActor.run {

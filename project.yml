@@ -51,6 +51,13 @@ targets:
         NSPhotoLibraryUsageDescription: DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
+        UIAppFonts:
+          - DMSerifDisplay-Regular.ttf
+          - DMSerifDisplay-Italic.ttf
+          - DMSans-Regular.ttf
+          - DMSans-Medium.ttf
+          - DMSans-SemiBold.ttf
+          - DMSans-Bold.ttf
         UILaunchScreen:
           UIColorName: ""
         UISupportedInterfaceOrientations:

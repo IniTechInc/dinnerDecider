@@ -28,6 +28,7 @@ struct RecipesView: View {
 
                 content
             }
+            .background(Color.surfacePrimary.ignoresSafeArea())
             .navigationTitle("Recipes")
             .toolbar {
                 if segment != .shopping {
@@ -104,6 +105,7 @@ struct RecipesView: View {
                     RecipeRow(recipe: recipe)
                 }
             }
+            .dinnerSurfaceBackground()
         }
     }
 
@@ -150,7 +152,7 @@ private struct ThinkingView: View {
                 .accessibilityHidden(true)
             ProgressView()
             Text(messages[index])
-                .font(.headline)
+                .font(.dmHeadline)
                 .foregroundStyle(.secondary)
                 .contentTransition(.opacity)
                 .id(index)
@@ -175,7 +177,7 @@ private struct RecipeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(recipe.name)
-                .font(.headline)
+                .font(.recipeName)
                 .lineLimit(2)
             HStack(spacing: 12) {
                 Label("\(recipe.timeMinutes) min", systemImage: "clock")
@@ -186,7 +188,7 @@ private struct RecipeRow: View {
                     )
                 }
             }
-            .font(.caption)
+            .font(.dmCaption)
             .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
@@ -209,6 +211,19 @@ private struct RecipeDetailView: View {
 
     var body: some View {
         List {
+            Section {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(recipe.name)
+                        .font(.recipeName)
+                        .foregroundStyle(Color.textPrimary)
+                    Label("\(recipe.timeMinutes) min", systemImage: "clock")
+                        .font(.dmCaption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowBackground(Color.clear)
+
             if !recipe.missingItems.isEmpty {
                 Section {
                     almostThereBanner
@@ -222,7 +237,7 @@ private struct RecipeDetailView: View {
                     } label: {
                         HStack {
                             Image(systemName: checked.contains(line.id) ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(checked.contains(line.id) ? .green : .secondary)
+                                .foregroundStyle(checked.contains(line.id) ? Color.brandSecondary : Color.secondary)
                             Text(line.name)
                                 .strikethrough(checked.contains(line.id))
                                 .foregroundStyle(line.hasIt ? .primary : .secondary)
@@ -230,7 +245,7 @@ private struct RecipeDetailView: View {
                             if !line.hasIt {
                                 Text("need")
                                     .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(Color.brandAccent)
                             }
                         }
                         .contentShape(Rectangle())
@@ -271,6 +286,7 @@ private struct RecipeDetailView: View {
                 Text("Cooking will lower the quantity of the ingredients you used.")
             }
         }
+        .dinnerSurfaceBackground()
         .navigationTitle(recipe.name)
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog(
@@ -384,8 +400,10 @@ private struct ShoppingListView: View {
                     }
                     .onDelete(perform: delete)
                 }
+                .dinnerSurfaceBackground()
             }
         }
+        .background(Color.surfacePrimary.ignoresSafeArea())
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if !items.isEmpty {
@@ -428,7 +446,7 @@ private struct ShoppingListView: View {
         } label: {
             HStack {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.isChecked ? .green : .secondary)
+                    .foregroundStyle(item.isChecked ? Color.brandSecondary : Color.secondary)
                 Text(item.name)
                     .strikethrough(item.isChecked)
                     .foregroundStyle(item.isChecked ? .secondary : .primary)

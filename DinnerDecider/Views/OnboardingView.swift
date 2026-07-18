@@ -20,19 +20,19 @@ struct OnboardingView: View {
             symbol: "camera.viewfinder",
             title: "Photograph your food",
             body: "Snap your fridge, pantry, or shelves. DinnerDecider looks at what you have, one item at a time.",
-            tint: .green
+            tint: .brandPrimary
         ),
         Slide(
             symbol: "checkmark.circle",
             title: "Confirm the list",
             body: "Review what was found and fix anything with a tap. You are always in control of your inventory.",
-            tint: .blue
+            tint: .brandSecondary
         ),
         Slide(
             symbol: "fork.knife",
             title: "Cook what fits",
             body: "Get recipes from what you already have, plus a few you are only a couple of items away from making.",
-            tint: .orange
+            tint: .brandAccent
         )
     ]
 
@@ -51,7 +51,8 @@ struct OnboardingView: View {
 
             controls
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(Color.surfacePrimary.ignoresSafeArea())
+        .tint(.brandPrimary)
     }
 
     private func slideView(_ slide: Slide) -> some View {
@@ -63,10 +64,10 @@ struct OnboardingView: View {
                 .accessibilityHidden(true)
             VStack(spacing: 12) {
                 Text(slide.title)
-                    .font(.largeTitle.bold())
+                    .font(.displayLarge)
                     .multilineTextAlignment(.center)
                 Text(slide.body)
-                    .font(.body)
+                    .font(.dmBody)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -79,9 +80,9 @@ struct OnboardingView: View {
     private var privacyNote: some View {
         HStack(spacing: 8) {
             Image(systemName: "lock.shield.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.brandSecondary)
             Text("Everything stays on your phone. No account, no cloud, works in airplane mode.")
-                .font(.footnote)
+                .font(.dmFootnote)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 24)
@@ -101,6 +102,7 @@ struct OnboardingView: View {
                 }
             } label: {
                 Text(page < slides.count - 1 ? "Next" : "Get started")
+                    .font(.dmBodyBold)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -108,7 +110,7 @@ struct OnboardingView: View {
 
             if page < slides.count - 1 {
                 Button("Skip") { onDone() }
-                    .font(.subheadline)
+                    .font(.dmSubheadline)
             }
         }
         .padding(.horizontal, 24)

@@ -20,6 +20,7 @@ struct RootView: View {
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
+        .tint(.brandPrimary)
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 hasSeenOnboarding = true

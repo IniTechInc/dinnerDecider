@@ -174,6 +174,7 @@ struct ScanningView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .dinnerSurfaceBackground()
     }
 
     private var reviewList: some View {
@@ -200,6 +201,7 @@ struct ScanningView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .dinnerSurfaceBackground()
     }
 
     private var emptyResults: some View {
@@ -353,7 +355,7 @@ private struct ReviewRow: View {
             if item.needsReview {
                 Label("Check", systemImage: "questionmark.circle.fill")
                     .labelStyle(.iconOnly)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.brandAccent)
                     .accessibilityLabel("Low confidence, please check")
             }
             ConfidenceBadge(confidence: item.confidence)
@@ -372,15 +374,16 @@ struct ConfidenceBadge: View {
     let confidence: Double
 
     private var percent: Int { Int((confidence * 100).rounded()) }
+    // Sage reads as "confident"; amber as "worth a glance". Below 0.5 the row
+    // also shows an amber Check flag, keeping caution a single colour.
     private var color: Color {
-        if confidence >= 0.75 { return .green }
-        if confidence >= 0.5 { return .yellow }
-        return .orange
+        confidence >= 0.75 ? .brandSecondary : .brandAccent
     }
 
     var body: some View {
         Text("\(percent)%")
-            .font(.caption.monospacedDigit().weight(.semibold))
+            .font(.dmCaptionMedium)
+            .monospacedDigit()
             .foregroundStyle(color)
             .padding(.horizontal, 7)
             .padding(.vertical, 2)

@@ -46,19 +46,20 @@ struct TokenField: View {
         HStack(spacing: 4) {
             Text(token)
                 .lineLimit(1)
+                .foregroundStyle(Color.textPrimary)
             Button {
                 remove(token)
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.caption)
+                    .foregroundStyle(Color.brandPrimary)
             }
             .accessibilityLabel("Remove \(token)")
         }
         .font(.subheadline)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color.accentColor.opacity(0.15), in: Capsule())
-        .foregroundStyle(Color.accentColor)
+        .background(Color.brandPrimary.opacity(0.15), in: Capsule())
         .accessibilityElement(children: .combine)
     }
 

@@ -26,6 +26,15 @@
 	<string>DinnerDecider uses the camera to photograph your fridge and pantry so it can identify your food.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>DMSerifDisplay-Regular.ttf</string>
+		<string>DMSerifDisplay-Italic.ttf</string>
+		<string>DMSans-Regular.ttf</string>
+		<string>DMSans-Medium.ttf</string>
+		<string>DMSans-SemiBold.ttf</string>
+		<string>DMSans-Bold.ttf</string>
+	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchScreen</key>

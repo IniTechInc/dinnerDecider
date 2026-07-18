@@ -48,6 +48,7 @@ struct ModelSetupView: View {
                 Text("File Sharing is enabled, so model files dropped in via Finder are picked up automatically.")
             }
         }
+        .dinnerSurfaceBackground()
         .navigationTitle("Model Setup")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -55,7 +56,7 @@ struct ModelSetupView: View {
     private func statusRow(title: String, present: Bool, detail: String?) -> some View {
         HStack {
             Image(systemName: present ? "checkmark.circle.fill" : "xmark.circle")
-                .foregroundStyle(present ? .green : .secondary)
+                .foregroundStyle(present ? Color.brandSecondary : Color.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 if let detail, present {
@@ -67,7 +68,7 @@ struct ModelSetupView: View {
             Spacer()
             Text(present ? "Ready" : "Missing")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(present ? .green : .secondary)
+                .foregroundStyle(present ? Color.brandSecondary : Color.secondary)
         }
     }
 

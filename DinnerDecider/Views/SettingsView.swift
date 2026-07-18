@@ -27,6 +27,7 @@ struct SettingsView: View {
                     debugSection
                 }
             }
+            .dinnerSurfaceBackground()
             .navigationTitle("Settings")
         }
     }
@@ -123,7 +124,7 @@ struct SettingsView: View {
     private func statusRow(title: String, present: Bool, detail: String?) -> some View {
         HStack {
             Image(systemName: present ? "checkmark.circle.fill" : "xmark.circle")
-                .foregroundStyle(present ? .green : .secondary)
+                .foregroundStyle(present ? Color.brandSecondary : Color.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 if let detail, present {
@@ -135,7 +136,7 @@ struct SettingsView: View {
             Spacer()
             Text(present ? "Ready" : "Missing")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(present ? .green : .secondary)
+                .foregroundStyle(present ? Color.brandSecondary : Color.secondary)
         }
         .accessibilityElement(children: .combine)
     }
@@ -155,6 +156,8 @@ struct SettingsView: View {
             creditRow(name: "Gemma 4", detail: "Google, Apache 2.0")
             creditRow(name: "LocalLLMClient", detail: "tattn, MIT")
             creditRow(name: "llama.cpp", detail: "ggml-org, MIT")
+            creditRow(name: "DM Serif Display", detail: "Colophon, SIL Open Font License")
+            creditRow(name: "DM Sans", detail: "Colophon, SIL Open Font License")
 
             HStack {
                 Text("Version")
