@@ -37,7 +37,6 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 - **Fix, staged ladder:**
   - Build 3 (live, attached to Team Internal): ModelLifecycle state machine + IQ3_XXS + context 1536. Result: no crash but scan produced zero items (see #2); load-crash still reported once at ~1:55 PM.
   - Build 5 (VALID 14:55 MDT, attached to Team Internal): CPU-mmproj fork + batch 256 + taste wizard redesign + real recipes. Build 4 (VALID 14:19): lifecycle sessions fix (see #2), context 1024, accuracy improvements, real-recipes prompt. Manual-signing export path (dist cert A25BKU2237 + profile 48Q9M7QM6X) replaced the broken cloud-signing export.
-  - Build 5 (prepped, not built): vendored LocalLLMClient fork in `Vendor/LocalLLMClient` with mmproj `use_gpu=false`, saves ~534MB wired; slower image encode. Ship only if build 4 still jetsams at load.
 - **Status:** 🔧 In progress (crash-at-load may be environmental low-memory jetsam; close apps / reboot before scans)
 
 ### #2: Scan runs all crops, finds nothing (ROOT CAUSE FOUND)
