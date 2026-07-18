@@ -46,17 +46,19 @@ final class GemmaLLMService: LLMService {
             url: modelURL,
             mmprojURL: mmprojURL,
             parameter: .init(
-                // Context is deliberately 1536, not the 2048 default. On an 8GB
+                // Context is deliberately 1024, not the 2048 default. On an 8GB
                 // iPhone the whole model runs GPU-resident (llama.cpp uploads the
                 // weights, mmproj and KV cache into Metal buffers, which count as
                 // WIRED kernel memory). A vm-pageshortage jetsam killed us at
                 // ~5.1GB systemwide wired even though our own footprint was only
                 // ~400MB. Every token of context is KV cache that lives in that
                 // wired budget; our prompts and replies are short (a single item
-                // JSON, or a compact recipe list), so 1536 is comfortably enough
-                // and trims the KV allocation by ~25% vs 2048. See the memory
-                // notes in the crash write-up before raising this again.
-                context: 1536,
+                // JSON with ~256 image tokens, or a compact recipe list), so 1024
+                // is still comfortably enough. Was 1536; dropped further after a
+                // field crash at scan start on the IQ3_XXS build (escalation
+                // lever 1 in the memory/OOM notes). See those notes before
+                // raising this again.
+                context: 1024,
                 batch: 512,
                 temperature: 0.2,
                 topK: 40,
