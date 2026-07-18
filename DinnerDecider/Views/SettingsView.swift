@@ -24,7 +24,9 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 tasteProfileSection
-                krogerSection
+                if KrogerService.isConfigured {
+                    krogerSection
+                }
                 dietSection
                 allergiesSection
                 cuisinesSection

@@ -8,10 +8,25 @@ import Security
 @MainActor
 final class KrogerService: ObservableObject {
 
-    // MARK: - Configuration (same as Skylite)
+    // MARK: - Configuration
 
-    private static let clientId = "skylite-bbcdm05d"
-    private static let clientSecret = "joCAY9w17Wpkk8aWVRiHI_vQW1yRhjNupWMukHLY"
+    // Credentials load from KrogerCredentials.plist (git-ignored; keys
+    // "clientId" and "clientSecret"). Never hardcode them: this file is in a
+    // repo that will go public for the hackathon submission. When the plist is
+    // absent the integration stays dormant and Settings shows it unconfigured.
+    private static let credentials: (id: String, secret: String)? = {
+        guard let url = Bundle.main.url(forResource: "KrogerCredentials", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let dict = (try? PropertyListSerialization.propertyList(from: data, options: 0, format: nil)) as? [String: String],
+              let id = dict["clientId"], let secret = dict["clientSecret"]
+        else { return nil }
+        return (id, secret)
+    }()
+    private static var clientId: String { credentials?.id ?? "" }
+    private static var clientSecret: String { credentials?.secret ?? "" }
+    /// False when no KrogerCredentials.plist is bundled; UI should hide or
+    /// disable the Kroger connect flow.
+    static var isConfigured: Bool { credentials != nil }
     private static let redirectURI = "dinnerdecider://kroger-callback"
     private static let scopes = "product.compact cart.basic:write"
     private static let baseURL = "https://api.kroger.com/v1"

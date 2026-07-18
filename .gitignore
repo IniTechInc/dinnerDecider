@@ -33,3 +33,6 @@ training/harness/smoke_data/
 training/harness/__pycache__/
 *.safetensors
 eval/testset/photos/
+
+# Kroger API credentials (local only, never commit)
+DinnerDecider/Resources/KrogerCredentials.plist
