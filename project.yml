@@ -6,11 +6,10 @@ options:
   defaultConfig: Debug
   xcodeVersion: "16.0"
 
-# LocalLLMClient added in KAN-7 once llama.cpp submodule issue is resolved
-# packages:
-#   LocalLLMClient:
-#     url: https://github.com/tattn/LocalLLMClient
-#     from: "0.1.0"
+# KAN-7: LocalLLMClient as local package (MLX dependency stripped to avoid submodule issues)
+packages:
+  LocalLLMClient:
+    path: LocalLLMClient
 
 targets:
   dinnerDecider:
@@ -33,7 +32,11 @@ targets:
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations: {}
-    dependencies: []
+    dependencies:
+      - package: LocalLLMClient
+        product: LocalLLMClient
+      - package: LocalLLMClient
+        product: LocalLLMClientLlama
     settings:
       base:
         SWIFT_VERSION: "5.0"

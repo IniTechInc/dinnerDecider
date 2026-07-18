@@ -9,6 +9,14 @@ struct RootView: View {
             ModelDownloadView(modelState: $modelState)
         case .loading:
             ModelLoadingView()
+                .task {
+                    do {
+                        try await ModelService.shared.load()
+                        modelState = .ready
+                    } catch {
+                        modelState = .failed(error)
+                    }
+                }
         case .ready:
             MainTabView()
         case .failed(let error):
