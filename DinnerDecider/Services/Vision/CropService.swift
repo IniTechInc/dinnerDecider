@@ -59,8 +59,8 @@ enum CropService {
         let saliency = VNGenerateObjectnessBasedSaliencyImageRequest()
         let rectangles = VNDetectRectanglesRequest()
         rectangles.maximumObservations = 8
-        rectangles.minimumConfidence = 0.3
-        rectangles.minimumSize = 0.1
+        rectangles.minimumConfidence = 0.15
+        rectangles.minimumSize = 0.05
 
         try? handler.perform([saliency, rectangles])
 
@@ -133,7 +133,7 @@ enum CropService {
     /// 2. Portrait iPhone photos: the raw CGImage is landscape with an EXIF
     ///    rotation tag stored in `imageOrientation`. Without normalization,
     ///    Vision detects boxes in the wrong coordinate frame.
-    private static func normalizedCGImage(from image: UIImage) -> CGImage? {
+    static func normalizedCGImage(from image: UIImage) -> CGImage? {
         if image.imageOrientation == .up, let cg = image.cgImage { return cg }
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1

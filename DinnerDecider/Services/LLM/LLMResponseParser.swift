@@ -86,4 +86,56 @@ enum LLMResponseParser {
         }
         return try? JSONDecoder().decode(type, from: data)
     }
+
+    /// Return the first balanced `[ ... ]` JSON array found in `text`, or nil.
+    static func firstJSONArray(in text: String) -> String? {
+        let cleaned = stripCodeFences(stripReasoning(text))
+        let chars = Array(cleaned)
+        guard let start = chars.firstIndex(of: "[") else { return nil }
+
+        var depth = 0
+        var inString = false
+        var escaped = false
+        var index = start
+
+        while index < chars.count {
+            let character = chars[index]
+            if inString {
+                if escaped {
+                    escaped = false
+                } else if character == "\\" {
+                    escaped = true
+                } else if character == "\"" {
+                    inString = false
+                }
+            } else {
+                switch character {
+                case "\"":
+                    inString = true
+                case "[":
+                    depth += 1
+                case "]":
+                    depth -= 1
+                    if depth == 0 {
+                        return String(chars[start...index])
+                    }
+                default:
+                    break
+                }
+            }
+            index += 1
+        }
+        return nil
+    }
+
+    /// Decode an array of `type` from the first JSON array embedded in `response`.
+    static func decodeArray<T: Decodable>(_ type: T.Type, from response: String) -> [T]? {
+        guard
+            let json = firstJSONArray(in: response),
+            let data = json.data(using: .utf8)
+        else {
+            return nil
+        }
+        return try? JSONDecoder().decode([T].self, from: data)
+    }
 }

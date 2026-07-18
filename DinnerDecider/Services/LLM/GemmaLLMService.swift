@@ -86,6 +86,7 @@ final class GemmaLLMService: LLMService {
         let ocrLine = trimmed.isEmpty ? "none" : trimmed
         let prompt = """
         You identify a single grocery item from the photo. \
+        If no grocery item is clearly visible, use name "unknown" with confidence 0. \
         Text found on the packaging: \(ocrLine). \
         Respond ONLY with JSON, no other words: \
         {"name": "...", "brand": "... or null", \
@@ -97,6 +98,23 @@ final class GemmaLLMService: LLMService {
             throw LLMServiceError.badResponse
         }
         return item
+    }
+
+    func identifyAllItems(image: CGImage, ocrText: String) async throws -> [IdentifiedItem] {
+        guard client != nil else { throw LLMServiceError.modelNotLoaded }
+        let uiImage = Self.downscaled(image)
+        let trimmed = ocrText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let ocrLine = trimmed.isEmpty ? "none" : trimmed
+        let prompt = """
+        List ALL food and grocery items visible in this photo. \
+        Text found in the image: \(ocrLine). \
+        Respond ONLY with a JSON array, no other words: \
+        [{"name": "...", "brand": "... or null", \
+        "category": "produce|dairy|meat|pantry|snack|beverage|condiment|frozen|other", \
+        "confidence": 0-1}]
+        """
+        let text = try await complete(prompt: prompt, attachments: [.image(uiImage)])
+        return LLMResponseParser.decodeArray(IdentifiedItem.self, from: text) ?? []
     }
 
     func generateText(prompt: String) async throws -> String {

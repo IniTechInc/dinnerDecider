@@ -48,6 +48,19 @@ final class MockLLMService: LLMService {
         return item
     }
 
+    func identifyAllItems(image: CGImage, ocrText: String) async throws -> [IdentifiedItem] {
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        // Return 3-5 items from the pool to simulate a whole-image pass
+        let count = min(3 + (scanCallCount % 3), cannedItems.count)
+        let startIndex = scanCallCount % cannedItems.count
+        scanCallCount += 1
+        var items: [IdentifiedItem] = []
+        for i in 0..<count {
+            items.append(cannedItems[(startIndex + i) % cannedItems.count])
+        }
+        return items
+    }
+
     func generateText(prompt: String) async throws -> String {
         // `--slow-model-load` also stretches generation so the recipe "thinking"
         // state is demonstrable in the simulator; normally it is near-instant.

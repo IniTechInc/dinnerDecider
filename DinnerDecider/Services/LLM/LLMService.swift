@@ -36,6 +36,10 @@ protocol LLMService {
     /// Identify a single cropped grocery image, aided by any OCR text found on it.
     func identifyItem(image: CGImage, ocrText: String) async throws -> IdentifiedItem
 
+    /// Identify all grocery items visible in a full photo (whole-image pass).
+    /// Returns an empty array if nothing is recognized.
+    func identifyAllItems(image: CGImage, ocrText: String) async throws -> [IdentifiedItem]
+
     /// General text generation used for recipe suggestions (text-only prompts).
     func generateText(prompt: String) async throws -> String
 }
