@@ -4,16 +4,14 @@ import Foundation
 import Security
 
 /// Kroger API client — handles OAuth2 auth, product search, and cart operations.
-/// Uses the same credentials as Skylite's Kroger integration.
 @MainActor
 final class KrogerService: ObservableObject {
 
     // MARK: - Configuration
 
     // Credentials load from KrogerCredentials.plist (git-ignored; keys
-    // "clientId" and "clientSecret"). Never hardcode them: this file is in a
-    // repo that will go public for the hackathon submission. When the plist is
-    // absent the integration stays dormant and Settings shows it unconfigured.
+    // "clientId" and "clientSecret"). When the plist is absent the integration
+    // stays dormant and Settings shows it unconfigured.
     private static let credentials: (id: String, secret: String)? = {
         guard let url = Bundle.main.url(forResource: "KrogerCredentials", withExtension: "plist"),
               let data = try? Data(contentsOf: url),
