@@ -521,7 +521,7 @@ def process_photo(photo: Path, n_negatives: int, do_prelabel: bool) -> dict:
                           "category": "other", "confidence": 0.0})
         records.append({
             "id": f"{stem}_{idx}",
-            "image": f"crops/{fname}",
+            "image": f"real/crops/{fname}",
             "ocr": ocr,
             "prelabel": prelabel,
             "label": None,
@@ -544,7 +544,7 @@ def process_photo(photo: Path, n_negatives: int, do_prelabel: bool) -> dict:
         ocr = ocr_image(crop)
         records.append({
             "id": f"{stem}_{idx}",
-            "image": f"crops/{fname}",
+            "image": f"real/crops/{fname}",
             "ocr": ocr,
             "prelabel": dict(NEG_PRELABEL),
             "label": None,
