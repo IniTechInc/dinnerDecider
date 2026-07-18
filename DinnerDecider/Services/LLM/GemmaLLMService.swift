@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreImage
 import Foundation
 import UIKit
 import LocalLLMClient
@@ -88,6 +89,7 @@ final class GemmaLLMService: LLMService {
         let ocrLine = trimmed.isEmpty ? "none" : trimmed
         let prompt = """
         You identify a single grocery item from the photo. \
+        Common items include: milk, eggs, butter, cheese, yogurt, chicken, beef, lettuce, tomatoes, onions, carrots, bread, rice, pasta, cereal, juice, soda, ketchup, mustard, olive oil, salt, pepper, ice cream, frozen pizza. \
         If no grocery item is clearly visible, use name "unknown" with confidence 0. \
         Text found on the packaging: \(ocrLine). \
         Respond ONLY with JSON, no other words: \
@@ -109,6 +111,7 @@ final class GemmaLLMService: LLMService {
         let ocrLine = trimmed.isEmpty ? "none" : trimmed
         let prompt = """
         List ALL food and grocery items visible in this photo. \
+        Common items include: milk, eggs, butter, cheese, yogurt, chicken, beef, lettuce, tomatoes, onions, carrots, bread, rice, pasta, cereal, juice, soda, ketchup, mustard, olive oil, salt, pepper, ice cream, frozen pizza. \
         Text found in the image: \(ocrLine). \
         Respond ONLY with a JSON array, no other words: \
         [{"name": "...", "brand": "... or null", \
@@ -131,17 +134,37 @@ final class GemmaLLMService: LLMService {
         let input = LLMInput.chat([.user(prompt, attachments: attachments)])
         var output = ""
         for try await token in try client.textStream(from: input) {
+            if Task.isCancelled { break }
             output += token
         }
         return output
     }
 
-    /// Downscale so the longest side is <= `maxImageSide`, opaque, scale 1.
+    /// Reusable CIContext for image preprocessing. Creating one per-crop would
+    /// allocate a new Metal GPU context each time, exhausting wired memory on
+    /// top of the already ~3.5GB GPU-resident model and triggering jetsam.
+    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+
+    /// Downscale so the longest side is <= `maxImageSide`, normalize exposure, opaque, scale 1.
     private static func downscaled(_ cgImage: CGImage) -> UIImage {
         let width = CGFloat(cgImage.width)
         let height = CGFloat(cgImage.height)
         let longest = max(width, height)
-        let source = UIImage(cgImage: cgImage)
+
+        // Auto-adjust exposure and contrast for dim fridge/pantry photos.
+        let normalized: CGImage = {
+            let ciImage = CIImage(cgImage: cgImage)
+            let adjusted = ciImage.applyingFilter("CIToneCurve", parameters: [
+                "inputPoint0": CIVector(x: 0.0, y: 0.05),
+                "inputPoint1": CIVector(x: 0.25, y: 0.28),
+                "inputPoint2": CIVector(x: 0.5, y: 0.55),
+                "inputPoint3": CIVector(x: 0.75, y: 0.78),
+                "inputPoint4": CIVector(x: 1.0, y: 1.0)
+            ])
+            return ciContext.createCGImage(adjusted, from: adjusted.extent) ?? cgImage
+        }()
+
+        let source = UIImage(cgImage: normalized)
         guard longest > maxImageSide else { return source }
 
         let scale = maxImageSide / longest

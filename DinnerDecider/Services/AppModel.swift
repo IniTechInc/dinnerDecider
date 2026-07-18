@@ -279,29 +279,31 @@ final class AppModel: ObservableObject {
             )
 
             // --- Whole-image pass first: ask the model to list everything it
-            // can see before we crop, catching items that fall between tiles. ---
-            if let cgImage = await Task.detached(operation: { CropService.normalizedCGImage(from: image) }).value {
-                let fullOCR = await Task.detached { OCRService.recognizeText(in: cgImage) }.value
-                let wholeImageItems = try? await runInference {
-                    try await self.llm.identifyAllItems(image: cgImage, ocrText: fullOCR)
-                }
-                if let items = wholeImageItems {
-                    for item in items {
-                        // Filter out empty-crop hallucinations: the model (and
-                        // training data) uses "unknown" at ~0.1 confidence for
-                        // background-only crops.
-                        let dominated = item.name.lowercased() == "unknown"
-                            || item.confidence < 0.15
-                        guard !dominated else { continue }
-                        results.append(item)
+            // can see before we crop, catching items that fall between tiles.
+            // Scoped in `do {}` so the full-resolution cgImage (~20-40MB) is
+            // released before the crop loop allocates its own images. ---
+            do {
+                if let cgImage = await Task.detached(operation: { CropService.normalizedCGImage(from: image) }).value {
+                    let fullOCR = await Task.detached { OCRService.recognizeText(in: cgImage) }.value
+                    let wholeImageItems = try? await runInference {
+                        try await self.llm.identifyAllItems(image: cgImage, ocrText: fullOCR)
                     }
-                    let reduceMotion = UIAccessibility.isReduceMotionEnabled
-                    withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.7)) {
-                        scannedItems = InventoryLogic.dedupe(results)
+                    if let items = wholeImageItems {
+                        for item in items {
+                            let dominated = item.name.lowercased() == "unknown"
+                                || item.confidence < 0.15
+                            guard !dominated else { continue }
+                            results.append(item)
+                        }
+                        let reduceMotion = UIAccessibility.isReduceMotionEnabled
+                        withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.7)) {
+                            scannedItems = InventoryLogic.dedupe(results)
+                        }
                     }
                 }
             }
 
+            if Task.isCancelled { return }
             let cropResult = await Task.detached { CropService.crops(from: image) }.value
             let total = cropResult.images.count
 
@@ -318,16 +320,30 @@ final class AppModel: ObservableObject {
                 )
                 let ocrText = await Task.detached { OCRService.recognizeText(in: cropped) }.value
                 do {
-                    let identified = try await runInference {
-                        try await self.llm.identifyItem(image: cropped, ocrText: ocrText)
+                    if cropResult.isTileFallback {
+                        // Tiles are large regions that may contain multiple items;
+                        // ask the model to list everything it sees in each tile.
+                        let items = try await runInference {
+                            try await self.llm.identifyAllItems(image: cropped, ocrText: ocrText)
+                        }
+                        for item in items {
+                            let dominated = item.name.lowercased() == "unknown"
+                                || item.confidence < 0.15
+                            guard !dominated else { continue }
+                            results.append(item)
+                        }
+                    } else {
+                        let identified = try await runInference {
+                            try await self.llm.identifyItem(image: cropped, ocrText: ocrText)
+                        }
+                        // Filter out empty-crop hallucinations: the model (and
+                        // training data) uses "unknown" at ~0.1 confidence for
+                        // background-only crops.
+                        let dominated = identified.name.lowercased() == "unknown"
+                            || identified.confidence < 0.15
+                        guard !dominated else { continue }
+                        results.append(identified)
                     }
-                    // Filter out empty-crop hallucinations: the model (and
-                    // training data) uses "unknown" at ~0.1 confidence for
-                    // background-only crops.
-                    let dominated = identified.name.lowercased() == "unknown"
-                        || identified.confidence < 0.15
-                    guard !dominated else { continue }
-                    results.append(identified)
                     // Gentle stream-in spring, but honour Reduce Motion.
                     let reduceMotion = UIAccessibility.isReduceMotionEnabled
                     withMotion(reduceMotion, .spring(response: 0.35, dampingFraction: 0.7)) {

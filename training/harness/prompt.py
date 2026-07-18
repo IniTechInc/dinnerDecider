@@ -17,6 +17,9 @@ def build_user_prompt(ocr_text: str) -> str:
     ocr_line = trimmed if trimmed else "none"
     return (
         "You identify a single grocery item from the photo. "
+        "Common items include: milk, eggs, butter, cheese, yogurt, chicken, beef, "
+        "lettuce, tomatoes, onions, carrots, bread, rice, pasta, cereal, juice, "
+        "soda, ketchup, mustard, olive oil, salt, pepper, ice cream, frozen pizza. "
         'If no grocery item is clearly visible, use name "unknown" with confidence 0. '
         f"Text found on the packaging: {ocr_line}. "
         "Respond ONLY with JSON, no other words: "

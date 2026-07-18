@@ -7,6 +7,9 @@ import Vision
 struct CropResult {
     let images: [CGImage]
     let rects: [CGRect]
+    /// True when crops came from the fallback tile grid rather than targeted
+    /// object detection, meaning each crop is large and may contain multiple items.
+    let isTileFallback: Bool
 }
 
 /// Splits a fridge/pantry photo into per-item crops before identification.
@@ -26,7 +29,7 @@ enum CropService {
         // silently return zero crops. Drawing through UIGraphicsImageRenderer flattens
         // both the color space and the EXIF rotation into a plain up-oriented CGImage.
         guard let cgImage = normalizedCGImage(from: image) else {
-            return CropResult(images: [], rects: [])
+            return CropResult(images: [], rects: [], isTileFallback: false)
         }
         let width = cgImage.width
         let height = cgImage.height
@@ -34,7 +37,8 @@ enum CropService {
         var boxes = detectBoxes(in: cgImage, width: width, height: height)
         boxes = boxes.map { pad(rect: $0, width: width, height: height) }
 
-        if boxes.count < 2 {
+        let isTileFallback = boxes.count < 2
+        if isTileFallback {
             boxes = tileGrid(width: width, height: height)
         }
 
@@ -47,7 +51,7 @@ enum CropService {
                 rects.append(integral)
             }
         }
-        return CropResult(images: images, rects: rects)
+        return CropResult(images: images, rects: rects, isTileFallback: isTileFallback)
     }
 
     // MARK: - Detection

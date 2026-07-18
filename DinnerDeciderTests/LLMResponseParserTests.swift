@@ -85,4 +85,80 @@ final class LLMResponseParserTests: XCTestCase {
         let extracted = LLMResponseParser.firstJSONObject(in: response)
         XCTAssertEqual(extracted, "{\"name\": \"Omelet\"}")
     }
+
+    // MARK: - JSON array parsing (identifyAllItems path)
+
+    func testDecodesJSONArrayInsideCodeFences() {
+        let response = """
+        ```json
+        [{"name": "Milk", "brand": null, "category": "dairy", "confidence": 0.92}]
+        ```
+        """
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertEqual(items?.count, 1)
+        XCTAssertEqual(items?.first?.name, "Milk")
+    }
+
+    func testDecodesJSONArrayWithLeadingProse() {
+        let response = "Here are the items: [{\"name\": \"Eggs\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.9}]"
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertEqual(items?.count, 1)
+        XCTAssertEqual(items?.first?.name, "Eggs")
+    }
+
+    func testDecodesMultiItemArray() {
+        let response = """
+        [{"name": "Milk", "brand": "Horizon", "category": "dairy", "confidence": 0.9},
+         {"name": "Eggs", "brand": null, "category": "dairy", "confidence": 0.85},
+         {"name": "Butter", "brand": null, "category": "dairy", "confidence": 0.88}]
+        """
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertEqual(items?.count, 3)
+        XCTAssertEqual(items?[2].name, "Butter")
+    }
+
+    func testReturnsNilForObjectWhenArrayExpected() {
+        let response = "{\"name\": \"Milk\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.9}"
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertNil(items)
+    }
+
+    func testReturnsNilForMalformedArray() {
+        let response = "[{\"name\": \"Milk\"},"
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertNil(items)
+    }
+
+    func testDecodesArrayAfterThinkingChannel() {
+        let response = """
+        <|channel>thought
+        I see several items in this fridge photo.
+        <channel|>[{"name": "Yogurt", "brand": "Fage", "category": "dairy", "confidence": 0.91}]
+        """
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertEqual(items?.count, 1)
+        XCTAssertEqual(items?.first?.name, "Yogurt")
+    }
+
+    func testDecodesEmptyArray() {
+        let response = "[]"
+        let items = LLMResponseParser.decodeArray(IdentifiedItem.self, from: response)
+        XCTAssertNotNil(items)
+        XCTAssertEqual(items?.count, 0)
+    }
+
+    // MARK: - Missing / malformed fields
+
+    func testMissingRequiredFieldReturnsNil() {
+        let response = "{\"name\": \"Milk\"}"
+        let item = LLMResponseParser.decode(IdentifiedItem.self, from: response)
+        XCTAssertNil(item)
+    }
+
+    func testNullBrandDecodesSuccessfully() {
+        let response = "{\"name\": \"Eggs\", \"brand\": null, \"category\": \"produce\", \"confidence\": 0.8}"
+        let item = LLMResponseParser.decode(IdentifiedItem.self, from: response)
+        XCTAssertNotNil(item)
+        XCTAssertNil(item?.brand)
+    }
 }
