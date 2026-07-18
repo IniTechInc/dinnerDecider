@@ -13,10 +13,12 @@ struct SettingsView: View {
 
     @State private var debugTapCount = 0
     @State private var showDebug = false
+    @State private var showTasteWizard = false
 
     var body: some View {
         NavigationStack {
             Form {
+                tasteProfileSection
                 dietSection
                 allergiesSection
                 cuisinesSection
@@ -29,6 +31,39 @@ struct SettingsView: View {
             }
             .dinnerSurfaceBackground()
             .navigationTitle("Settings")
+            .fullScreenCover(isPresented: $showTasteWizard) {
+                TasteProfileWizard {
+                    showTasteWizard = false
+                }
+            }
+        }
+    }
+
+    // MARK: - Taste Profile
+
+    private var tasteProfileSection: some View {
+        Section {
+            Button {
+                showTasteWizard = true
+            } label: {
+                HStack {
+                    Label("Taste Profile", systemImage: "heart.text.clipboard")
+                    Spacer()
+                    if TasteProfile.load()?.isComplete == true {
+                        Text("Edit")
+                            .font(.dmCaption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Set up")
+                            .font(.dmCaption)
+                            .foregroundStyle(Color.brandPrimary)
+                    }
+                }
+            }
+        } header: {
+            Text("Your Taste")
+        } footer: {
+            Text("Tell us what you love and hate so recipes match your palate.")
         }
     }
 

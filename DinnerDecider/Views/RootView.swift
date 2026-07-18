@@ -4,12 +4,13 @@ import SwiftUI
 /// contained to that tab. A one-time onboarding cover greets first-run users.
 struct RootView: View {
     @AppStorage(PrefKey.hasSeenOnboarding) private var hasSeenOnboarding = false
+    @AppStorage(PrefKey.hasCompletedTasteProfile) private var hasCompletedTasteProfile = false
     @State private var showOnboarding = false
+    @State private var showTasteWizard = false
+    @State private var deepLinkMealId: UUID?
 
     var body: some View {
         TabView {
-            // Outline symbols so iOS fills the selected tab automatically,
-            // giving a consistent outlined/filled selection cue across tabs.
             CaptureView()
                 .tabItem { Label("Scan", systemImage: "camera") }
 
@@ -27,18 +28,44 @@ struct RootView: View {
             OnboardingView {
                 hasSeenOnboarding = true
                 showOnboarding = false
+                // After onboarding, offer the taste profile wizard.
+                if !hasCompletedTasteProfile {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        showTasteWizard = true
+                    }
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showTasteWizard) {
+            TasteProfileWizard {
+                hasCompletedTasteProfile = true
+                showTasteWizard = false
             }
         }
         .onAppear {
             if !hasSeenOnboarding {
                 showOnboarding = true
+            } else if !hasCompletedTasteProfile {
+                showTasteWizard = true
             }
         }
+        .onOpenURL { url in
+            handleDeepLink(url)
+        }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        // dinnerdecider://meal/{UUID}
+        guard url.scheme == "dinnerdecider",
+              url.host == "meal",
+              let idString = url.pathComponents.dropFirst().first,
+              let id = UUID(uuidString: idString) else { return }
+        deepLinkMealId = id
     }
 }
 
 #Preview {
     RootView()
         .environmentObject(AppModel())
-        .modelContainer(for: [InventoryItem.self, ShoppingListItem.self], inMemory: true)
+        .modelContainer(for: [InventoryItem.self, ShoppingListItem.self, PlannedMeal.self], inMemory: true)
 }

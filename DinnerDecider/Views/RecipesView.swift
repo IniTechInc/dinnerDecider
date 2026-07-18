@@ -281,6 +281,9 @@ private struct RecipeDetailView: View {
     @State private var checked = Set<String>()
     @State private var showCookConfirm = false
     @State private var addedToShopping = false
+    @State private var showDatePicker = false
+    @State private var mealDate = CalendarDefaults.defaultMealDate()
+    @State private var addedToCalendar = false
 
     var body: some View {
         List {
@@ -359,6 +362,8 @@ private struct RecipeDetailView: View {
             } footer: {
                 Text("Cooking will lower the quantity of the ingredients you used.")
             }
+
+            calendarSection
         }
         .dinnerSurfaceBackground()
         .navigationTitle(recipe.name)
@@ -372,6 +377,11 @@ private struct RecipeDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("We will lower the amount of each ingredient you had on hand.")
+        }
+        .sheet(isPresented: $showDatePicker) {
+            MealDatePickerSheet(date: $mealDate) {
+                addToCalendar()
+            }
         }
     }
 
@@ -388,6 +398,25 @@ private struct RecipeDetailView: View {
             .disabled(addedToShopping)
         }
         .padding(.vertical, 4)
+    }
+
+    private var calendarSection: some View {
+        Section {
+            if addedToCalendar {
+                Label("Added to calendar", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Color.brandSecondary)
+            } else {
+                Button {
+                    showDatePicker = true
+                } label: {
+                    Label("Add to meal plan", systemImage: "calendar.badge.plus")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+        } footer: {
+            Text("Adds a calendar event with the recipe and a reminder 30 min before.")
+        }
     }
 
     private var missingSentence: String {
@@ -439,6 +468,76 @@ private struct RecipeDetailView: View {
         }
         Haptics.success()
         dismiss()
+    }
+
+    private func addToCalendar() {
+        Task {
+            let granted = await CalendarService.requestAccess()
+            guard granted else { return }
+            let meal = PlannedMeal(from: recipe, date: mealDate)
+            modelContext.insert(meal)
+            if let eventId = CalendarService.addEvent(for: meal) {
+                meal.calendarEventId = eventId
+            }
+            addedToCalendar = true
+            Haptics.success()
+        }
+    }
+}
+
+/// Helper for the default meal date (today at 6 PM, or tomorrow if past 6 PM).
+enum CalendarDefaults {
+    static func defaultMealDate() -> Date {
+        let cal = Calendar.current
+        let now = Date()
+        let hour = cal.component(.hour, from: now)
+        let base = hour >= 18 ? cal.date(byAdding: .day, value: 1, to: now)! : now
+        return cal.date(bySettingHour: 18, minute: 0, second: 0, of: base) ?? now
+    }
+}
+
+/// Compact sheet for picking when to cook a recipe.
+private struct MealDatePickerSheet: View {
+    @Binding var date: Date
+    var onConfirm: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: Spacing.xl) {
+                Text("When do you want to cook?")
+                    .font(.dmHeadline)
+                DatePicker(
+                    "Date & time",
+                    selection: $date,
+                    in: Date()...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.graphical)
+                .tint(.brandPrimary)
+
+                Button {
+                    dismiss()
+                    onConfirm()
+                } label: {
+                    Text("Add to Calendar")
+                        .font(.dmBodyBold)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.brandPrimary)
+                .padding(.horizontal)
+            }
+            .padding()
+            .navigationTitle("Meal Plan")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

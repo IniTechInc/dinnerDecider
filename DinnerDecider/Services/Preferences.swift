@@ -62,6 +62,9 @@ enum PrefKey {
     static let debugSimulateFailure = "debugSimulateRecipeFailure"
     // Model selection uses ModelFileLocator.selectedModelKey.
 
+    /// True once the user has completed (or skipped) the taste profile wizard.
+    static let hasCompletedTasteProfile = "hasCompletedTasteProfile"
+
     /// Default number of people to cook for when the user has not set a size.
     static let defaultHouseholdSize = 2
 }

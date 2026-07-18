@@ -22,7 +22,7 @@ struct DinnerDeciderApp: App {
                     .environmentObject(appModel)
             }
         }
-        .modelContainer(for: [InventoryItem.self, ShoppingListItem.self])
+        .modelContainer(for: [InventoryItem.self, ShoppingListItem.self, PlannedMeal.self])
     }
 }
 

@@ -51,6 +51,7 @@ targets:
         NSPhotoLibraryUsageDescription: DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.
         NSSpeechRecognitionUsageDescription: DinnerDecider uses speech recognition so you can say what you're in the mood for and get matching recipe suggestions.
         NSMicrophoneUsageDescription: DinnerDecider uses the microphone to listen to your food cravings and suggest matching recipes.
+        NSCalendarsFullAccessUsageDescription: DinnerDecider adds planned meals to your calendar so you know what to cook and when.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         ITSAppUsesNonExemptEncryption: false
@@ -61,6 +62,10 @@ targets:
           - DMSans-Medium.ttf
           - DMSans-SemiBold.ttf
           - DMSans-Bold.ttf
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - dinnerdecider
+            CFBundleURLName: com.philwoolley.dinnerdecider
         UILaunchScreen:
           UIColorName: ""
         UISupportedInterfaceOrientations:

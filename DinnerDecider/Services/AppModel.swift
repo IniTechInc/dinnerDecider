@@ -417,7 +417,12 @@ final class AppModel: ObservableObject {
         defer { endModelSession() }
         await loadModelIfNeeded()
 
-        let prompt = Self.recipePrompt(itemNames: names, prefs: RecipePreferences.current(defaults), mood: moodText)
+        let prompt = Self.recipePrompt(
+            itemNames: names,
+            prefs: RecipePreferences.current(defaults),
+            mood: moodText,
+            tasteProfile: TasteProfile.load()
+        )
         let raw: String
         if defaults.bool(forKey: PrefKey.debugSimulateFailure) {
             // Hidden debug switch: return a deliberately broken reply so the
@@ -446,7 +451,12 @@ final class AppModel: ObservableObject {
 
     /// Build a compact prompt: inventory as a comma list, not prose (per spec).
     /// Pure and testable: pass names + a preferences snapshot, no globals.
-    nonisolated static func recipePrompt(itemNames: [String], prefs: RecipePreferences, mood: String = "") -> String {
+    nonisolated static func recipePrompt(
+        itemNames: [String],
+        prefs: RecipePreferences,
+        mood: String = "",
+        tasteProfile: TasteProfile? = nil
+    ) -> String {
         let inventory = itemNames.joined(separator: ", ")
 
         var lines: [String] = []
@@ -455,6 +465,9 @@ final class AppModel: ObservableObject {
         let trimmedMood = mood.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedMood.isEmpty {
             lines.append("The user says: \"\(trimmedMood)\". Tailor your recipe suggestions to match this mood or craving.")
+        }
+        if let taste = tasteProfile, taste.isComplete {
+            lines.append(taste.promptFragment())
         }
         if prefs.diet != DietPreference.none.rawValue {
             lines.append("Diet: \(prefs.diet).")
