@@ -7,9 +7,12 @@ options:
   xcodeVersion: "26.3"
 
 packages:
+  # Vendored fork of tattn/LocalLLMClient 0.5.0. One change: the mmproj vision
+  # projector loads on CPU (Multimodal.swift use_gpu=false), freeing ~534MB of
+  # wired Metal memory that was jetsamming 8GB phones mid-scan. The llama.cpp
+  # engine still arrives as the upstream prebuilt xcframework via SPM.
   LocalLLMClient:
-    url: https://github.com/tattn/LocalLLMClient.git
-    exactVersion: "0.5.0"
+    path: Vendor/LocalLLMClient
 
 settings:
   base:
@@ -17,7 +20,7 @@ settings:
     DEVELOPMENT_TEAM: AXW4GKUTKZ
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "4"
+    CURRENT_PROJECT_VERSION: "5"
 
 targets:
   DinnerDecider:

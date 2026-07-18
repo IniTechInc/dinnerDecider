@@ -1,0 +1,152 @@
+# https://github.com/actions/runner-images
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Package.swift"
+      - "Example/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: ["main"]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Package.swift"
+      - "Example/**"
+      - ".github/workflows/test.yml"
+
+jobs:
+  test-macos:
+    name: Test on macOS (${{ matrix.test-type }})
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        # NOTE: MLX tests are excluded because they require Metal GPU support
+        # which is not available in GitHub Actions hosted runners.
+        # mlx-swift-lm uses self-hosted macOS runners with Metal support:
+        # https://github.com/ml-explore/mlx-swift-lm/blob/main/.github/workflows/pull_request.yml
+        # To enable MLX tests, use self-hosted runners: runs-on: [self-hosted, macos]
+        test-type: [Llama, FoundationModels]
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
+      TEST_RUNNER_GITHUB_MODEL_CACHE: "${{ github.workspace }}/model_cache"
+    steps:
+      - &checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - &cache_model
+        name: Cache model file
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: model_cache
+          key: model_cache
+
+      - &xcode26_metal_workaround
+        name: "Download Metal Toolchain"
+        continue-on-error: true
+        run: |
+          xcodebuild -downloadComponent MetalToolchain
+
+      - name: Run ${{ matrix.test-type }} tests with Xcode 26
+        run: TEST_RUNNER_GITHUB_ACTIONS_TEST="${{ matrix.test-type }}" xcodebuild test -skipMacroValidation -scheme LocalLLMClient-Package -destination 'platform=macOS'
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+            ~/Library/Logs/DiagnosticReports/*
+          retention-days: 7
+
+  build-example-macos:
+    runs-on: macos-26
+    needs: test-macos
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
+    steps:
+      - *checkout
+
+      - *xcode26_metal_workaround
+
+      - name: Build Example app for macOS
+        working-directory: Example
+        run: |
+          xcodebuild -downloadPlatform iOS
+          xcodebuild build -skipMacroValidation -project LocalLLMClientExample.xcodeproj -scheme LocalLLMClientExample -destination 'platform=macOS' CODE_SIGN_IDENTITY="-"
+
+  build-example-ios:
+    runs-on: macos-26
+    needs: test-macos
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_26.4.app/Contents/Developer"
+    steps:
+      - *checkout
+
+      - *xcode26_metal_workaround
+
+      - name: Build Example app for iOS
+        working-directory: Example
+        run: |
+          xcodebuild -downloadPlatform iOS
+          xcodebuild build -skipMacroValidation -project LocalLLMClientExample.xcodeproj -scheme LocalLLMClientExample -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4' CODE_SIGN_IDENTITY="-"
+
+  test-ubuntu-x86_64:
+    runs-on: ubuntu-latest
+    needs: test-macos
+    env:
+      GITHUB_MODEL_CACHE: "${{ github.workspace }}/model_cache"
+    steps:
+      - *checkout
+
+      - *cache_model
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Install Swift
+        shell: bash
+        run: |
+          curl -O "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" && \
+          tar zxf "swiftly-$(uname -m).tar.gz" && \
+          ./swiftly init --assume-yes --no-modify-profile --skip-install --quiet-shell-followup && \
+          . ${SWIFTLY_HOME_DIR:-~/.local/share/swiftly}/env.sh && \
+          hash -r
+          swiftly install 6.1
+          echo "SWIFTLY_HOME_DIR=${SWIFTLY_HOME_DIR}" >>"${GITHUB_ENV}"
+          echo "SWIFTLY_BIN_DIR=${SWIFTLY_BIN_DIR}" >>"${GITHUB_ENV}"
+          echo "${SWIFTLY_BIN_DIR}" >>"${GITHUB_PATH}"
+
+      - name: Setup llama.cpp binaries
+        id: setup-llama
+        run: |
+          LLAMA_VERSION=$(./scripts/get_llama_version.sh)
+          mkdir -p ${{ github.workspace }}/lib
+
+          # Download and extract llama.cpp binaries
+          LLAMA_URL="https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_VERSION}/llama-${LLAMA_VERSION}-bin-ubuntu-x64.zip"
+          echo "Downloading llama.cpp binaries from: $LLAMA_URL"
+          curl -L $LLAMA_URL -o llama-bin.zip
+          unzip -j llama-bin.zip "*.so" -d "${{ github.workspace }}/lib"
+          ls -la ${{ github.workspace }}/lib
+
+      - name: Build package
+        run: LDFLAGS="-L${{ github.workspace }}/lib" swift build
+        # LD_LIBRARY_PATH="$(pwd)/lib" ./.build/debug/localllm -m "${{ github.workspace }}/model_cache/huggingface/models/ggml-org/SmolVLM-256M-Instruct-GGUF/SmolVLM-256M-Instruct-Q8_0.gguf" "Hello"
+
+      - name: Run tests
+        run: LDFLAGS="-L${{ github.workspace }}/lib" LD_LIBRARY_PATH="${{ github.workspace }}/lib" swift test
+        if: false # TODO:

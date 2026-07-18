@@ -1,0 +1,66 @@
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: "DM Serif Display";
+    src: url("file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Resources/Fonts/DMSerifDisplay-Regular.ttf");
+  }
+  @font-face {
+    font-family: "DM Sans";
+    src: url("file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Resources/Fonts/DMSans-Regular.ttf");
+  }
+  @font-face {
+    font-family: "DM Sans";
+    font-weight: 600;
+    src: url("file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Resources/Fonts/DMSans-SemiBold.ttf");
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 560px; height: 280px; overflow: hidden; }
+  .card {
+    width: 560px; height: 280px;
+    background: #FFF6E8;
+    display: flex; align-items: center;
+    padding: 0 40px;
+    position: relative;
+    font-family: "DM Sans", sans-serif;
+  }
+  .stripe {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 220px;
+    background: linear-gradient(160deg, #7FA27A 0%, #6a8f66 100%);
+  }
+  .stripe::before {
+    content: ""; position: absolute; left: -28px; top: -40px; bottom: -40px; width: 80px;
+    background: #FFF6E8; transform: rotate(6deg);
+  }
+  .text { position: relative; z-index: 2; width: 300px; }
+  h1 {
+    font-family: "DM Serif Display", serif;
+    font-size: 44px; color: #1F1D1B; letter-spacing: -0.5px;
+  }
+  h1 .accent { color: #E4573D; }
+  .tag {
+    margin-top: 10px; font-size: 17px; line-height: 1.45; color: #4a453f;
+  }
+  .chips { margin-top: 18px; display: flex; gap: 8px; }
+  .chip {
+    font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+    background: rgba(228, 87, 61, 0.12); color: #c23e28;
+  }
+  .chip.sage { background: rgba(127, 162, 122, 0.18); color: #4c6b48; }
+  .icon {
+    position: absolute; right: 42px; top: 50%; transform: translateY(-50%);
+    width: 168px; height: 168px; border-radius: 38px; z-index: 2;
+    box-shadow: 0 14px 34px rgba(31, 29, 27, 0.28);
+  }
+</style>
+<div class="card">
+  <div class="stripe"></div>
+  <div class="text">
+    <h1>Dinner<span class="accent">Decider</span></h1>
+    <div class="tag">Photograph your fridge. Get real recipes. Every byte stays on your phone.</div>
+    <div class="chips">
+      <span class="chip">Gemma 4 E4B</span>
+      <span class="chip sage">100% on-device</span>
+    </div>
+  </div>
+  <img class="icon" src="file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png">
+</div>

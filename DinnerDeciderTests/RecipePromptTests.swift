@@ -62,4 +62,27 @@ final class RecipePromptTests: XCTestCase {
         XCTAssertTrue(prompt.contains("hasIt true only if it is in the inventory"))
         XCTAssertFalse(prompt.contains("uses only inventory items"))
     }
+
+    /// An allergies-only taste profile must reach the model, and the taste
+    /// fragment must sit before the JSON schema instruction so it reads as
+    /// context, not an afterthought.
+    func testPromptIncludesTasteProfileAllergyLineBeforeSchema() {
+        var taste = TasteProfile()
+        taste.allergies = ["Peanuts"]
+        let prompt = AppModel.recipePrompt(
+            itemNames: ["Eggs"],
+            prefs: prefs(),
+            tasteProfile: taste
+        )
+        XCTAssertTrue(prompt.contains("Allergies: Peanuts. Never include these."))
+        guard
+            let allergyRange = prompt.range(of: "Allergies: Peanuts."),
+            let schemaRange = prompt.range(of: "Respond ONLY with JSON")
+        else {
+            return XCTFail("Prompt missing allergy or schema lines")
+        }
+        XCTAssertTrue(allergyRange.lowerBound < schemaRange.lowerBound)
+        // The real-dishes and schema guardrails must survive untouched.
+        XCTAssertTrue(prompt.contains("real, well-known dishes"))
+    }
 }

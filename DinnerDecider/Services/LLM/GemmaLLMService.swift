@@ -60,7 +60,11 @@ final class GemmaLLMService: LLMService {
                 // lever 1 in the memory/OOM notes). See those notes before
                 // raising this again.
                 context: 1024,
-                batch: 512,
+                // Halved from 512 after a device jetsam at crop 4 of 9 on build
+                // 4: the llama.cpp compute buffer scales with batch size and
+                // lives in the same wired Metal budget as the weights. Our
+                // prompts are a few hundred tokens; 256 costs nothing here.
+                batch: 256,
                 temperature: 0.2,
                 topK: 40,
                 topP: 0.95
@@ -143,7 +147,10 @@ final class GemmaLLMService: LLMService {
     /// Reusable CIContext for image preprocessing. Creating one per-crop would
     /// allocate a new Metal GPU context each time, exhausting wired memory on
     /// top of the already ~3.5GB GPU-resident model and triggering jetsam.
-    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    /// Software renderer on purpose: the tone-curve pass on a <=896px crop is
+    /// milliseconds on CPU, and it keeps preprocessing entirely out of the
+    /// wired GPU budget the model is already straining.
+    private static let ciContext = CIContext(options: [.useSoftwareRenderer: true])
 
     /// Downscale so the longest side is <= `maxImageSide`, normalize exposure, opaque, scale 1.
     private static func downscaled(_ cgImage: CGImage) -> UIImage {

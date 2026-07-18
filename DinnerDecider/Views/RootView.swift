@@ -4,9 +4,7 @@ import SwiftUI
 /// contained to that tab. A one-time onboarding cover greets first-run users.
 struct RootView: View {
     @AppStorage(PrefKey.hasSeenOnboarding) private var hasSeenOnboarding = false
-    @AppStorage(PrefKey.hasCompletedTasteProfile) private var hasCompletedTasteProfile = false
-    @State private var showOnboarding = false
-    @State private var showTasteWizard = false
+    @State private var showFirstRun = false
     @State private var deepLinkMealId: UUID?
 
     var body: some View {
@@ -24,29 +22,15 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .tint(.brandPrimary)
-        .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView {
-                hasSeenOnboarding = true
-                showOnboarding = false
-                // After onboarding, offer the taste profile wizard.
-                if !hasCompletedTasteProfile {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        showTasteWizard = true
-                    }
-                }
-            }
-        }
-        .fullScreenCover(isPresented: $showTasteWizard) {
-            TasteProfileWizard {
-                hasCompletedTasteProfile = true
-                showTasteWizard = false
-            }
+        // One presentation for the whole first run: onboarding flows straight
+        // into the taste profile wizard without dismissing and re-covering.
+        // Existing users are never shown either again.
+        .fullScreenCover(isPresented: $showFirstRun) {
+            FirstRunFlow { showFirstRun = false }
         }
         .onAppear {
             if !hasSeenOnboarding {
-                showOnboarding = true
-            } else if !hasCompletedTasteProfile {
-                showTasteWizard = true
+                showFirstRun = true
             }
         }
         .onOpenURL { url in
@@ -61,6 +45,35 @@ struct RootView: View {
               let idString = url.pathComponents.dropFirst().first,
               let id = UUID(uuidString: idString) else { return }
         deepLinkMealId = id
+    }
+}
+
+/// The first-run flow: onboarding slides, then the taste profile wizard, both
+/// inside a single cover so the hand-off is seamless. Owns its own step state so
+/// switching content never dismisses and re-presents.
+private struct FirstRunFlow: View {
+    var onFinished: () -> Void
+
+    @AppStorage(PrefKey.hasSeenOnboarding) private var hasSeenOnboarding = false
+    @AppStorage(PrefKey.hasCompletedTasteProfile) private var hasCompletedTasteProfile = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var step: Step = .onboarding
+
+    private enum Step { case onboarding, tasteProfile }
+
+    var body: some View {
+        switch step {
+        case .onboarding:
+            OnboardingView {
+                hasSeenOnboarding = true
+                withMotion(reduceMotion) { step = .tasteProfile }
+            }
+        case .tasteProfile:
+            TasteProfileWizard {
+                hasCompletedTasteProfile = true
+                onFinished()
+            }
+        }
     }
 }
 

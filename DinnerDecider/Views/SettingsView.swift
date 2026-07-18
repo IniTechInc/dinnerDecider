@@ -49,7 +49,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Taste Profile", systemImage: "heart.text.clipboard")
                     Spacer()
-                    if TasteProfile.load()?.isComplete == true {
+                    if TasteProfile.load()?.hasContent == true {
                         Text("Edit")
                             .font(.dmCaption)
                             .foregroundStyle(.secondary)

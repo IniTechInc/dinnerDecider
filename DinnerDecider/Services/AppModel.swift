@@ -466,7 +466,7 @@ final class AppModel: ObservableObject {
         if !trimmedMood.isEmpty {
             lines.append("The user says: \"\(trimmedMood)\". Tailor your recipe suggestions to match this mood or craving.")
         }
-        if let taste = tasteProfile, taste.isComplete {
+        if let taste = tasteProfile, taste.hasContent {
             lines.append(taste.promptFragment())
         }
         if prefs.diet != DietPreference.none.rawValue {

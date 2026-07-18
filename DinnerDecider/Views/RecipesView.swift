@@ -17,6 +17,7 @@ struct RecipesView: View {
     }
 
     @State private var segment: Segment = .makeNow
+    @State private var showTasteWizard = false
 
     var body: some View {
         NavigationStack {
@@ -33,6 +34,15 @@ struct RecipesView: View {
             .background(Color.surfacePrimary.ignoresSafeArea())
             .navigationTitle("Recipes")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        Haptics.tap()
+                        showTasteWizard = true
+                    } label: {
+                        Image(systemName: "heart.circle")
+                    }
+                    .accessibilityLabel("Taste Profile")
+                }
                 if segment != .shopping {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -47,6 +57,11 @@ struct RecipesView: View {
                         }
                         .disabled(items.isEmpty || appModel.isGeneratingRecipes)
                     }
+                }
+            }
+            .sheet(isPresented: $showTasteWizard) {
+                TasteProfileWizard {
+                    showTasteWizard = false
                 }
             }
             .onChange(of: speechRecognizer.transcript) { _, newValue in
@@ -284,6 +299,7 @@ private struct RecipeDetailView: View {
     @State private var showDatePicker = false
     @State private var mealDate = CalendarDefaults.defaultMealDate()
     @State private var addedToCalendar = false
+    @State private var calendarError: String?
 
     var body: some View {
         List {
@@ -413,6 +429,11 @@ private struct RecipeDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                if let calendarError {
+                    Text(calendarError)
+                        .font(.dmCaption)
+                        .foregroundStyle(.red)
+                }
             }
         } footer: {
             Text("Adds a calendar event with the recipe and a reminder 30 min before.")
@@ -473,14 +494,23 @@ private struct RecipeDetailView: View {
     private func addToCalendar() {
         Task {
             let granted = await CalendarService.requestAccess()
-            guard granted else { return }
+            guard granted else {
+                // Never claim success when the user has not granted access.
+                calendarError = "Calendar access is needed to plan meals."
+                return
+            }
             let meal = PlannedMeal(from: recipe, date: mealDate)
             modelContext.insert(meal)
             if let eventId = CalendarService.addEvent(for: meal) {
                 meal.calendarEventId = eventId
+                calendarError = nil
+                addedToCalendar = true
+                Haptics.success()
+            } else {
+                // Creation failed: drop the orphan so nothing pretends it worked.
+                modelContext.delete(meal)
+                calendarError = "Could not add to calendar."
             }
-            addedToCalendar = true
-            Haptics.success()
         }
     }
 }
