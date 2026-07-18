@@ -2,7 +2,7 @@
 
 **Build with Gemma: JustBuild hackathon, On-Device AI with Gemma 4 track**
 
-Team: IniTech (Phil Woolley, olsonjb)
+Team: IniTech (Phil Woolley, Kurt Lehnardt)
 Repo: https://github.com/IniTechInc/dinnerDecider (public)
 Demo video: [PLACEHOLDER: demo video link, if required by submission form]
 
