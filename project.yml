@@ -1,0 +1,69 @@
+name: DinnerDecider
+options:
+  bundleIdPrefix: com.philwoolley
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  xcodeVersion: "26.3"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: AXW4GKUTKZ
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  DinnerDecider:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - DinnerDecider
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.philwoolley.dinnerdecider
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: YES
+    info:
+      path: DinnerDecider/Info.plist
+      properties:
+        CFBundleDisplayName: DinnerDecider
+        NSCameraUsageDescription: DinnerDecider uses the camera to photograph your fridge and pantry so it can identify your food.
+        NSPhotoLibraryUsageDescription: DinnerDecider uses your photo library so you can pick photos of your fridge and pantry to identify your food.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+
+  DinnerDeciderTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - DinnerDeciderTests
+    dependencies:
+      - target: DinnerDecider
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.philwoolley.dinnerdecider.tests
+
+schemes:
+  DinnerDecider:
+    build:
+      targets:
+        DinnerDecider: all
+        DinnerDeciderTests: [test]
+    test:
+      targets:
+        - DinnerDeciderTests
+    run:
+      config: Debug

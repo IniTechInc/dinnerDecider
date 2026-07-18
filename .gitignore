@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift build artifacts
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# xcodegen output (project.yml is the source of truth)
+*.xcodeproj
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# User-specific Xcode state
+xcuserdata/
+*.xcuserstate
+
+# Model files (large; never commit)
+*.gguf
+*.litertlm
