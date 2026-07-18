@@ -39,12 +39,21 @@ struct RootView: View {
     }
 
     private func handleDeepLink(_ url: URL) {
-        // dinnerdecider://meal/{UUID}
-        guard url.scheme == "dinnerdecider",
-              url.host == "meal",
-              let idString = url.pathComponents.dropFirst().first,
-              let id = UUID(uuidString: idString) else { return }
-        deepLinkMealId = id
+        guard url.scheme == "dinnerdecider" else { return }
+
+        switch url.host {
+        case "meal":
+            // dinnerdecider://meal/{UUID}
+            if let idString = url.pathComponents.dropFirst().first,
+               let id = UUID(uuidString: idString) {
+                deepLinkMealId = id
+            }
+        case "kroger-callback":
+            // Handled by ASWebAuthenticationSession callback — no action needed here.
+            break
+        default:
+            break
+        }
     }
 }
 

@@ -576,11 +576,14 @@ private struct MealDatePickerSheet: View {
 private struct ShoppingListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ShoppingListItem.dateAdded) private var items: [ShoppingListItem]
+    @StateObject private var kroger = KrogerService()
 
     @State private var newItem = ""
+    @State private var showKrogerResult = false
     @FocusState private var addFieldFocused: Bool
 
     private var hasChecked: Bool { items.contains(where: \.isChecked) }
+    private var uncheckedItems: [ShoppingListItem] { items.filter { !$0.isChecked } }
 
     private var exportLines: [ShoppingListLogic.Line] {
         items.map { ShoppingListLogic.Line(name: $0.name, isChecked: $0.isChecked) }
@@ -602,6 +605,23 @@ private struct ShoppingListView: View {
                         row(for: item)
                     }
                     .onDelete(perform: delete)
+
+                    if kroger.isConnected && !uncheckedItems.isEmpty {
+                        Section {
+                            Button {
+                                sendToKroger()
+                            } label: {
+                                Label(
+                                    kroger.isExporting ? "Sending to Kroger..." : "Send to Kroger Cart",
+                                    systemImage: "cart.fill"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .disabled(kroger.isExporting)
+                            .buttonStyle(.bordered)
+                            .tint(Color.brandPrimary)
+                        }
+                    }
                 }
                 .dinnerSurfaceBackground()
             }
@@ -621,6 +641,15 @@ private struct ShoppingListView: View {
                         Label("Clear checked", systemImage: "checklist.checked")
                     }
                 }
+            }
+        }
+        .alert("Kroger Cart", isPresented: $showKrogerResult) {
+            Button("OK") {}
+        } message: {
+            if let error = kroger.exportError {
+                Text(error)
+            } else if kroger.exportSuccess {
+                Text("Items added to your Kroger cart! Open the Kroger app to check out.")
             }
         }
     }
@@ -692,6 +721,14 @@ private struct ShoppingListView: View {
             modelContext.delete(item)
         }
         Haptics.tap()
+    }
+
+    private func sendToKroger() {
+        let names = uncheckedItems.map(\.name)
+        Task {
+            let _ = await kroger.addToCart(items: names)
+            showKrogerResult = true
+        }
     }
 }
 

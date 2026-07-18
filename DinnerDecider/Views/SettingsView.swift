@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 /// Preferences that shape recipe suggestions, plus model management and credits.
@@ -10,15 +11,20 @@ struct SettingsView: View {
     @AppStorage(PrefKey.debugSimulateFailure) private var simulateFailure = false
 
     private let locator = ModelFileLocator()
+    @StateObject private var kroger = KrogerService()
 
     @State private var debugTapCount = 0
     @State private var showDebug = false
     @State private var showTasteWizard = false
+    @State private var showKrogerAuth = false
+    @State private var krogerZip = ""
+    @State private var krogerStores: [KrogerService.KrogerStore] = []
 
     var body: some View {
         NavigationStack {
             Form {
                 tasteProfileSection
+                krogerSection
                 dietSection
                 allergiesSection
                 cuisinesSection
@@ -64,6 +70,78 @@ struct SettingsView: View {
             Text("Your Taste")
         } footer: {
             Text("Tell us what you love and hate so recipes match your palate.")
+        }
+    }
+
+    // MARK: - Kroger
+
+    private var krogerSection: some View {
+        Section {
+            if kroger.isConnected {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.brandSecondary)
+                    Text("Connected")
+                    Spacer()
+                    Button("Disconnect", role: .destructive) {
+                        kroger.disconnect()
+                    }
+                    .font(.dmCaption)
+                }
+
+                if kroger.storeName.isEmpty {
+                    HStack {
+                        TextField("Zip code", text: $krogerZip)
+                            .keyboardType(.numberPad)
+                            .frame(width: 80)
+                        Button("Find stores") {
+                            Task {
+                                krogerStores = await kroger.searchStores(zipCode: krogerZip)
+                            }
+                        }
+                        .disabled(krogerZip.count < 5)
+                    }
+                    ForEach(krogerStores) { store in
+                        Button {
+                            kroger.selectStore(store)
+                            krogerStores = []
+                        } label: {
+                            VStack(alignment: .leading) {
+                                Text(store.name).font(.dmBody)
+                                Text(store.address).font(.dmCaption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } else {
+                    HStack {
+                        Label(kroger.storeName, systemImage: "storefront")
+                        Spacer()
+                        Button("Change") {
+                            kroger.selectStore(KrogerService.KrogerStore(id: "", name: "", address: "", chain: ""))
+                        }
+                        .font(.dmCaption)
+                    }
+                }
+            } else {
+                Button {
+                    Task {
+                        if let url = await kroger.connect() {
+                            showKrogerAuth = true
+                        }
+                    }
+                } label: {
+                    Label("Connect Kroger", systemImage: "cart")
+                }
+            }
+        } header: {
+            Text("Grocery Delivery")
+        } footer: {
+            Text(kroger.isConnected
+                 ? "Your shopping list can be sent directly to your Kroger cart."
+                 : "Connect your Kroger account to send shopping lists to your cart.")
+        }
+        .sheet(isPresented: $showKrogerAuth) {
+            KrogerAuthSheet(kroger: kroger)
         }
     }
 
