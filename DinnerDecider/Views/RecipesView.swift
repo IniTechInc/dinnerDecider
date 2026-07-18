@@ -52,6 +52,34 @@ struct RecipesView: View {
             .onChange(of: speechRecognizer.transcript) { _, newValue in
                 appModel.moodText = newValue
             }
+            .onChange(of: speechRecognizer.isListening) { wasListening, isNowListening in
+                // When speech stops and we have mood text + inventory, auto-generate.
+                if wasListening && !isNowListening && !appModel.moodText.isEmpty && !items.isEmpty {
+                    Haptics.tap()
+                    appModel.requestRecipes(fromItemNames: items.map(\.name))
+                }
+            }
+            .overlay {
+                // Surface speech errors as a brief toast.
+                if let error = speechRecognizer.errorMessage {
+                    VStack {
+                        Spacer()
+                        Text(error)
+                            .font(.dmCaption)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.brandPrimary.opacity(0.9), in: Capsule())
+                            .padding(.bottom, 20)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            speechRecognizer.errorMessage = nil
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -82,6 +110,11 @@ struct RecipesView: View {
                 TextField("I'm feeling like Italian tonight...", text: $appModel.moodText)
                     .font(.dmBody)
                     .submitLabel(.done)
+                    .onSubmit {
+                        guard !items.isEmpty else { return }
+                        Haptics.tap()
+                        appModel.requestRecipes(fromItemNames: items.map(\.name))
+                    }
                 if !appModel.moodText.isEmpty {
                     Button {
                         appModel.moodText = ""

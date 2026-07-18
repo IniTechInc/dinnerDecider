@@ -84,12 +84,18 @@ final class SpeechRecognizer: ObservableObject {
         isListening = true
 
         recognitionTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let result {
-                    self.transcript = result.bestTranscription.formattedString
+            guard let self else { return }
+            let transcription = result?.bestTranscription.formattedString
+            let isFinal = result?.isFinal ?? false
+            let errorDesc = error?.localizedDescription
+            DispatchQueue.main.async {
+                if let transcription {
+                    self.transcript = transcription
                 }
-                if error != nil || (result?.isFinal ?? false) {
+                if errorDesc != nil || isFinal {
+                    if let errorDesc {
+                        print("[Speech] Recognition error: \(errorDesc)")
+                    }
                     self.stopListening()
                 }
             }
