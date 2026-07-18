@@ -6,6 +6,11 @@ options:
   createIntermediateGroups: true
   xcodeVersion: "26.3"
 
+packages:
+  LocalLLMClient:
+    url: https://github.com/tattn/LocalLLMClient.git
+    exactVersion: "0.5.0"
+
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -21,6 +26,11 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - DinnerDecider
+    dependencies:
+      - package: LocalLLMClient
+        product: LocalLLMClient
+      - package: LocalLLMClient
+        product: LocalLLMClientLlama
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.philwoolley.dinnerdecider
@@ -28,6 +38,8 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: YES
+        SWIFT_OBJC_INTEROP_MODE: objcxx
+        CODE_SIGN_ENTITLEMENTS: DinnerDecider/DinnerDecider.entitlements
     info:
       path: DinnerDecider/Info.plist
       properties:
@@ -55,6 +67,7 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.philwoolley.dinnerdecider.tests
+        SWIFT_OBJC_INTEROP_MODE: objcxx
 
 schemes:
   DinnerDecider:

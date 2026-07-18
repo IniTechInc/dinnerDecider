@@ -11,11 +11,27 @@ import Foundation
 struct ModelFileLocator {
 
     /// Prefix every acceptable weights file must start with.
+    /// Matches the real GGUF, e.g. `gemma-4-E4B-it-Q4_0.gguf`.
     static let modelPrefix = "gemma-4-E4B-it"
-    /// The vision projector filename llama.cpp needs alongside the weights.
-    static let mmprojName = "mmproj-F16.gguf"
+    /// Preferred vision projector filename (the good, post-June-4 Q8_0 build).
+    static let preferredMmprojName = "mmproj-gemma-4-E4B-it-Q8_0.gguf"
     /// UserDefaults key holding the user's preferred weights filename.
     static let selectedModelKey = "selectedModelFileName"
+
+    /// Whether a filename is an acceptable vision projector (`mmproj*.gguf`).
+    static func isMmproj(_ name: String) -> Bool {
+        let lower = name.lowercased()
+        return lower.hasPrefix("mmproj") && lower.hasSuffix(".gguf")
+    }
+
+    /// Choose the projector file from candidates, preferring the Q8_0 build.
+    static func chooseMmprojFile(candidates: [String]) -> String? {
+        let eligible = candidates.filter(isMmproj)
+        if eligible.contains(preferredMmprojName) {
+            return preferredMmprojName
+        }
+        return eligible.first
+    }
 
     private let fileManager: FileManager
     private let defaults: UserDefaults
@@ -99,10 +115,27 @@ struct ModelFileLocator {
         return nil
     }
 
-    /// Resolved URL to the vision projector file.
-    var mmprojURL: URL? {
+    /// All projector files (`mmproj*.gguf`) across the search directories.
+    func availableMmprojFileNames() -> [String] {
+        var names: [String] = []
         for directory in searchDirectories {
-            let url = directory.appendingPathComponent(Self.mmprojName)
+            guard let contents = try? fileManager.contentsOfDirectory(atPath: directory.path) else {
+                continue
+            }
+            for name in contents where Self.isMmproj(name) && !names.contains(name) {
+                names.append(name)
+            }
+        }
+        return names
+    }
+
+    /// Resolved URL to the vision projector file (prefers the Q8_0 build).
+    var mmprojURL: URL? {
+        guard let chosen = Self.chooseMmprojFile(candidates: availableMmprojFileNames()) else {
+            return nil
+        }
+        for directory in searchDirectories {
+            let url = directory.appendingPathComponent(chosen)
             if fileManager.fileExists(atPath: url.path) {
                 return url
             }
