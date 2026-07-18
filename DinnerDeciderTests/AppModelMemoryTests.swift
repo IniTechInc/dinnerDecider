@@ -23,6 +23,11 @@ private final class GatedLLMService: LLMService {
         return IdentifiedItem(name: "x", brand: nil, category: "other", confidence: 1)
     }
 
+    func identifyAllItems(image: CGImage, ocrText: String) async throws -> [IdentifiedItem] {
+        await block()
+        return [IdentifiedItem(name: "x", brand: nil, category: "other", confidence: 1)]
+    }
+
     func generateText(prompt: String) async throws -> String {
         await block()
         return "{\"makeNow\":[],\"almostThere\":[]}"
