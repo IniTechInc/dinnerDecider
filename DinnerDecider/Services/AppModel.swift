@@ -84,6 +84,12 @@ final class AppModel: ObservableObject {
 
     private let defaults: UserDefaults
 
+    /// Explicit state machine for the on-device model. It is the single authority
+    /// on whether an unload is safe right now: memory-pressure and reload requests
+    /// are routed through it so the multi-GB llama client is never freed while a
+    /// load or an inference is still in flight (the crash this fixes).
+    private var lifecycle = ModelLifecycle()
+
     /// Token for the UIKit memory-warning observer, removed on deinit.
     private var memoryWarningObserver: NSObjectProtocol?
     /// Low-level memory-pressure source, catching warning/critical events even
@@ -99,7 +105,13 @@ final class AppModel: ObservableObject {
         self.llm = resolved
         self.isUsingMock = resolved is MockLLMService
         self.defaults = defaults
-        registerForMemoryPressure()
+        // The headless self-test drives its own GemmaLLMService and must run in a
+        // process that behaves exactly like the last known-good build: no extra
+        // memory-pressure machinery firing a storm of no-op handlers while it
+        // loads the model. Only the normal app installs the pressure sources.
+        if !SelfTest.isRequested {
+            registerForMemoryPressure()
+        }
     }
 
     deinit {
@@ -119,28 +131,52 @@ final class AppModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.handleMemoryPressure() }
+            // UIKit only posts a plain memory warning, never a "critical" tier.
+            Task { @MainActor in self?.handleMemoryPressure(.warning) }
         }
 
         let source = DispatchSource.makeMemoryPressureSource(
             eventMask: [.warning, .critical],
             queue: .main
         )
-        source.setEventHandler { [weak self] in
-            Task { @MainActor in self?.handleMemoryPressure() }
+        source.setEventHandler { [weak self, weak source] in
+            let level: MemoryPressureLevel =
+                (source?.data.contains(.critical) ?? false) ? .critical : .warning
+            Task { @MainActor in self?.handleMemoryPressure(level) }
         }
         source.resume()
         memoryPressureSource = source
     }
 
-    /// Release the ~3.5GB wired on-device model so the system reclaims memory
-    /// rather than jetsamming us (the documented `vm-pageshortage` failure mode).
-    /// A no-op mid-scan-free state is cheap; the next scan reloads the model.
-    func handleMemoryPressure() {
-        guard isModelLoaded || llm.isLoaded else { return }
+    /// React to system memory pressure.
+    ///
+    /// The lifecycle decides what is safe: a `.warning` while the model is loading
+    /// or inferring is IGNORED (those phases legitimately spike wired memory, and
+    /// freeing the client mid-operation is the use-after-free that crashed the
+    /// app). Freeing the ~3.5GB wired model only happens when it is resident and
+    /// idle, or is deferred until an in-flight operation drains. Defaults to
+    /// `.warning` so existing callers and tests keep the idle-unload behavior.
+    func handleMemoryPressure(_ level: MemoryPressureLevel = .warning) {
+        if case .proceed = lifecycle.handleMemoryPressure(level) {
+            performUnload()
+        }
+    }
+
+    /// Actually free the resident client and record that we released it under
+    /// pressure (drives the "warming up again" treatment on the next load).
+    private func performUnload() {
         llm.unloadModel()
+        lifecycle.finishUnload()
         isModelLoaded = false
         didReleaseModelForMemory = true
+    }
+
+    /// Honor a unload that was deferred while the model was busy, now that we are
+    /// back to idle. Call after any load or inference completes.
+    private func drainDeferredUnloadIfNeeded() {
+        if case .proceed = lifecycle.drainPendingUnload() {
+            performUnload()
+        }
     }
 
     /// Real service if the model is on the device, mock otherwise.
@@ -158,12 +194,38 @@ final class AppModel: ObservableObject {
     }
 
     func loadModelIfNeeded() async {
-        guard !isModelLoaded, !isLoadingModel else { return }
+        // Coalesce duplicate loads and skip when already resident.
+        switch lifecycle.beginLoad() {
+        case .coalesced, .alreadyLoaded:
+            return
+        case .proceed:
+            break
+        }
         isLoadingModel = true
         try? await llm.loadModel()
-        isModelLoaded = llm.isLoaded
+        let loaded = llm.isLoaded
+        lifecycle.finishLoad(success: loaded)
+        isModelLoaded = loaded
         isLoadingModel = false
-        if isModelLoaded { didReleaseModelForMemory = false }
+        if loaded { didReleaseModelForMemory = false }
+        // A `.critical` event or an explicit unload may have arrived mid-load; it
+        // was deferred, so honor it now that the client is resident and idle.
+        drainDeferredUnloadIfNeeded()
+    }
+
+    /// Bracket a single model inference so the lifecycle knows the client is in
+    /// use. While `inferring`, memory pressure can only *defer* an unload, never
+    /// free the client out from under the running operation. On completion any
+    /// deferred unload is honored.
+    private func runInference<T>(_ operation: () async throws -> T) async rethrows -> T {
+        let started = lifecycle.beginInference()
+        defer {
+            if started {
+                lifecycle.finishInference()
+                drainDeferredUnloadIfNeeded()
+            }
+        }
+        return try await operation()
     }
 
     // MARK: - Scan pipeline
@@ -219,7 +281,10 @@ final class AppModel: ObservableObject {
                     )
                 )
                 let ocrText = await Task.detached { OCRService.recognizeText(in: cropped) }.value
-                if let identified = try? await llm.identifyItem(image: cropped, ocrText: ocrText) {
+                let identified = try? await runInference {
+                    try await self.llm.identifyItem(image: cropped, ocrText: ocrText)
+                }
+                if let identified {
                     results.append(identified)
                     // Gentle stream-in spring, but honour Reduce Motion.
                     let reduceMotion = UIAccessibility.isReduceMotionEnabled
@@ -282,7 +347,7 @@ final class AppModel: ObservableObject {
             // real error-and-retry UI can be demonstrated end to end.
             raw = "Sure! Here are some ideas: { this response is not valid json at all"
         } else {
-            raw = (try? await llm.generateText(prompt: prompt)) ?? ""
+            raw = (try? await runInference { try await self.llm.generateText(prompt: prompt) }) ?? ""
         }
 
         // User cancelled while the model was thinking: leave state untouched.
