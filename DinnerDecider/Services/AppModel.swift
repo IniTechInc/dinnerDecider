@@ -185,8 +185,15 @@ final class AppModel: ObservableObject {
     }
 
     /// Real service if the model is on the device, mock otherwise.
+    /// On the simulator the Metal GPU backend for the mmproj (vision projector)
+    /// cannot allocate XPC shared-memory buffers (`MTLSimDevice` limitation),
+    /// so the real model always crashes at load time. Force the mock there.
     static func makeDefaultService() -> LLMService {
-        ModelFileLocator().isModelPresent ? GemmaLLMService() : MockLLMService()
+        #if targetEnvironment(simulator)
+        return MockLLMService()
+        #else
+        return ModelFileLocator().isModelPresent ? GemmaLLMService() : MockLLMService()
+        #endif
     }
 
     // MARK: - Model loading
