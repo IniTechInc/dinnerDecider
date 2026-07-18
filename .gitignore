@@ -32,3 +32,4 @@ training/harness/llama.cpp/
 training/harness/smoke_data/
 training/harness/__pycache__/
 *.safetensors
+eval/testset/photos/

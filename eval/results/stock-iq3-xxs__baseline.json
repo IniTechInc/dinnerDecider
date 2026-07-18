@@ -1,0 +1,107 @@
+{
+  "run_label": "stock-IQ3_XXS",
+  "mode": "baseline",
+  "photos": 7,
+  "mean_recall": 0.1608946608946609,
+  "mean_precision": 0.2634353741496599,
+  "f1": 0.19977537148432373,
+  "per_photo": [
+    {
+      "expected": 10,
+      "predicted": 0,
+      "matched": 0,
+      "recall": 0.0,
+      "precision": 0.0,
+      "filename": "phil_01.jpg",
+      "predicted_names": []
+    },
+    {
+      "expected": 10,
+      "predicted": 8,
+      "matched": 5,
+      "recall": 0.5,
+      "precision": 0.625,
+      "filename": "phil_02.jpg",
+      "predicted_names": [
+        "Cheese",
+        "Eggs",
+        "Tomatoes",
+        "Meat",
+        "Milk",
+        "Mustard",
+        "Mayonnaise",
+        "Pickles"
+      ]
+    },
+    {
+      "expected": 10,
+      "predicted": 0,
+      "matched": 0,
+      "recall": 0.0,
+      "precision": 0.0,
+      "filename": "phil_03.jpg",
+      "predicted_names": []
+    },
+    {
+      "expected": 6,
+      "predicted": 3,
+      "matched": 1,
+      "recall": 0.16666666666666666,
+      "precision": 0.3333333333333333,
+      "filename": "phil_04.jpg",
+      "predicted_names": [
+        "milk",
+        "ketchup",
+        "mustard"
+      ]
+    },
+    {
+      "expected": 11,
+      "predicted": 7,
+      "matched": 2,
+      "recall": 0.18181818181818182,
+      "precision": 0.2857142857142857,
+      "filename": "phil_05.jpg",
+      "predicted_names": [
+        "milk",
+        "jam",
+        "pickles",
+        "mustard",
+        "sauce",
+        "crackers",
+        "snacks"
+      ]
+    },
+    {
+      "expected": 9,
+      "predicted": 5,
+      "matched": 1,
+      "recall": 0.1111111111111111,
+      "precision": 0.2,
+      "filename": "phil_06.jpg",
+      "predicted_names": [
+        "jam",
+        "spices",
+        "cooking oil",
+        "snacks",
+        "condiments"
+      ]
+    },
+    {
+      "expected": 12,
+      "predicted": 5,
+      "matched": 2,
+      "recall": 0.16666666666666666,
+      "precision": 0.4,
+      "filename": "phil_07.jpg",
+      "predicted_names": [
+        "potatoes",
+        "oatmeal",
+        "flour",
+        "sugar",
+        "spices"
+      ]
+    }
+  ],
+  "timestamp": "2026-07-18 12:51:38"
+}
