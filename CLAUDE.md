@@ -32,9 +32,16 @@ iOS app: photograph your fridge, Gemma 4 E4B identifies items 100% on-device, bu
 
 ## Model files (never commit; git-ignored)
 
-- Verified-good pair (post-June-4 conversion) in HF cache: `~/.cache/huggingface/hub/models--ggml-org--gemma-4-E4B-it-GGUF/snapshots/06f24bb.../gemma-4-E4B-it-Q4_0.gguf` + `mmproj-gemma-4-E4B-it-Q8_0.gguf`
-- Deliver to device: copy both into the app's Documents (Finder file sharing or `xcrun devicectl`). App auto-detects; falls back to mock with an orange demo badge when absent.
+- Memory-optimized weights (preferred on device): `unsloth/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-UD-IQ3_XXS.gguf` (3.46 GiB) with the ggml-org `mmproj-gemma-4-E4B-it-Q8_0.gguf`. Chosen to fix an on-device `vm-pageshortage` OOM: the whole model is GPU-resident (wired Metal), so IQ3_XXS saves ~0.82 GiB wired vs Q4_0, decoded faster than Q3_K_S on Apple Metal (10.3 vs 8.8 tok/s in MacHarness), and emitted the cleanest JSON. `Q3_K_S.gguf` (3.60 GiB, ~0.68 GiB saved) is the fallback. `ModelFileLocator.defaultModelPreference` encodes this order.
+- Verified-good larger pair (post-June-4 conversion): `models--ggml-org--gemma-4-E4B-it-GGUF/snapshots/06f24bb.../gemma-4-E4B-it-Q4_0.gguf` + `mmproj-gemma-4-E4B-it-Q8_0.gguf`. Still works but is the wired-memory hog that caused the crash; only use if a smaller quant is unavailable.
+- Deliver to device: copy weights + mmproj into the app's Documents (Finder file sharing or `xcrun devicectl`). App auto-detects; falls back to mock with an orange demo badge when absent.
 - Fine-tuned model: name it `gemma-4-E4B-it-finetuned-*.gguf`, select in Settings > Model. Keep stock mmproj (vision layers frozen in training).
+
+## Memory / OOM notes
+
+- The crash is a systemwide `vm-pageshortage` jetsam (not app-footprint), driven by WIRED Metal memory: llama.cpp uploads all weights + mmproj + KV cache into GPU buffers. The Increased Memory Limit entitlement does NOT help this. Lever = shrink wired: smaller quant + smaller `context` (1536, in GemmaLLMService).
+- LocalLLMClient 0.5.0 does NOT expose `n_gpu_layers`, KV-cache type (q8 KV), flash-attention, or the mmproj `use_gpu` toggle. `LlamaClient.Parameter` only exposes `context` and `batch` (and sampling). `Model.swift` hardcodes full GPU offload + `use_mmap=true`; `Multimodal.swift` hardcodes `use_gpu=true`. Reducing GPU-resident weights (partial offload) or running the mmproj on CPU would each save more wired memory but require forking the package.
+- Headless memory self-test: launch with `--llm-selftest` (see SelfTest.swift). Writes `Documents/selftest_result.txt` with peak footprint + available memory. Bundled test image is `DinnerDecider/Resources/selftest.png`.
 
 ## Known gotchas
 

@@ -13,8 +13,16 @@ import LocalLLMClientLlama
 
 let home = FileManager.default.homeDirectoryForCurrentUser.path
 let snapshot = "\(home)/.cache/huggingface/hub/models--ggml-org--gemma-4-E4B-it-GGUF/snapshots/06f24bb269339b2a19a5167199b81e89ef813c10"
-let modelURL = URL(fileURLWithPath: "\(snapshot)/gemma-4-E4B-it-Q4_0.gguf")
-let mmprojURL = URL(fileURLWithPath: "\(snapshot)/mmproj-gemma-4-E4B-it-Q8_0.gguf")
+
+// Model + mmproj paths default to the known-good ggml-org pair, but can be
+// overridden on the command line so different quants can be A/B tested for
+// quality and tokens/sec without editing this file:
+//   swift run MacHarness [modelPath] [mmprojPath]
+let arguments = Array(CommandLine.arguments.dropFirst())
+let defaultModelPath = "\(snapshot)/gemma-4-E4B-it-Q4_0.gguf"
+let defaultMmprojPath = "\(snapshot)/mmproj-gemma-4-E4B-it-Q8_0.gguf"
+let modelURL = URL(fileURLWithPath: arguments.count > 0 ? arguments[0] : defaultModelPath)
+let mmprojURL = URL(fileURLWithPath: arguments.count > 1 ? arguments[1] : defaultMmprojPath)
 let imagePath = "/private/tmp/claude-501/-Users-philwoolley-Projects-gemma4hackathon/e7d67faa-807c-441f-af53-fba52792188d/scratchpad/test_box.png"
 
 func log(_ s: String) { FileHandle.standardError.write((s + "\n").data(using: .utf8)!) }
@@ -55,6 +63,8 @@ func main() async {
     let image = downscale(raw)
 
     log("Loading Gemma 4 E4B (grammar-free, single resident client)...")
+    log("  model:  \(modelURL.lastPathComponent)")
+    log("  mmproj: \(mmprojURL.lastPathComponent)")
     let t0 = Date()
     let client: LlamaClient
     do {

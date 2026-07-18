@@ -13,6 +13,23 @@ struct ModelFileLocator {
     /// Prefix every acceptable weights file must start with.
     /// Matches the real GGUF, e.g. `gemma-4-E4B-it-Q4_0.gguf`.
     static let modelPrefix = "gemma-4-E4B-it"
+
+    /// Built-in weights preference, most-preferred first, used when the user has
+    /// not pinned a file. Smaller quants are preferred over the larger Q4_0 /
+    /// Q4_K_M builds because the whole model runs GPU-resident on device, so a
+    /// smaller weights file is directly less WIRED Metal memory, which is what
+    /// caused the on-device vm-pageshortage jetsam.
+    ///
+    /// Order is by measured trade-off in the macOS harness against this GGUF:
+    /// - UD-IQ3_XXS (3.46 GiB): saves ~0.82 GiB of wired vs Q4_0, emitted the
+    ///   cleanest/most compact JSON, and decoded *faster* than Q3_K_S on Apple
+    ///   Metal (10.3 vs 8.8 tok/s) - so the usual "IQ is slow on Metal" caveat
+    ///   did not hold on this hardware. Preferred.
+    /// - Q3_K_S (3.60 GiB): saves ~0.68 GiB, also correct; kept as the fallback.
+    static let defaultModelPreference = [
+        "gemma-4-E4B-it-UD-IQ3_XXS.gguf",
+        "gemma-4-E4B-it-Q3_K_S.gguf"
+    ]
     /// Preferred vision projector filename (the good, post-June-4 Q8_0 build).
     static let preferredMmprojName = "mmproj-gemma-4-E4B-it-Q8_0.gguf"
     /// UserDefaults key holding the user's preferred weights filename.
@@ -46,8 +63,13 @@ struct ModelFileLocator {
     /// Choose the weights file from a list of candidate filenames.
     ///
     /// Only files that start with `modelPrefix`, end in `.gguf`, and are not the
-    /// mmproj projector are eligible. If `preferred` is among the eligible files
-    /// it wins; otherwise the first eligible file is used.
+    /// mmproj projector are eligible. Selection order:
+    /// 1. the user's explicitly pinned `preferred` file, if present (this is how a
+    ///    fine-tuned build is chosen, via Settings > Model);
+    /// 2. the first available file from `defaultModelPreference` (memory-optimized
+    ///    quants), so the smaller Q3_K_S wins over a larger Q4 build when both are
+    ///    installed;
+    /// 3. otherwise the first eligible file (unchanged fallback).
     static func chooseModelFile(candidates: [String], preferred: String?) -> String? {
         let eligible = candidates.filter {
             $0.hasPrefix(modelPrefix)
@@ -56,6 +78,9 @@ struct ModelFileLocator {
         }
         if let preferred, eligible.contains(preferred) {
             return preferred
+        }
+        if let preferredQuant = defaultModelPreference.first(where: { eligible.contains($0) }) {
+            return preferredQuant
         }
         return eligible.first
     }

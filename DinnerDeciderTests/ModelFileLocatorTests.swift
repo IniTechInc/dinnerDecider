@@ -54,6 +54,58 @@ final class ModelFileLocatorTests: XCTestCase {
         XCTAssertEqual(chosen, "gemma-4-E4B-it-Q4_0.gguf")
     }
 
+    // MARK: - Memory-optimized default preference
+
+    func testPrefersSmallerQuantOverQ4WhenBothPresent() {
+        // No pinned preference: the memory-optimized Q3_K_S should win over the
+        // larger Q4_0 to keep WIRED Metal memory down on device.
+        let chosen = ModelFileLocator.chooseModelFile(
+            candidates: [
+                "gemma-4-E4B-it-Q4_0.gguf",
+                "gemma-4-E4B-it-Q3_K_S.gguf",
+                "mmproj-gemma-4-E4B-it-Q8_0.gguf"
+            ],
+            preferred: nil
+        )
+        XCTAssertEqual(chosen, "gemma-4-E4B-it-Q3_K_S.gguf")
+    }
+
+    func testUserPinnedFileStillWinsOverDefaultPreference() {
+        // An explicit user selection always overrides the built-in preference.
+        let chosen = ModelFileLocator.chooseModelFile(
+            candidates: [
+                "gemma-4-E4B-it-Q4_0.gguf",
+                "gemma-4-E4B-it-Q3_K_S.gguf"
+            ],
+            preferred: "gemma-4-E4B-it-Q4_0.gguf"
+        )
+        XCTAssertEqual(chosen, "gemma-4-E4B-it-Q4_0.gguf")
+    }
+
+    func testPrefersIQ3XXSOverQ3AndQ4WhenAllPresent() {
+        // Full preference order: the most memory-efficient quant (UD-IQ3_XXS)
+        // wins over Q3_K_S and Q4_0 when nothing is pinned.
+        let chosen = ModelFileLocator.chooseModelFile(
+            candidates: [
+                "gemma-4-E4B-it-Q4_0.gguf",
+                "gemma-4-E4B-it-Q3_K_S.gguf",
+                "gemma-4-E4B-it-UD-IQ3_XXS.gguf"
+            ],
+            preferred: nil
+        )
+        XCTAssertEqual(chosen, "gemma-4-E4B-it-UD-IQ3_XXS.gguf")
+    }
+
+    func testFallsBackToFirstEligibleWhenNoPreferredQuantPresent() {
+        // Neither pinned nor a memory-optimized quant present: unchanged fallback
+        // to the first eligible file.
+        let chosen = ModelFileLocator.chooseModelFile(
+            candidates: ["gemma-4-E4B-it-Q4_K_M.gguf", "gemma-4-E4B-it-Q4_0.gguf"],
+            preferred: nil
+        )
+        XCTAssertEqual(chosen, "gemma-4-E4B-it-Q4_K_M.gguf")
+    }
+
     // MARK: - Projector selection
 
     func testPrefersQ8ProjectorWhenPresent() {
