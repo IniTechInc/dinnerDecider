@@ -21,7 +21,11 @@ enum CropService {
     private static let tileOverlap: CGFloat = 0.20
 
     static func crops(from image: UIImage) -> CropResult {
-        guard let cgImage = image.cgImage else {
+        // Normalize orientation and handle CIImage-backed UIImages (e.g. HDR photos from
+        // PhotosPicker). UIImage(data:) for HEIC/HDR often has cgImage == nil, which would
+        // silently return zero crops. Drawing through UIGraphicsImageRenderer flattens
+        // both the color space and the EXIF rotation into a plain up-oriented CGImage.
+        guard let cgImage = normalizedCGImage(from: image) else {
             return CropResult(images: [], rects: [])
         }
         let width = cgImage.width
@@ -49,7 +53,8 @@ enum CropService {
     // MARK: - Detection
 
     private static func detectBoxes(in cgImage: CGImage, width: Int, height: Int) -> [CGRect] {
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        // Image is already orientation-normalized via normalizedCGImage, so .up is correct.
+        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:])
 
         let saliency = VNGenerateObjectnessBasedSaliencyImageRequest()
         let rectangles = VNDetectRectanglesRequest()
@@ -118,6 +123,25 @@ enum CropService {
         let intersectionArea = intersection.width * intersection.height
         let unionArea = a.width * a.height + b.width * b.height - intersectionArea
         return unionArea > 0 ? intersectionArea / unionArea : 0
+    }
+
+    /// Returns a CGImage that is guaranteed to be in the `.up` orientation and
+    /// has pixel data (not a deferred CIImage). This handles two failure modes:
+    ///
+    /// 1. HDR / HEIC photos from PhotosPicker: `UIImage(data:)` may produce a
+    ///    CIImage-backed UIImage where `.cgImage` is nil.
+    /// 2. Portrait iPhone photos: the raw CGImage is landscape with an EXIF
+    ///    rotation tag stored in `imageOrientation`. Without normalization,
+    ///    Vision detects boxes in the wrong coordinate frame.
+    private static func normalizedCGImage(from image: UIImage) -> CGImage? {
+        if image.imageOrientation == .up, let cg = image.cgImage { return cg }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }.cgImage
     }
 
     /// A 3x3 grid of overlapping tiles covering the whole image.
