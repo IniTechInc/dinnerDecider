@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dinnerDecider - Hackathon Demo</title>
+<style>
+  @font-face {
+    font-family: "DM Serif Display";
+    src: url("file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Resources/Fonts/DMSerifDisplay-Regular.ttf") format("truetype");
+    font-weight: 400; font-style: normal; font-display: block;
+  }
+  @font-face {
+    font-family: "DM Sans";
+    src: url("file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Resources/Fonts/DMSans-Regular.ttf") format("truetype");
+    font-weight: 400; font-style: normal; font-display: block;
+  }
+  @font-face {
+    font-family: "DM Sans";
+    src: url("file:///Users/philwoolley/Projects/gemma4hackathon/DinnerDecider/Resources/Fonts/DMSans-SemiBold.ttf") format("truetype");
+    font-weight: 600; font-style: normal; font-display: block;
+  }
+
+  :root {
+    --cream:   #FFF6E8;
+    --charcoal:#1F1D1B;
+    --terra:   #E4573D;
+    --sage:    #7FA27A;
+    --amber:   #F2B23C;
+    --greige:  #CFC7BD;
+    --muted:   #6E655B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: var(--charcoal);
+    overflow: hidden;
+    font-family: "DM Sans", system-ui, sans-serif;
+    color: var(--charcoal);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 16:9 stage, centred, letterboxed. 1em == 1% of stage width. */
+  #stage {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(100vw, 177.78vh);
+    height: min(56.25vw, 100vh);
+    font-size: min(1vw, 1.7778vh);
+    background: var(--cream);
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6em 7em;
+  }
+  .slide.active { display: flex; }
+
+  h1 { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; line-height: .98; letter-spacing: -0.01em; }
+  h2 { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; line-height: 1.02; }
+  .serif { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; }
+
+  .eyebrow {
+    font-size: 1.55em; font-weight: 600; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--terra);
+  }
+  .muted { color: var(--muted); }
+
+  /* ---- soft phone frame ---- */
+  .phone {
+    aspect-ratio: 1206 / 2622;
+    border-radius: 1.7em;
+    overflow: hidden;
+    background: #000;
+    border: 0.42em solid var(--charcoal);
+    box-shadow: 0 1.6em 3.4em -1.1em rgba(31,29,27,.45),
+                0 0.5em 1.2em -0.5em rgba(31,29,27,.30);
+  }
+  .phone img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 0.55em 1.15em; border-radius: 999px;
+    font-size: 1.35em; font-weight: 600;
+    background: rgba(127,162,122,0.16);
+    color: #4c6a49;
+    border: 0.09em solid rgba(127,162,122,0.45);
+  }
+
+  /* ---- navigation dots ---- */
+  #dots {
+    position: fixed; bottom: 2.4vh; right: 2.4vw;
+    display: flex; gap: 0.9vh; z-index: 20;
+  }
+  #dots button {
+    width: 1.35vh; height: 1.35vh; border-radius: 999px;
+    border: 0.18vh solid rgba(255,246,232,0.85);
+    background: transparent; cursor: pointer; padding: 0;
+    transition: background .18s ease, transform .18s ease;
+  }
+  #dots button.on { background: var(--terra); border-color: var(--terra); transform: scale(1.18); }
+
+  /* =================== SLIDE 1 =================== */
+  #s1 { align-items: center; text-align: center; justify-content: center; }
+  #s1 .eyebrow { margin-bottom: 1.6em; }
+  #s1 h1 { font-size: 12.5em; color: var(--charcoal); }
+  #s1 h1 .amp { color: var(--terra); }
+  #s1 .one-liner { font-size: 2.5em; margin-top: 0.7em; color: var(--charcoal); max-width: 26em; line-height: 1.28; }
+  #s1 .one-liner b { color: var(--terra); font-weight: 600; }
+  #s1 .card {
+    margin-top: 2.6em; width: 46em; border-radius: 1.2em; overflow: hidden;
+    box-shadow: 0 1.6em 3.4em -1.2em rgba(31,29,27,.45), 0 0.4em 1em -0.4em rgba(31,29,27,.28);
+    border: 0.1em solid rgba(31,29,27,0.06);
+  }
+  #s1 .card img { width: 100%; display: block; }
+  #s1 .team { margin-top: 2.2em; font-size: 1.7em; font-weight: 600; color: var(--muted); }
+  #s1 .team b { color: var(--charcoal); }
+
+  /* =================== SLIDE 2 =================== */
+  #s2 { padding: 4.6em 7em; }
+  #s2 .eyebrow { margin-bottom: 0.8em; }
+  #s2 h2 { font-size: 5.8em; }
+  #s2 .subhead { font-family: "DM Serif Display", Georgia, serif; font-size: 3.15em; color: var(--terra); line-height: 1.08; margin-top: 0.18em; max-width: 22em; }
+  #s2 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 5em; margin-top: 1.9em; }
+  #s2 .col .kh { font-size: 1.45em; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sage); margin-bottom: 0.6em; }
+  #s2 .col.problem .kh { color: var(--muted); }
+  #s2 .col p { font-size: 1.72em; line-height: 1.34; }
+  #s2 .col p + p { margin-top: 0.7em; }
+  #s2 .callout {
+    margin-top: 1.9em; background: rgba(228,87,61,0.08);
+    border-left: 0.5em solid var(--terra); border-radius: 0.6em;
+    padding: 1.2em 1.6em; font-size: 1.72em; line-height: 1.34; max-width: 46em;
+  }
+  #s2 .callout b { font-weight: 600; color: var(--terra); }
+
+  /* =================== SLIDE 3 =================== */
+  #s3 { padding: 4em 6em; }
+  #s3 .eyebrow { margin-bottom: 0.4em; }
+  #s3 h2 { font-size: 5.1em; }
+  #s3 .row { display: flex; gap: 3.4em; margin-top: 1.2em; align-items: flex-start; justify-content: center; }
+  #s3 .fig { display: flex; flex-direction: column; align-items: center; width: 17em; }
+  #s3 .fig .phone { height: 28em; width: auto; }
+  #s3 .fig .step { margin-top: 0.85em; font-size: 1.55em; font-weight: 600; color: var(--charcoal); text-align: center; }
+  #s3 .fig .step .n { color: var(--terra); }
+  #s3 .fig .sub { font-size: 1.2em; color: var(--muted); text-align: center; margin-top: 0.15em; line-height: 1.25; }
+  #s3 .chips { display: flex; flex-wrap: wrap; gap: 0.8em; justify-content: center; margin-top: 1.4em; }
+
+  /* =================== SLIDE 4 =================== */
+  #s4 .eyebrow { margin-bottom: 0.6em; }
+  #s4 h2 { font-size: 6.2em; max-width: 15em; }
+  #s4 h2 em { font-style: normal; color: var(--terra); }
+  #s4 .grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 4.5em; margin-top: 2.1em; align-items: start; }
+  #s4 .lead { font-size: 1.95em; line-height: 1.36; margin-bottom: 1.2em; }
+  #s4 .lead b { font-weight: 600; color: var(--charcoal); }
+  #s4 ul { list-style: none; }
+  #s4 li { font-size: 1.72em; line-height: 1.3; padding-left: 1.7em; position: relative; margin-bottom: 0.75em; }
+  #s4 li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 0.7em; height: 0.7em; border-radius: 0.16em; background: var(--sage); }
+  #s4 li b { font-weight: 600; }
+  #s4 .evalcard {
+    background: #fff; border-radius: 1.1em; padding: 1.9em 2em 1.6em;
+    box-shadow: 0 1.2em 2.8em -1.2em rgba(31,29,27,.30); border: 0.09em solid rgba(31,29,27,0.06);
+  }
+  #s4 .evalcard .cap { font-size: 1.4em; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  #s4 .evalcard .capsub { font-size: 1.3em; color: var(--muted); margin-top: 0.3em; line-height: 1.3; }
+  #s4 table { width: 100%; border-collapse: collapse; margin-top: 1.3em; }
+  #s4 td { padding: 0.62em 0; font-size: 1.72em; border-bottom: 0.09em solid var(--greige); }
+  #s4 td.num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #s4 tr.ship td { border-bottom: none; }
+  #s4 tr.ship td.lbl { font-weight: 600; }
+  #s4 tr.ship td.num { color: var(--terra); font-size: 2em; }
+  #s4 .badge {
+    margin-top: 1.2em; display: inline-block; background: var(--amber); color: var(--charcoal);
+    font-size: 1.5em; font-weight: 600; padding: 0.5em 1em; border-radius: 999px;
+  }
+  #s4 .builds { margin-top: 1.5em; font-size: 1.55em; color: var(--muted); }
+  #s4 .builds b { color: var(--terra); font-weight: 600; }
+
+  /* =================== SLIDE 5 =================== */
+  #s5 .eyebrow { margin-bottom: 0.7em; }
+  #s5 h2 { font-size: 7em; }
+  #s5 h2 em { font-style: normal; color: var(--terra); }
+  #s5 .next {
+    margin-top: 1.9em; font-size: 2.15em; line-height: 1.38; max-width: 40em;
+  }
+  #s5 .next b { font-weight: 600; }
+  #s5 .stat { color: var(--sage); font-weight: 600; }
+  #s5 .divider { width: 6em; height: 0.32em; background: var(--greige); border-radius: 999px; margin: 2.4em 0 2em; }
+  #s5 .close { font-family: "DM Serif Display", Georgia, serif; font-size: 4.4em; color: var(--charcoal); line-height: 1.05; }
+  #s5 .close em { font-style: normal; color: var(--terra); }
+  #s5 .team { margin-top: 2.2em; font-size: 1.85em; }
+  #s5 .team .label { font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-size: 0.8em; }
+  #s5 .team .names { color: var(--charcoal); font-weight: 600; margin-top: 0.3em; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- ===================== SLIDE 1 : TITLE ===================== -->
+  <section class="slide active" id="s1">
+    <div class="eyebrow">Team IniTech &nbsp;&middot;&nbsp; Build with Gemma &nbsp;&middot;&nbsp; On-Device AI track</div>
+    <h1>dinner<span class="amp">Decider</span></h1>
+    <div class="one-liner">Point your phone at the fridge, get dinner. Every answer is computed <b>100% on the phone.</b></div>
+    <div class="card">
+      <img src="file:///Users/philwoolley/Projects/gemma4hackathon/writeup/kaggle-media/dinnerdecider-card-560x280.png" alt="dinnerDecider">
+    </div>
+    <div class="team">Gemma 4 E4B, on device &nbsp;&middot;&nbsp; <b>Phil Woolley</b> &amp; <b>olsonjb</b></div>
+  </section>
+
+  <!-- ===================== SLIDE 2 : PROBLEM + PRIVACY ===================== -->
+  <section class="slide" id="s2">
+    <div class="eyebrow">The nightly question</div>
+    <h2>&ldquo;What&rsquo;s for dinner?&rdquo;</h2>
+    <div class="subhead">Answered by a model that never phones home.</div>
+    <div class="cols">
+      <div class="col problem">
+        <div class="kh">The problem, every day</div>
+        <p>It is 6 PM, you are tired and hungry, staring into a full fridge with no idea what to make. The easy escape is takeout.</p>
+        <p>Meanwhile the half bag of spinach behind the milk quietly turns into food waste. It is a visibility problem.</p>
+      </div>
+      <div class="col answer">
+        <div class="kh">The on-device answer</div>
+        <p>dinnerDecider turns your kitchen into a structured inventory, then into recipes you can cook right now.</p>
+        <p>Gemma 4 runs entirely on the phone. No server, no account, no round trip.</p>
+      </div>
+    </div>
+    <div class="callout">
+      Fridge photos are intimate: our own test shots have <b>medications, supplements, and alcohol</b> next to the food. With dinnerDecider none of it ever leaves the phone. It works in <b>airplane mode.</b>
+    </div>
+  </section>
+
+  <!-- ===================== SLIDE 3 : HOW IT WORKS ===================== -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">How it works &nbsp;&middot;&nbsp; three steps, no manual</div>
+    <h2 class="serif">Photograph. Confirm. Cook.</h2>
+    <div class="row">
+      <div class="fig">
+        <div class="phone"><img src="file:///Users/philwoolley/Projects/gemma4hackathon/writeup/kaggle-media/05-scan-home.png" alt="Scan the fridge"></div>
+        <div class="step"><span class="n">1.</span> Scan into inventory</div>
+        <div class="sub">Photograph the fridge or pantry; items stream in live and you confirm with a tap.</div>
+      </div>
+      <div class="fig">
+        <div class="phone"><img src="file:///Users/philwoolley/Projects/gemma4hackathon/writeup/kaggle-media/02-taste-pills.png" alt="Taste profile"></div>
+        <div class="step"><span class="n">2.</span> Tune your taste</div>
+        <div class="sub">A wizard of taste pills and a chili-pepper spice dial shapes every recipe.</div>
+      </div>
+      <div class="fig">
+        <div class="phone"><img src="file:///Users/philwoolley/Projects/gemma4hackathon/writeup/kaggle-media/06-recipes-mood.png" alt="Recipes"></div>
+        <div class="step"><span class="n">3.</span> Real recipes</div>
+        <div class="sub">Cook what you have, or say &ldquo;I feel like Italian tonight&rdquo; out loud.</div>
+      </div>
+    </div>
+    <div class="chips">
+      <span class="pill">Have / missing marking</span>
+      <span class="pill">Persistent shopping list</span>
+      <span class="pill">Voice mood input</span>
+      <span class="pill">Meal planner with calendar</span>
+    </div>
+  </section>
+
+  <!-- ===================== SLIDE 4 : THE HARD PART ===================== -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">The hard part</div>
+    <h2>Fitting Gemma 4 into <em>8 GB of phone.</em></h2>
+    <div class="grid">
+      <div>
+        <p class="lead">An 8 GB iPhone gives roughly <b>4 GB of usable wired GPU memory.</b> Fitting a 3.5 GB model plus vision projector plus KV cache under that ceiling took four moves:</p>
+        <ul>
+          <li>Pick the <b>UD-IQ3_XXS</b> quant (3.46 GiB), smaller and faster than the alternatives</li>
+          <li>Shrink the context window to <b>1024 tokens</b></li>
+          <li>Move the <b>vision projector onto the CPU</b>, off the wired GPU budget</li>
+          <li>A <b>lifecycle state machine</b> so iOS memory pressure cannot unload the model mid-scan</li>
+        </ul>
+        <div class="builds">Shipped <b>six TestFlight builds today</b> iterating on exactly this.</div>
+      </div>
+      <div class="evalcard">
+        <div class="cap">Recognition recall</div>
+        <div class="capsub">7 real, cluttered kitchen photos &middot; ~68 hand-labeled items, counting everything &middot; zero training, on device</div>
+        <table>
+          <tr><td class="lbl">Baseline (whole image)</td><td class="num">16.1%</td></tr>
+          <tr><td class="lbl">Crop + OCR pipeline</td><td class="num">21.2%</td></tr>
+          <tr class="ship"><td class="lbl">As shipped (union)</td><td class="num">33.5%</td></tr>
+        </table>
+        <div class="badge">2.1&times; the baseline</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SLIDE 5 : WHAT'S NEXT + TEAM ===================== -->
+  <section class="slide" id="s5">
+    <div class="eyebrow">What&rsquo;s next</div>
+    <h2>Teach it the <em>hard items.</em></h2>
+    <div class="next">
+      A local <b>LoRA fine-tune harness</b> is ready, with a <span class="stat">1,288-example dataset</span>: 75 verified real crops plus synthetic data from Open Food Facts. It drops into the app as a single GGUF file swap, no code change. That is the next lever on recall.
+    </div>
+    <div class="divider"></div>
+    <div class="close">Private. Offline. Free to run. <em>Dinner, decided.</em></div>
+    <div class="team">
+      <div class="label">Team IniTech</div>
+      <div class="names">Phil Woolley &nbsp;&amp;&nbsp; olsonjb</div>
+    </div>
+  </section>
+
+</div>
+
+<nav id="dots" aria-label="slide navigation"></nav>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var dotsWrap = document.getElementById('dots');
+  var current = 0;
+
+  // build dots
+  slides.forEach(function (_, i) {
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      go(i);
+    });
+    dotsWrap.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotsWrap.children);
+
+  function render() {
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === current); });
+    dots.forEach(function (d, i) { d.classList.toggle('on', i === current); });
+  }
+  function go(i) { current = Math.max(0, Math.min(slides.length - 1, i)); render(); }
+  function next() { go(current + 1); }
+  function prev() { go(current - 1); }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); next(); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+  });
+
+  // click anywhere advances (dots handle their own clicks via stopPropagation)
+  document.addEventListener('click', function () { next(); });
+
+  // allow deep-linking / verification via #2 ... #5
+  function fromHash() {
+    var n = parseInt((location.hash || '').replace('#', ''), 10);
+    if (!isNaN(n)) current = Math.max(0, Math.min(slides.length - 1, n - 1));
+  }
+  window.addEventListener('hashchange', function () { fromHash(); render(); });
+  fromHash();
+
+  render();
+})();
+</script>
+</body>
+</html>
