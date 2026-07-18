@@ -108,21 +108,21 @@ struct ScanningView: View {
                         }
                     }
             }
-            Text(statusText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            if let statusText {
+                Text(statusText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
         }
         .padding(.bottom, 8)
     }
 
-    private var statusText: String {
-        // The model was released under memory pressure and is reloading before
-        // this scan can proceed. Say so plainly instead of showing a bare spinner.
-        if appModel.isLoadingModel && appModel.didReleaseModelForMemory {
-            return "Warming up again (freed memory to keep things stable)..."
-        }
+    private var statusText: String? {
+        // During model warm-up the full LoadingStateView carries the messaging,
+        // so keep the header to just the photo and avoid duplicate copy.
+        if appModel.modelLoadPhase != .idle { return nil }
         switch appModel.scanPhase {
         case .idle:
             return "Getting ready..."
@@ -150,7 +150,9 @@ struct ScanningView: View {
 
     @ViewBuilder
     private var content: some View {
-        if isEmpty {
+        if appModel.modelLoadPhase != .idle {
+            modelWarmupState
+        } else if isEmpty {
             emptyResults
         } else if isCancelled {
             cancelledState
@@ -159,6 +161,18 @@ struct ScanningView: View {
         } else {
             scanningList
         }
+    }
+
+    // Warm treatment shown while the model loads into memory, before any
+    // per-item progress can appear. Cancel lives in the toolbar during a scan.
+    private var modelWarmupState: some View {
+        LoadingStateView(
+            messages: appModel.modelLoadPhase == .reloadingAfterMemory
+                ? LoadingCopy.modelReload
+                : LoadingCopy.modelWarmup,
+            explainer: LoadingCopy.modelExplainer
+        )
+        .dinnerSurfaceBackground()
     }
 
     private var scanningList: some View {
@@ -170,11 +184,9 @@ struct ScanningView: View {
                             ? .opacity
                             : .move(edge: .top).combined(with: .opacity))
                 }
-                HStack(spacing: 12) {
-                    ProgressView()
-                    Text(appModel.scannedItems.isEmpty ? "Looking for items..." : "Still looking...")
-                        .foregroundStyle(.secondary)
-                }
+                // Shimmering placeholder for the item being identified right now,
+                // so there is always gentle motion between streamed results.
+                ShimmeringItemRow(statusLabel: shimmerLabel)
             } header: {
                 if !appModel.scannedItems.isEmpty {
                     Text("Found so far")
@@ -183,6 +195,18 @@ struct ScanningView: View {
         }
         .listStyle(.insetGrouped)
         .dinnerSurfaceBackground()
+    }
+
+    /// The VoiceOver-announced status for the in-progress shimmer row.
+    private var shimmerLabel: String {
+        if case let .scanning(progress) = appModel.scanPhase {
+            if progress.stage == .cropping {
+                return "Splitting the photo into items..."
+            }
+            let total = max(progress.itemsTotal, 1)
+            return "Looking at item \(min(progress.itemsDone + 1, total)) of \(total)..."
+        }
+        return appModel.scannedItems.isEmpty ? "Looking for items..." : "Still looking..."
     }
 
     private var reviewList: some View {

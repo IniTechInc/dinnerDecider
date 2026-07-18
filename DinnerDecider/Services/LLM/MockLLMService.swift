@@ -28,7 +28,11 @@ final class MockLLMService: LLMService {
     private var scanCallCount = 0
 
     func loadModel() async throws {
-        try? await Task.sleep(nanoseconds: 400_000_000)
+        // Launch with `--slow-model-load` to stretch the first load so the warm
+        // loading treatment is demonstrable in the simulator (the real on-device
+        // load is ~20s; the mock is normally near-instant).
+        let slow = ProcessInfo.processInfo.arguments.contains("--slow-model-load")
+        try? await Task.sleep(nanoseconds: slow ? 12_000_000_000 : 400_000_000)
         isLoaded = true
     }
 
@@ -45,7 +49,10 @@ final class MockLLMService: LLMService {
     }
 
     func generateText(prompt: String) async throws -> String {
-        try? await Task.sleep(nanoseconds: 700_000_000)
+        // `--slow-model-load` also stretches generation so the recipe "thinking"
+        // state is demonstrable in the simulator; normally it is near-instant.
+        let slow = ProcessInfo.processInfo.arguments.contains("--slow-model-load")
+        try? await Task.sleep(nanoseconds: slow ? 9_000_000_000 : 700_000_000)
         // Return JSON wrapped in prose + a code fence, exactly like a real model
         // tends to, so the parser is genuinely exercised.
         return """

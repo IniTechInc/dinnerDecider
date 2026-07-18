@@ -40,4 +40,33 @@ final class AppModelMemoryTests: XCTestCase {
         XCTAssertTrue(model.isModelLoaded)
         XCTAssertFalse(model.didReleaseModelForMemory)
     }
+
+    // MARK: - modelLoadPhase
+
+    func testModelLoadPhaseIsIdleWhenNotLoading() async {
+        let model = AppModel(llm: MockLLMService())
+        XCTAssertEqual(model.modelLoadPhase, .idle)
+
+        await model.loadModelIfNeeded()
+        // Load has completed, so we are idle again (not loading).
+        XCTAssertEqual(model.modelLoadPhase, .idle)
+    }
+
+    func testModelLoadPhaseIsFirstLoadWhileLoading() {
+        let model = AppModel(llm: MockLLMService())
+        // Loading with no prior memory release is a first load.
+        model.isLoadingModel = true
+        XCTAssertEqual(model.modelLoadPhase, .firstLoad)
+    }
+
+    func testModelLoadPhaseIsReloadAfterMemoryPressure() async {
+        let model = AppModel(llm: MockLLMService())
+        await model.loadModelIfNeeded()
+        model.handleMemoryPressure()
+        XCTAssertTrue(model.didReleaseModelForMemory)
+
+        // Loading again after a memory release reports the reload phase.
+        model.isLoadingModel = true
+        XCTAssertEqual(model.modelLoadPhase, .reloadingAfterMemory)
+    }
 }

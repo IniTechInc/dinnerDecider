@@ -20,6 +20,18 @@ struct ScanProgress: Equatable {
     var stage: Stage
 }
 
+/// Which model-load moment the UI is in, so a warm loading treatment can appear
+/// before per-item progress does. Derived from `isLoadingModel` +
+/// `didReleaseModelForMemory` so it stays a single source of truth.
+enum ModelLoadPhase: Equatable {
+    /// Not loading (either already resident, or no load in flight).
+    case idle
+    /// Loading into memory for the first time this session (the ~20s wait).
+    case firstLoad
+    /// Reloading after the model was freed under memory pressure.
+    case reloadingAfterMemory
+}
+
 /// Where the scan pipeline currently is, for the Scanning screen.
 enum ScanPhase: Equatable {
     case idle
@@ -137,6 +149,13 @@ final class AppModel: ObservableObject {
     }
 
     // MARK: - Model loading
+
+    /// The current model-load moment, driving the warm loading treatment in the
+    /// scanning and recipe screens. `.idle` whenever no load is in flight.
+    var modelLoadPhase: ModelLoadPhase {
+        guard isLoadingModel else { return .idle }
+        return didReleaseModelForMemory ? .reloadingAfterMemory : .firstLoad
+    }
 
     func loadModelIfNeeded() async {
         guard !isModelLoaded, !isLoadingModel else { return }

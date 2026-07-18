@@ -56,6 +56,7 @@ struct CaptureView: View {
             .onChange(of: photoItems) { _, newItems in
                 loadPicked(newItems)
             }
+            .onAppear { seedDemoPhotoIfRequested() }
         }
     }
 
@@ -63,7 +64,7 @@ struct CaptureView: View {
 
     private var imagePreview: some View {
         Group {
-            if batch.isEmpty {
+            if batch.isEmpty && !isLoadingPicks {
                 ContentUnavailableView(
                     "Snap your fridge or pantry",
                     systemImage: "refrigerator",
@@ -78,7 +79,7 @@ struct CaptureView: View {
 
     private var thumbnails: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(batch.count == 1 ? "1 photo ready" : "\(batch.count) photos ready")
+            Text(thumbnailHeader)
                 .font(.dmSectionHeader)
                 .padding(.horizontal)
 
@@ -89,10 +90,27 @@ struct CaptureView: View {
                     ForEach(batch.photos) { photo in
                         thumbnail(photo)
                     }
+                    // Shimmering placeholders while picked photos are downscaled
+                    // and added, so the strip animates rather than sitting idle.
+                    if isLoadingPicks {
+                        ForEach(0..<max(photoItems.count, 1), id: \.self) { _ in
+                            ShimmerThumbnail()
+                        }
+                        .accessibilityElement()
+                        .accessibilityLabel("Adding photos")
+                        .accessibilityAddTraits(.updatesFrequently)
+                    }
                 }
                 .padding(.horizontal)
             }
         }
+    }
+
+    private var thumbnailHeader: String {
+        if isLoadingPicks {
+            return "Adding photos..."
+        }
+        return batch.count == 1 ? "1 photo ready" : "\(batch.count) photos ready"
     }
 
     private func thumbnail(_ photo: BatchPhoto) -> some View {
@@ -143,11 +161,6 @@ struct CaptureView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
-            }
-
-            if isLoadingPicks {
-                ProgressView()
-                    .padding(.top, 4)
             }
 
             if !batch.isEmpty {
@@ -241,6 +254,27 @@ struct CaptureView: View {
         case .denied:
             showCameraDeniedAlert = true
         }
+    }
+
+    /// Debug affordance: launch with `--seed-demo-photo` to drop a synthetic
+    /// multi-block image into the batch, so the scan flow (and its loading
+    /// states) can be exercised in the simulator without the Photos picker,
+    /// which runs out-of-process and cannot be automated. No effect otherwise.
+    private func seedDemoPhotoIfRequested() {
+        guard ProcessInfo.processInfo.arguments.contains("--seed-demo-photo"), batch.isEmpty else { return }
+        let size = CGSize(width: 900, height: 1200)
+        let image = UIGraphicsImageRenderer(size: size).image { context in
+            UIColor.systemGray5.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            let colors: [UIColor] = [.systemRed, .systemGreen, .systemYellow, .systemOrange, .systemTeal, .brown]
+            for (index, color) in colors.enumerated() {
+                color.setFill()
+                let column = CGFloat(index % 3)
+                let row = CGFloat(index / 3)
+                context.fill(CGRect(x: column * 300 + 30, y: row * 400 + 30, width: 240, height: 340))
+            }
+        }
+        batch.append(ImageDownscaler.forCapture(image))
     }
 
     private func loadPicked(_ items: [PhotosPickerItem]) {

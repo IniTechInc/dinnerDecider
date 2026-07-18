@@ -91,7 +91,7 @@ struct RecipesView: View {
                 Text("Scan or add items, then tap Generate to get recipe ideas.")
             }
         } else if appModel.isGeneratingRecipes {
-            ThinkingView { appModel.cancelRecipeGeneration() }
+            thinkingView
         } else if let error = appModel.recipeError {
             recipeErrorView(error)
         } else if recipes.isEmpty {
@@ -120,6 +120,21 @@ struct RecipesView: View {
         }
     }
 
+    // Recipe generation loading, unified with the model warm-up motif. While the
+    // model is still loading into memory it borrows the warm-up copy so the wait
+    // is explained; once loaded it shows the playful "thinking" lines. Always
+    // cancellable.
+    private var thinkingView: some View {
+        let loadingModel = appModel.modelLoadPhase != .idle
+        return LoadingStateView(
+            messages: loadingModel
+                ? (appModel.modelLoadPhase == .reloadingAfterMemory ? LoadingCopy.modelReload : LoadingCopy.modelWarmup)
+                : LoadingCopy.recipeThinking,
+            explainer: loadingModel ? LoadingCopy.modelExplainer : LoadingCopy.recipeExplainer,
+            onCancel: { appModel.cancelRecipeGeneration() }
+        )
+    }
+
     private func recipeErrorView(_ message: String) -> some View {
         ContentUnavailableView {
             Label("Hmm, that did not work", systemImage: "exclamationmark.triangle")
@@ -133,70 +148,6 @@ struct RecipesView: View {
                 Label("Try again", systemImage: "arrow.clockwise")
             }
             .buttonStyle(.borderedProminent)
-        }
-    }
-}
-
-// MARK: - Thinking (loading) view
-
-/// Playful rotating copy while Gemma "thinks". Always cancellable, and its
-/// motion is gated by the Reduce Motion accessibility setting.
-private struct ThinkingView: View {
-    var onCancel: () -> Void
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private let messages = [
-        "Peeking into your pantry...",
-        "Tasting a few ideas...",
-        "Pairing your ingredients...",
-        "Simmering some suggestions...",
-        "Plating up options..."
-    ]
-    @State private var index = 0
-    private let timer = Timer.publish(every: 1.6, on: .main, in: .common).autoconnect()
-
-    var body: some View {
-        VStack(spacing: Spacing.lg) {
-            Spacer()
-            sparkle
-            ProgressView()
-            Text(messages[index])
-                .font(.dmHeadline)
-                .foregroundStyle(.secondary)
-                .contentTransition(.opacity)
-                .id(index)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Thinking up recipes")
-            Spacer()
-            Button("Cancel", role: .cancel) {
-                Haptics.tap()
-                onCancel()
-            }
-            .padding(.bottom, Spacing.xl)
-        }
-        .frame(maxWidth: .infinity)
-        .onReceive(timer) { _ in
-            guard !reduceMotion else {
-                index = (index + 1) % messages.count
-                return
-            }
-            withAnimation {
-                index = (index + 1) % messages.count
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var sparkle: some View {
-        let base = Image(systemName: "sparkles")
-            .font(.system(size: 44))
-            .foregroundStyle(.tint)
-            .accessibilityHidden(true)
-        if reduceMotion {
-            base
-        } else {
-            base.symbolEffect(.pulse, options: .repeating)
         }
     }
 }
