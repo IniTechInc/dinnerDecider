@@ -22,7 +22,7 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 |---|-----------|--------|----------------|---------|--------|----------|
 | 1 | 2026-07-18 13:40 | iPhone 16 Pro Max | unknown (1 or 2, pre-build-3) | Crash right as image analysis starts during a scan | 🔧 In progress | build 5 (memory levers) |
 | 2 | 2026-07-18 14:05 | iPhone 16 Pro Max, iOS 26.5.2 | 3 | Scan counted 9 items analyzing, then "Nothing spotted" (screenshot: clearly visible labeled milk jugs) | ✅ Session fix verified (build 4 did real inference); superseded by #4 | build 4 |
-| 4 | 2026-07-18 14:40 | iPhone 16 Pro Max | 4 | Crash while identifying item 4 of 9 (real inference confirmed working through item 3, then memory ceiling) | 🔧 In progress | build 5 (memory levers) |
+| 4 | 2026-07-18 14:40 | iPhone 16 Pro Max | 4 | Crash while identifying item 4 of 9 (real inference confirmed working through item 3, then memory ceiling) | 🔧 In progress | build 8 (context resets + 4-call budget; builds 5/7 CPU-vision detour failed) |
 | 3 | 2026-07-18 ~13:55 | iPhone 16 Pro Max | 3 | Recipe quality: invented "cheesy Italian dip" from ketchup + cheddar; wants real recipes + missing-item marking + shopping list flow | 🔧 In progress | build 4 (prompt fix; UI existed) |
 
 ---
@@ -53,7 +53,8 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 - **What it proves:** the #2 session fix works (model stayed resident, items 1-3 got real inference). The crash moved to the true wired-memory ceiling mid-scan.
 - **Fix (build 5):** vendored LocalLLMClient fork (Vendor/LocalLLMClient) with mmproj use_gpu=false (~534MB wired saved, slower image encode); batch 512 -> 256 (smaller compute buffer); CIContext exposure pass moved to software renderer. Escalation remaining if this fails: UD-IQ2_M quant.
 - **Awaiting:** crash log screenshot from Analytics Data to confirm JetsamEvent (asked 3x).
-- **Status:** 🔧 In progress
+- **Builds 5/7 detour:** CPU vision cured the jetsam but blinded recognition (instant per-call failures, 10-15s empty scans). Build 8: GPU vision restored + fork resetSession() before every request (root cause: wrapper cached KV + image chunks across calls) + scan-wide 4-call budget.
+- **Status:** 🔧 In progress, verify build 8 on device
 
 ### #3: Real recipes + shopping list flow (chat request)
 - **Request:** real recognizable recipes (not inventory-invented fakes), mark have/missing per ingredient, add-missing-to-shopping-list button, persistent shopping list.
