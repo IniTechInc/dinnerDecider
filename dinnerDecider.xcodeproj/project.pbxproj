@@ -9,7 +9,9 @@
 /* Begin PBXBuildFile section */
 		090DF8F37F7421E12F1ADFAC /* ScannedItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D47621FD8C7112AE86299F9C /* ScannedItem.swift */; };
 		0A919957DF37CB26F50C01F2 /* FoodItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E786B89B3F37FB0CC26A5D07 /* FoodItem.swift */; };
+		1C79848837CE4D40DC149F31 /* LocalLLMClient in Frameworks */ = {isa = PBXBuildFile; productRef = 18F448AD449915E106D848BF /* LocalLLMClient */; };
 		36704D22522C68AC0F00CA60 /* RecipesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C1A8383359C729618DB1E3 /* RecipesView.swift */; };
+		476ED439B336236CF83C5AB3 /* LocalLLMClientLlama in Frameworks */ = {isa = PBXBuildFile; productRef = 137525ED3B2E74B9C7D985D1 /* LocalLLMClientLlama */; };
 		7ABDEEE2203AC9A6F7EB6DFC /* ModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7AC3B433187269FDBA9157 /* ModelService.swift */; };
 		9A161B7CB7A908431E687153 /* dinnerDeciderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A69E5D025A241FBF7525B9 /* dinnerDeciderApp.swift */; };
 		9C2BBBFD0A8DA304A5633C42 /* InventoryConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E74B839E230132E13B879DB /* InventoryConfirmView.swift */; };
@@ -49,6 +51,7 @@
 		B2689C67AFE6E4ECA7CC3A4C /* ScanningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanningView.swift; sourceTree = "<group>"; };
 		BAC2EE53ED70BB1F6EC3F5BE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CE13971845219565567AF9EA /* ModelDownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadView.swift; sourceTree = "<group>"; };
+		D1DDB5AB1B8C83DC249D7CAF /* LocalLLMClient */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LocalLLMClient; path = LocalLLMClient; sourceTree = SOURCE_ROOT; };
 		D47621FD8C7112AE86299F9C /* ScannedItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannedItem.swift; sourceTree = "<group>"; };
 		D61F4AE5877F2E105A2CC899 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D98D44444030B8F55E9934B4 /* dinnerDeciderTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = dinnerDeciderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,6 +59,18 @@
 		E786B89B3F37FB0CC26A5D07 /* FoodItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItem.swift; sourceTree = "<group>"; };
 		F7E4378C76ECC0A11F6A3AAC /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		ADD3369E1C7FF51BA51C6B4A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C79848837CE4D40DC149F31 /* LocalLLMClient in Frameworks */,
+				476ED439B336236CF83C5AB3 /* LocalLLMClientLlama in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		2F3BDB7338E4305D16C8223B /* Views */ = {
@@ -89,11 +104,20 @@
 			path = Sources/dinnerDecider;
 			sourceTree = "<group>";
 		};
+		755E9355451731885F4D88D0 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				D1DDB5AB1B8C83DC249D7CAF /* LocalLLMClient */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		9738B7856C08F9E95724CD4A = {
 			isa = PBXGroup;
 			children = (
 				718FB3F0F49C4FB3D65400A5 /* dinnerDecider */,
 				F77300E7A6ADF37B43D7E222 /* dinnerDeciderTests */,
+				755E9355451731885F4D88D0 /* Packages */,
 				DC6FB3E7ABDF0CAB94CFC944 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -149,6 +173,7 @@
 			buildConfigurationList = 6B6E0FDAB21D9BECE27402B2 /* Build configuration list for PBXNativeTarget "dinnerDecider" */;
 			buildPhases = (
 				18326BFF5959B8493CC87F05 /* Sources */,
+				ADD3369E1C7FF51BA51C6B4A /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -156,6 +181,8 @@
 			);
 			name = dinnerDecider;
 			packageProductDependencies = (
+				18F448AD449915E106D848BF /* LocalLLMClient */,
+				137525ED3B2E74B9C7D985D1 /* LocalLLMClientLlama */,
 			);
 			productName = dinnerDecider;
 			productReference = 2942AE2BBAEB21240C38FD05 /* dinnerDecider.app */;
@@ -203,6 +230,9 @@
 			);
 			mainGroup = 9738B7856C08F9E95724CD4A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1DD5515DF1B73244465C1C68 /* XCLocalSwiftPackageReference "LocalLLMClient" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC6FB3E7ABDF0CAB94CFC944 /* Products */;
 			projectDirPath = "";
@@ -357,6 +387,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
@@ -367,8 +398,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_SWIFT_FLAGS = "-cxx-interoperability-mode=default";
 				PRODUCT_BUNDLE_IDENTIFIER = com.initech.dinnerDecider;
 				SDKROOT = iphoneos;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -434,6 +467,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
@@ -444,8 +478,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_SWIFT_FLAGS = "-cxx-interoperability-mode=default";
 				PRODUCT_BUNDLE_IDENTIFIER = com.initech.dinnerDecider;
 				SDKROOT = iphoneos;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -482,6 +518,24 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		1DD5515DF1B73244465C1C68 /* XCLocalSwiftPackageReference "LocalLLMClient" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalLLMClient;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		137525ED3B2E74B9C7D985D1 /* LocalLLMClientLlama */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LocalLLMClientLlama;
+		};
+		18F448AD449915E106D848BF /* LocalLLMClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LocalLLMClient;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A3B8EBF07BF22B4ECC4C07E2 /* Project object */;
 }

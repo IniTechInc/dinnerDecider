@@ -44,6 +44,9 @@ targets:
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_STYLE: Automatic
         ENABLE_PREVIEWS: YES
+        CLANG_ENABLE_EXPLICIT_MODULES: NO
+        SWIFT_ENABLE_EXPLICIT_MODULES: NO
+        OTHER_SWIFT_FLAGS: "-cxx-interoperability-mode=default"
     scheme:
       testTargets:
         - dinnerDeciderTests

@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import LocalLLMClient
 import LocalLLMClientLlama
 
 // MARK: - KAN-7: Real LocalLLMClient integration for Gemma 4 E4B on-device inference
