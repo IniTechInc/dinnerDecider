@@ -89,8 +89,8 @@ class DeviceCapabilityPolicyTest {
      * Galaxy XCover6 Pro on hand ships in a single 6 GB configuration worldwide and
      * lands near 5.4-5.7 GiB of `totalMem` after carveouts.
      *
-     * `isLowRamDevice` is **false** on it — OEMs only set `ro.config.low_ram` for
-     * the Android Go class — so the flag alone would wave this device straight
+     * `isLowRamDevice` is **false** on it - OEMs only set `ro.config.low_ram` for
+     * the Android Go class - so the flag alone would wave this device straight
      * through to a 3.5 GB model load and an LMKD kill. Only the 7.0 GiB floor
      * catches it.
      */

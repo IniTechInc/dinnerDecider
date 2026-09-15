@@ -56,7 +56,7 @@ object ScanOutcome {
     /**
      * The terminal phase for a scan that ran to completion.
      *
-     * - Anything found wins, **regardless of how many calls failed alongside it** —
+     * - Anything found wins, **regardless of how many calls failed alongside it**  - 
      *   the user gets what was found rather than an error that throws away real
      *   results.
      * - Nothing found, but something threw: [ScanPhase.FAILED].

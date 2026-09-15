@@ -8,7 +8,7 @@ import org.junit.Test
 /**
  * Unit tests for the pure model lifecycle state machine.
  *
- * Line-for-line port of `DinnerDeciderTests/ModelLifecycleTests.swift` — **all
+ * Line-for-line port of `DinnerDeciderTests/ModelLifecycleTests.swift` - **all
  * 17 tests, Swift names preserved**, so a failure here maps 1:1 onto the Swift
  * test that pins the same rule. The corrected guarantee table in
  * `shared/pipeline/model-lifecycle.md` lists all 17 and is the checklist.
@@ -21,7 +21,7 @@ import org.junit.Test
  *
  * Two of the 17 are easy to miss and were absent from the shared doc's table
  * until Sept 14 2026:
- * - [testWarningPressureWhenReadyIdleUnloads] — load-bearing. It pins that
+ * - [testWarningPressureWhenReadyIdleUnloads] - load-bearing. It pins that
  *   WARNING is ignored *only* while BUSY or inside a session; at READY and idle
  *   it really does unload. A port treating WARNING as always-ignorable keeps a
  *   multi-GB model resident through exactly the pressure it exists to relieve.

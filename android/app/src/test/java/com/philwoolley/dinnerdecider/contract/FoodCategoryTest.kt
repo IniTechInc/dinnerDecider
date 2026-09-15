@@ -8,7 +8,7 @@ import org.junit.Test
  * Pins `shared/taxonomy/categories.md`.
  *
  * The fallback to `other` is silent by design, so a typo in one of the nine raw
- * strings fails no parsing test — it just files a whole category under "Other"
+ * strings fails no parsing test - it just files a whole category under "Other"
  * forever. These tests are the only thing that catches that.
  */
 class FoodCategoryTest {
@@ -83,7 +83,7 @@ class FoodCategoryTest {
      * THE ASYMMETRY. `fromStorage` does **not** lower-case, because the value it
      * reads was written by the enum's own raw value and is already canonical
      * (`categories.md` rule 4). Keeping the normalization at the untrusted boundary
-     * only is invisible until a fine-tune produces `Dairy` instead of `dairy` — at
+     * only is invisible until a fine-tune produces `Dairy` instead of `dairy` - at
      * which point one of these two calls must still answer OTHER.
      */
     @Test

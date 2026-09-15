@@ -13,13 +13,13 @@ data class DeviceSnapshot(
     /**
      * `ActivityManager.isLowRamDevice()`.
      *
-     * **Near-useless as a gate — read [DeviceCapabilityPolicy] before relying on
+     * **Near-useless as a gate - read [DeviceCapabilityPolicy] before relying on
      * it.** It is a straight read of the `ro.config.low_ram` system property, which
      * OEMs set only for Android Go configurations (the 2 GB-and-under class), so it
      * returns **false** on a 6 GB phone that cannot host this model at all.
      */
     val isLowRamDevice: Boolean,
-    /** `ActivityManager.MemoryInfo.totalMem` — total physical RAM the kernel exposes. */
+    /** `ActivityManager.MemoryInfo.totalMem` - total physical RAM the kernel exposes. */
     val totalMemBytes: Long,
     /** `ActivityManager.MemoryInfo.availMem` at the moment of the load attempt. */
     val availMemBytes: Long,
@@ -42,7 +42,7 @@ data class DeviceSnapshot(
     /**
      * The Settings "Try the real model anyway" override.
      *
-     * Overrides the two memory verdicts and nothing else — see
+     * Overrides the two memory verdicts and nothing else - see
      * [DeviceCapabilityPolicy.evaluate].
      */
     val userForcedReal: Boolean,
@@ -65,7 +65,7 @@ enum class MockReason {
 
     /**
      * The device does not have enough physical RAM to host the model. Covers both
-     * the `isLowRamDevice` flag and — far more importantly — the
+     * the `isLowRamDevice` flag and - far more importantly - the
      * [DeviceCapabilityPolicy.MIN_TOTAL_MEM_BYTES] floor.
      */
     LOW_RAM_DEVICE,
@@ -101,7 +101,7 @@ sealed interface RuntimeMode {
  *
  * ### `isLowRamDevice()` is not the protection
  * The [DeviceSnapshot.isLowRamDevice] early-out is kept because it is free and
- * because a device that *does* set `ro.config.low_ram` is unambiguously out — but
+ * because a device that *does* set `ro.config.low_ram` is unambiguously out - but
  * it is not what keeps this app off under-specified hardware. OEMs set that
  * property only for Android Go configurations (roughly the 2 GB-and-under class).
  * A 6 GB phone reports `false` and would sail straight past it.
@@ -109,12 +109,12 @@ sealed interface RuntimeMode {
  * **The [MIN_TOTAL_MEM_BYTES] floor is the only check doing real work here.**
  * If it were removed, the low-RAM flag would let the model load on hardware where
  * decode touches essentially every weight page per token, producing major-fault
- * thrash against UFS and an LMKD kill — the same class of failure as the iOS
+ * thrash against UFS and an LMKD kill - the same class of failure as the iOS
  * jetsam, reached through a different killer.
  *
  * ### What the user override can and cannot do
  * [DeviceSnapshot.userForcedReal] overrides [MockReason.LOW_RAM_DEVICE] and
- * [MockReason.INSUFFICIENT_MEMORY] — the two judgement calls, where the user is
+ * [MockReason.INSUFFICIENT_MEMORY] - the two judgement calls, where the user is
  * entitled to take the risk on their own device. It never overrides
  * [MockReason.UNSUPPORTED_ABI] or [MockReason.NATIVE_LIBS_MISSING], because those
  * are statements of fact about what can execute, and honouring the override there
@@ -132,7 +132,7 @@ object DeviceCapabilityPolicy {
      *
      * Not a comfort margin, a floor. A phone marketed as "8 GB" reports roughly
      * 7.4-7.8 GiB of `totalMem` after kernel and hardware carveouts, so 7.0 GiB is
-     * the smallest threshold that still admits genuine 8 GB devices — and iOS was
+     * the smallest threshold that still admits genuine 8 GB devices - and iOS was
      * jetsammed **on** an 8 GB phone, so 8 GB is the entry ticket, not headroom.
      * Anything reporting less than this is a 6 GB device or smaller (the confirmed
      * test hardware, a Galaxy XCover6 Pro, lands near 5.4-5.7 GiB) and cannot host
@@ -149,7 +149,7 @@ object DeviceCapabilityPolicy {
      *
      * The iOS figure (~4.8 GB) cannot simply be carried over: it was a **wired
      * Metal** number. On Android inference is CPU-only and the weights are
-     * `MAP_SHARED|PROT_READ` on a regular file — clean, file-backed and evictable,
+     * `MAP_SHARED|PROT_READ` on a regular file - clean, file-backed and evictable,
      * a fundamentally different memory profile. Pulling in the other direction,
      * `MAP_POPULATE` pre-faults the whole 3.5 GB at load and both LMKD and
      * `Debug.getMemoryInfo()` count clean file-backed pages in PSS, so the killer

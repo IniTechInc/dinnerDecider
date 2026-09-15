@@ -5,8 +5,8 @@ extracted verbatim from the shipped Swift unit tests. A port (Kotlin, Go, or
 anything else) is parser-conformant when it runs these exact fixtures and matches
 every expected output.
 
-This is the cheapest possible proof of parity. The parser is pure — no model, no
-network, no filesystem — so the whole suite runs in milliseconds in any language.
+This is the cheapest possible proof of parity. The parser is pure - no model, no
+network, no filesystem - so the whole suite runs in milliseconds in any language.
 
 ## Why fixtures and not prose
 
@@ -50,7 +50,7 @@ When `expectNull` is `true` the `expected` key is **absent**. Treat a missing
 | `operation` | Input | Expected result type |
 | --- | --- | --- |
 | `stripReasoning` | raw model output | `string` (never null) |
-| `firstJSONObject` | raw model output | `string` or null — the extracted substring, **byte-exact** |
+| `firstJSONObject` | raw model output | `string` or null - the extracted substring, **byte-exact** |
 | `firstJSONArray` | raw model output | `string` or null |
 | `decodeIdentifiedItem` | raw model output | `IdentifiedItem` object or null |
 | `decodeIdentifiedItemArray` | raw model output | array of `IdentifiedItem` or null |
@@ -68,7 +68,7 @@ Schemas for the decoded types: `shared/schema/identified-item.schema.json`,
   compare exactly.
 - **Optionals**: `brand` absent and `brand: null` are the same result. The
   expected value uses JSON `null`; a port's "no value" representation
-  (`nil`, `null`, `""` from a pointer, `None`) must map onto it — but an empty
+  (`nil`, `null`, `""` from a pointer, `None`) must map onto it - but an empty
   **string** brand is *not* null.
 - **Arrays**: order-sensitive, length-sensitive.
 - **Objects**: compare the fields named in the schema. Extra fields a port
@@ -93,12 +93,12 @@ Schemas for the decoded types: `shared/schema/identified-item.schema.json`,
 Three fixtures are not from `LLMResponseParserTests` but are still real strings
 from the shipped app, which is why they are worth keeping:
 
-- `recipe-bundle-prose-and-fence` — the exact reply `MockLLMService.generateText`
+- `recipe-bundle-prose-and-fence` - the exact reply `MockLLMService.generateText`
   emits. The mock deliberately wraps its JSON in prose *and* a code fence
   "exactly like a real model tends to, so the parser is genuinely exercised".
-- `recipe-bundle-unreadable` — the exact string the hidden
+- `recipe-bundle-unreadable` - the exact string the hidden
   `debugSimulateRecipeFailure` switch injects to demonstrate the retry UI.
-- `recipe-bundle-empty-buckets` — the reply the test double in
+- `recipe-bundle-empty-buckets` - the reply the test double in
   `AppModelMemoryTests` returns.
 
 ## Runner contract
@@ -122,7 +122,7 @@ Requirements:
 
 ## Adding cases
 
-Only add a case that is backed by real behavior — an existing Swift test, a
+Only add a case that is backed by real behavior - an existing Swift test, a
 string the app actually produces, or a real model output captured from a device.
 Set `source` accordingly. A hypothetical input is not a golden fixture; it is a
 guess, and a guess that gets frozen into three implementations is worse than no
@@ -133,11 +133,11 @@ case at all.
 These are specified in prose and pinned by Swift tests, but have **no JSON
 fixtures yet**:
 
-- `InventoryLogic` — dedupe, confirm plans, cook plans, portion lines
+- `InventoryLogic` - dedupe, confirm plans, cook plans, portion lines
   (`InventoryLogicTests.swift`)
-- `ShoppingListLogic` — aggregation, new-item filtering, export text
+- `ShoppingListLogic` - aggregation, new-item filtering, export text
   (`ShoppingListLogicTests.swift`)
-- `ModelLifecycle` — the state machine (`ModelLifecycleTests.swift`, 16 tests)
+- `ModelLifecycle` - the state machine (`ModelLifecycleTests.swift`, 16 tests)
 - `ScanCallBudget` (`ScanCallBudgetTests.swift`)
 - `ModelFileLocator` selection (`ModelFileLocatorTests.swift`)
 - Prompt assembly (`RecipePromptTests.swift`, `TasteProfileTests.swift`)
@@ -146,5 +146,5 @@ fixtures yet**:
 pure and would mechanize just as well as the parser cases, but no fixture format
 for a state machine or a plan-producing function exists in this repo yet, and
 inventing one here would be a guess. For now a port should translate those Swift
-test files directly — they are pure and synchronous, so the translation is
+test files directly - they are pure and synchronous, so the translation is
 line-for-line.`

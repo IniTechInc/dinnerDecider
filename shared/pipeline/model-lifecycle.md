@@ -3,9 +3,9 @@
 **This is the most important document in `shared/`.** It took three TestFlight
 builds to get right. A port that skips it will reproduce two specific field bugs:
 
-- the **"Nothing spotted" empty scan** — the scan counts N items, analyzes them
+- the **"Nothing spotted" empty scan** - the scan counts N items, analyzes them
   all, and reports nothing recognized (TestFlight feedback #2, build 3), and
-- the **mid-scan use-after-free crash** — the app dies the moment image analysis
+- the **mid-scan use-after-free crash** - the app dies the moment image analysis
   starts (TestFlight feedback #1, build 1).
 
 Both have the same root cause: the multi-GB inference client was freed while
@@ -15,13 +15,13 @@ Sources of record:
 `DinnerDecider/Services/ModelLifecycle.swift` (the pure machine),
 `DinnerDecider/Services/AppModel.swift:110-268` (the adapter that turns its
 decisions into real load/unload calls), and
-`DinnerDeciderTests/ModelLifecycleTests.swift` (**the specification** — 17 tests,
+`DinnerDeciderTests/ModelLifecycleTests.swift` (**the specification** - 17 tests,
 several written as explicit crash repros).
 
 ## Why a state machine at all
 
 The client holds its weights, vision projector and KV cache in **wired** GPU
-buffers — several gigabytes that the OS cannot page out. Two consequences:
+buffers - several gigabytes that the OS cannot page out. Two consequences:
 
 - The system will ask you to free memory, often, and at the worst moments.
 - Freeing the client while a load or an inference is in flight is a
@@ -52,12 +52,12 @@ sessionActive = activeSessionCount > 0
 
 ## Extra state
 
-**`pendingUnload: bool`** — an unload was requested while it was unsafe to honor
+**`pendingUnload: bool`** - an unload was requested while it was unsafe to honor
 it. Honored the instant we become idle *and* no session is active. Set by an
 explicit unload request while busy, or by a `CRITICAL` memory event; **never** by
 a `WARNING`.
 
-**`activeSessionCount: int`** — how many user-visible model sessions are running.
+**`activeSessionCount: int`** - how many user-visible model sessions are running.
 A session is a whole scan (over N crops, across N photos) or a whole recipe
 generation. **This counter is the fix for the "Nothing spotted" bug.** See below.
 
@@ -70,7 +70,7 @@ already in flight, fold in) · `ALREADY_LOADED` (resident, nothing to do).
 (busy; recorded, runs once idle) · `NOTHING_TO_DO`.
 
 The machine **never** touches the runtime. It returns decisions; the caller
-translates them. Keep that separation — it is what makes the rules testable.
+translates them. Keep that separation - it is what makes the rules testable.
 
 ## Transitions
 
@@ -91,9 +91,9 @@ requested during a teardown folds in and the caller retries once idle.
 
 | From | success | To | Side effect |
 | --- | --- | --- | --- |
-| `LOADING` | true | `READY` | — |
+| `LOADING` | true | `READY` | - |
 | `LOADING` | false | `UNLOADED` | `pendingUnload = false` |
-| anything else | any | unchanged (guard) | — |
+| anything else | any | unchanged (guard) | - |
 
 *Why the `pendingUnload` reset:* if the load failed there is nothing resident to
 free, and leaving the flag set would make the next successful load immediately
@@ -117,13 +117,13 @@ and corrupt the state. On iOS this is a scoped bracket that runs
 
 | From | Returns | To | Side effect |
 | --- | --- | --- | --- |
-| `READY` | `PROCEED` | `UNLOADING` | — |
+| `READY` | `PROCEED` | `UNLOADING` | - |
 | `LOADING` | `DEFERRED` | `LOADING` | `pendingUnload = true` |
 | `INFERRING` | `DEFERRED` | `INFERRING` | `pendingUnload = true` |
-| `UNLOADED` | `NOTHING_TO_DO` | `UNLOADED` | — |
-| `UNLOADING` | `NOTHING_TO_DO` | `UNLOADING` | — |
+| `UNLOADED` | `NOTHING_TO_DO` | `UNLOADED` | - |
+| `UNLOADING` | `NOTHING_TO_DO` | `UNLOADING` | - |
 
-Note `requestUnload` at `READY` proceeds **even during an active session** — an
+Note `requestUnload` at `READY` proceeds **even during an active session** - an
 explicit request from the app is trusted; only *pressure* respects sessions.
 
 ### `handleMemoryPressure(level) -> UnloadDecision`
@@ -132,14 +132,14 @@ Levels: `WARNING`, `CRITICAL`.
 
 | From | Level | Returns | To | Side effect |
 | --- | --- | --- | --- | --- |
-| `UNLOADED` | either | `NOTHING_TO_DO` | `UNLOADED` | — |
-| `UNLOADING` | either | `NOTHING_TO_DO` | `UNLOADING` | — |
-| `READY`, **no** session | either | `PROCEED` | `UNLOADING` | — |
-| `READY`, session active | `WARNING` | `NOTHING_TO_DO` | `READY` | — |
+| `UNLOADED` | either | `NOTHING_TO_DO` | `UNLOADED` | - |
+| `UNLOADING` | either | `NOTHING_TO_DO` | `UNLOADING` | - |
+| `READY`, **no** session | either | `PROCEED` | `UNLOADING` | - |
+| `READY`, session active | `WARNING` | `NOTHING_TO_DO` | `READY` | - |
 | `READY`, session active | `CRITICAL` | `DEFERRED` | `READY` | `pendingUnload = true` |
-| `LOADING` | `WARNING` | `NOTHING_TO_DO` | `LOADING` | — |
+| `LOADING` | `WARNING` | `NOTHING_TO_DO` | `LOADING` | - |
 | `LOADING` | `CRITICAL` | `DEFERRED` | `LOADING` | `pendingUnload = true` |
-| `INFERRING` | `WARNING` | `NOTHING_TO_DO` | `INFERRING` | — |
+| `INFERRING` | `WARNING` | `NOTHING_TO_DO` | `INFERRING` | - |
 | `INFERRING` | `CRITICAL` | `DEFERRED` | `INFERRING` | `pendingUnload = true` |
 
 Two rules, stated as rules:
@@ -166,7 +166,7 @@ return NOTHING_TO_DO
 
 All three conditions are load-bearing. The caller runs this **after every load
 and after every inference**. The `NOT sessionActive` clause is what stops a
-`CRITICAL` that arrived during a scan from freeing the model between crops — "a
+`CRITICAL` that arrived during a scan from freeing the model between crops - "a
 mid-session drain would gut the remaining crops"
 (`ModelLifecycle.swift:183-184`).
 
@@ -181,29 +181,29 @@ endSession():
     return drainPendingUnload()                   # last one out honors the deferral
 ```
 
-Sessions **nest**, counted not boolean — a scan and a recipe run can overlap, and
+Sessions **nest**, counted not boolean - a scan and a recipe run can overlap, and
 the deferred unload fires only when the last one ends
 (`testNestedSessionsOnlyEndWhenAllEnd`). The clamp at 0 makes an unbalanced
 `endSession` harmless.
 
-## The session concept — why it exists
+## The session concept - why it exists
 
 This is the part most likely to be dropped by a port, and the part that caused
 the worst bug.
 
-A scan is N model calls. **The moments between those calls are `READY`** — the
+A scan is N model calls. **The moments between those calls are `READY`** - the
 client is resident and no inference is in flight. Under the pre-`45b99c3` rules
 that looked exactly like "idle and resident", so the memory-pressure handler
 freed the model right there.
 
-And it happened every single time, because — as the source records — after the
+And it happened every single time, because - as the source records - after the
 multi-GB load *the system reliably posts a memory warning*. So:
 
 1. Scan starts, model loads (~3.5 GB wired).
 2. System posts a memory warning moments later.
 3. Handler sees `READY`, frees the client.
 4. Crop 2..N each call into a freed client, throw "model not loaded", and the
-   scan loop catches, logs, and continues — **silently**.
+   scan loop catches, logs, and continues - **silently**.
 5. Scan ends with zero items: **"Nothing spotted"**, from a photo of clearly
    visible labeled milk jugs.
 
@@ -220,7 +220,7 @@ Session bracketing rules for a port:
 - Open the session **before** `loadModelIfNeeded()`, so pressure arriving during
   the load is already covered.
 - Close it on **every** exit path including cancellation and thrown errors (iOS
-  uses `defer`; use your language's equivalent — Kotlin `try/finally`, Go
+  uses `defer`; use your language's equivalent - Kotlin `try/finally`, Go
   `defer`).
 - Closing the session is what runs a deferred unload, so never skip it on the
   cancellation path or the model stays wired forever.
@@ -296,7 +296,7 @@ From `AppModel.swift`:
    - Android: `ComponentCallbacks2.onTrimMemory` levels are the nearest analogue.
    - Linux/Go: there is no equivalent signal. `TODO(unresolved): no
      memory-pressure source is specified for a Linux port anywhere in this repo.
-     A Go port still needs the full machine — sessions, brackets, deferral — for
+     A Go port still needs the full machine - sessions, brackets, deferral - for
      explicit unloads and for lifecycle correctness; it simply may have no
      producer of pressure events, or may poll cgroup memory pressure. That is a
      port-level design decision with no shipped precedent to copy.`
@@ -305,7 +305,7 @@ From `AppModel.swift`:
    "warming up again" state rather than a bare spinner.
 3. **Drain after every load and every inference.**
 4. **Bracket every single model call** with `beginInference` / `finishInference`
-   — including the recipe generation, not just the scan.
+   - including the recipe generation, not just the scan.
 5. **Do not install pressure sources in headless/self-test processes.** iOS
    skips registration under the self-test flag so the process "behaves exactly
    like the last known-good build: no extra memory-pressure machinery firing a

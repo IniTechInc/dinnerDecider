@@ -11,8 +11,8 @@ import kotlin.math.roundToInt
  *
  * iOS gets this from Core Image and therefore has no test for it; here the curve
  * is a pure 256-entry table, so it is checked with no device at all. What the
- * tests pin is the *shape* — endpoints, monotonicity, and the five control
- * points — rather than a byte-for-byte match with `CIToneCurve`, whose exact
+ * tests pin is the *shape* - endpoints, monotonicity, and the five control
+ * points - rather than a byte-for-byte match with `CIToneCurve`, whose exact
  * interpolant Apple does not document.
  */
 class ToneCurveLutTest {

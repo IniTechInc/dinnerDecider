@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.asSharedFlow
  * can observe, and nothing else. It emits the raw `Int` level straight from
  * [onTrimMemory] rather than a mapped contract enum, so it carries zero dependency on the
  * pure contract layer and never needs to be edited again as the port grows. The mapping
- * from a trim level to a memory-pressure level — including the four-producer funnel that
- * `onTrimMemory` alone cannot provide — belongs to the memory-pressure adapter
+ * from a trim level to a memory-pressure level - including the four-producer funnel that
+ * `onTrimMemory` alone cannot provide - belongs to the memory-pressure adapter
  * (plan Step 44), which is where it is unit-testable as a pure function.
  *
  * Why this is not enough on its own: every `TRIM_MEMORY_*` constant is deprecated as of

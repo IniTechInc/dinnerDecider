@@ -17,8 +17,8 @@ import kotlinx.serialization.json.Json
  *
  * ## Always write all thirteen keys, and never write `null` for a list
  *
- * Two independent traps with the same consequence — **the entire profile is lost,
- * allergies included** — and neither one fails a port's own round-trip test.
+ * Two independent traps with the same consequence - **the entire profile is lost,
+ * allergies included** - and neither one fails a port's own round-trip test.
  *
  * 1. **A missing key.** Swift's synthesized `Decodable` does *not* fall back to a
  *    property's default for a missing key on a non-optional property. A partial
@@ -63,7 +63,7 @@ data class TasteProfile(
      *
      * This gates whether the profile reaches the model at all, so it must cover
      * every category. An earlier iOS version checked only favorites and dislikes,
-     * which silently dropped allergies-only profiles — **a safety bug**, not a
+     * which silently dropped allergies-only profiles - **a safety bug**, not a
      * cosmetic one. Checking fewer than all twelve fields reintroduces it.
      *
      * The default spice level alone is not "content": a profile nobody touched must
@@ -102,7 +102,7 @@ data class TasteProfile(
      * even for a completely empty profile.
      *
      * No em dash (U+2014) appears anywhere in the output, and none may be
-     * introduced — the recipe prompt asserts its absence.
+     * introduced - the recipe prompt asserts its absence.
      */
     override fun promptFragment(): String {
         val lines = mutableListOf<String>()
@@ -150,7 +150,7 @@ data class TasteProfile(
          *
          * `encodeDefaults = true` is load-bearing, not stylistic: kotlinx's default
          * omits properties equal to their default, so a default-constructed profile
-         * would encode as `{}` — a blob iOS cannot decode at all. With it on, all
+         * would encode as `{}` - a blob iOS cannot decode at all. With it on, all
          * thirteen keys are always present and the six lists always render as `[]`,
          * never `null`.
          *
@@ -168,7 +168,7 @@ data class TasteProfile(
         /**
          * Decode a stored blob, returning null on anything unreadable.
          *
-         * Deliberately more forgiving than iOS on *reading* — Kotlin's property
+         * Deliberately more forgiving than iOS on *reading* - Kotlin's property
          * defaults cover a missing key, where Swift fails the whole decode. That
          * asymmetry is safe in the direction that matters (a partial blob still
          * yields the allergies it does carry). It is **not** a licence to write one.

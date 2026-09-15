@@ -68,7 +68,7 @@ on hardware that refused the model read as a verification of the model path.
 
 ## Android: llama.cpp cross-compile VERIFIED WORKING
 
-Checkout `1bc7a5af0d14b1fb72f266abbd1237b394187115` (2026-09-15) — comfortably past the
+Checkout `1bc7a5af0d14b1fb72f266abbd1237b394187115` (2026-09-15) - comfortably past the
 June 4 2026 vision-conversion fix (PR #24118) that CLAUDE.md warns about.
 
 ### CORRECTION (Sept 14, 2026): an earlier version of this file was WRONG
@@ -81,9 +81,9 @@ advice would have silently removed vision support entirely.** At this commit
 no vision, no Gemma mmproj, no scan. It would have built clean and failed at runtime.
 
 Two flags fix it, both verified by building:
-- `-DLLAMA_BUILD_MTMD=ON` — the standalone escape hatch at `CMakeLists.txt:266-269`,
+- `-DLLAMA_BUILD_MTMD=ON` - the standalone escape hatch at `CMakeLists.txt:266-269`,
   which exists for exactly this case: the mtmd library without the CLI binaries.
-- `-DLLAMA_BUILD_APP=OFF` — `llama-app` (the unified CLI) is added at
+- `-DLLAMA_BUILD_APP=OFF` - `llama-app` (the unified CLI) is added at
   `CMakeLists.txt:257` and defaults ON for a standalone build. It is what failed in the
   original spike (`-lllama-server-impl`, `-lllama-cli-impl`) and what failed again with
   only `MTMD=ON` (`arg.h` / `build-info.h` not found). Turning it off is the actual fix;
@@ -134,7 +134,7 @@ must also package the NDK's `libc++_shared.so` (see the size table).
 
 Strip with
 `$ANDROID_HOME/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip --strip-unneeded`.
-140M unstripped to 10M stripped is a 14x difference — do not ship unstripped.
+140M unstripped to 10M stripped is a 14x difference - do not ship unstripped.
 
 Note the target is named **`llama-common`** (producing `libllama-common.so`), not
 `common`. It is built, installed and fully exported under `BUILD_SHARED_LIBS=ON`, so
@@ -184,11 +184,11 @@ trusting it, since a toolchain change would break it silently:
   in the NDK sysroot). Neither matters: still images only, and Kroger OAuth uses the Android
   HTTP stack.
 - The build emits no `-march` flag. `GGML_NATIVE` auto-defaults OFF when cross-compiling and
-  `GGML_CPU_ARM_ARCH` is empty, so dotprod and i8mm int8 GEMM kernels are compiled out — a
+  `GGML_CPU_ARM_ARCH` is empty, so dotprod and i8mm int8 GEMM kernels are compiled out - a
   real decode/prefill slowdown on a platform that is already CPU-only. Consider
   `-DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+fp16`. Caveat: enabling dotprod activates the
   CPU_REPACK buffer type, which copies eligible weights into non-evictable anonymous RAM.
-  IQ3_XXS and Q3_K_S are NOT in the eligible list, so the shipped quant is unaffected — but
+  IQ3_XXS and Q3_K_S are NOT in the eligible list, so the shipped quant is unaffected - but
   set `use_extra_bufts = false` if anyone pins Q4_0.
 - x86_64 (emulator) is UNVERIFIED. On an Apple Silicon host the arm64-v8a emulator image is
   the native one, so this does not block the dev loop. Ship `arm64-v8a` only and let the
@@ -202,7 +202,7 @@ phone's CPU. Consequences:
   On Android the weights are `MAP_SHARED|PROT_READ` on a regular file and the CPU backend
   wraps them zero-copy, so they are clean and **evictable**. The iOS jetsam profile does not
   transfer. Caveat: `MAP_POPULATE` pre-faults all 3.5GB at load, and Android's LMK and
-  `Debug.getMemoryInfo()` both count clean file-backed pages in PSS — so the killer sees
+  `Debug.getMemoryInfo()` both count clean file-backed pages in PSS - so the killer sees
   more than "just KV cache plus compute buffers".
 - Latency will be materially worse than iOS's ~20 s/call. **Measure it before building any
   scan-UI timing assumptions. Do not ship an estimate.**
@@ -211,7 +211,7 @@ phone's CPU. Consequences:
 ## Linux/IoT: DO NOT COMPILE llama.cpp
 
 Official prebuilt artifacts cover every target we care about. Release tags are `bNNNNN`
-build numbers (note: the GitHub "latest release" API returns a stray `v0.4.1` tag — ignore
+build numbers (note: the GitHub "latest release" API returns a stray `v0.4.1` tag - ignore
 it and query the releases list instead).
 
 Per-release Linux assets confirmed present (e.g. `b10970`):

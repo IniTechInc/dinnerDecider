@@ -12,7 +12,7 @@ package com.philwoolley.dinnerdecider.contract
  * so the *rendered* prompt is **one line with no embedded newlines**. The Kotlin
  * raw strings below are therefore each a single physical line, however long that
  * makes them. A reformatter that wraps one of these strings changes the bytes the
- * model sees, which is a silent recognition regression with no failing test — hence
+ * model sees, which is a silent recognition regression with no failing test - hence
  * the length and no-newline assertions in `VisionPromptsTest`.
  *
  * Do **not** pad these prompts. The runtime context is 1024 tokens total and is
@@ -69,7 +69,7 @@ object VisionPrompts {
      * The vocabulary anchor is kept **identical** to [IDENTIFY_ITEM_TEMPLATE] on
      * purpose: the two passes must agree on naming or the name+brand dedupe between
      * them stops working. The literal `[{...}]` shape is what makes the model emit a
-     * top-level array rather than an object with an `items` key — and an object
+     * top-level array rather than an object with an `items` key - and an object
      * reply is a hard miss, since the parser's array path requires a genuine
      * top-level `[`.
      */
@@ -106,7 +106,7 @@ object VisionPrompts {
          * It looks like a memory lever and is not. `batch` must be at least one
          * image's vision-token chunk; Gemma 4 emits roughly 256 image tokens per
          * 896x896 image. At 256 (shipped in builds 5 and 7) **every image chunk
-         * failed to evaluate and scans found nothing** — recognition broke completely
+         * failed to evaluate and scans found nothing** - recognition broke completely
          * while the app appeared to work, which is the worst failure mode this
          * project has. Commit `af11e8c`: "Fix empty scans on build 5: batch back to
          * 512, image vision chunks must fit one batch."
@@ -143,13 +143,13 @@ object VisionPrompts {
          * The argument for it: 1024 minus ~256 image tokens minus ~140 prompt tokens
          * leaves under 630 for a fully enumerated inventory array, with no auto-grow.
          * The iOS reason for 1024 was to shrink *wired* KV cache, and Android has no
-         * wired ceiling — inference is CPU-only, the weights are file-backed and
+         * wired ceiling - inference is CPU-only, the weights are file-backed and
          * evictable, and KV at 2048 on CPU is tens of megabytes.
          *
          * Why it is still not the default: `shared/README.md` rule 4 makes a memory
          * decision something you make explicitly and record, never something you
          * drift into. Flipping it requires an on-device PSS measurement, and that
-         * measurement is **BLOCKED, not pending** — no 8 GB-or-larger Android device
+         * measurement is **BLOCKED, not pending** - no 8 GB-or-larger Android device
          * is available, and the 6 GB Galaxy XCover6 Pro on hand cannot host the
          * model at all. See `docs/PORTING_NOTES.md`, section *Available test
          * hardware*. Do not substitute an estimate for the measurement.
@@ -175,7 +175,7 @@ object VisionPrompts {
          * documents. iOS configured no cap and no stop strings: it simply drained the
          * token stream to completion, which was tolerable on a GPU backend answering
          * in ~20 s. On Android inference is CPU-only, so an un-terminated generation
-         * is an **unbounded hang** with no upper bound the user can wait out — the
+         * is an **unbounded hang** with no upper bound the user can wait out - the
          * same class of problem as an uncancellable native call.
          *
          * 512 is sized to [CONTEXT_CONTRACT]: 1024 total minus ~256 image tokens

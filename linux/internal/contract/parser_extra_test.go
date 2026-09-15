@@ -12,8 +12,8 @@ import (
 // shared/parser/response-parsing.md specifies behavior beyond them:
 //
 //   - StripCodeFences has no Swift test and no fixture of its own. It is only
-//     ever observed through a decode, so the ORDER of the four literals — the
-//     one thing most likely to be got wrong in a port — is invisible to the
+//     ever observed through a decode, so the ORDER of the four literals - the
+//     one thing most likely to be got wrong in a port - is invisible to the
 //     suite.
 //   - FirstJSONArray has NO DIRECT FIXTURE. All 8 array cases reach it through
 //     DecodeIdentifiedItemArray, so its raw substring boundaries are never
@@ -60,7 +60,7 @@ func TestStripCodeFencesRemovesAllFourLiterals(t *testing.T) {
 //
 // If the bare "```" were removed first, "```json" would collapse to "json" and
 // leave an orphaned language token sitting in the text. Harmless for the brace
-// scanner, but it means the order is untested by every fixture — so test it
+// scanner, but it means the order is untested by every fixture - so test it
 // directly.
 func TestStripCodeFencesLiteralOrderIsLoadBearing(t *testing.T) {
 	got := StripCodeFences("```json\n{\"name\": \"Omelet\"}\n```")
@@ -135,7 +135,7 @@ func TestStripReasoningDoesNotTrim(t *testing.T) {
 //
 // An honest note, discovered by mutating this port and re-running the suite:
 // swapping the two steps still passes all 27 fixtures, and still passes the
-// realistic case below. That is not a hole in the fixtures — it is a property of
+// realistic case below. That is not a hole in the fixtures - it is a property of
 // the two functions. StripCodeFences never touches the "<channel|>" literal and
 // StripReasoning never touches a fence, so for every realistic input the two
 // steps COMMUTE, and the bracket scanner skips whatever junk either one leaves
@@ -166,7 +166,7 @@ func TestOrderOfOperationsReasoningBeforeFences(t *testing.T) {
 	// The "right" answer here is the decoy, which reads backwards until you
 	// remember what is being asserted: that the port applies the two steps in the
 	// specified order, not that this particular salvage is desirable. Garbage in,
-	// identical garbage out — that is what parity means.
+	// identical garbage out - that is what parity means.
 	t.Run("fence stripping must not be able to manufacture a channel marker", func(t *testing.T) {
 		raw := "{\"name\": \"FIRST\"} tail <channel```|> {\"name\": \"SECOND\"}"
 		got, ok := FirstJSONObject(raw)
@@ -395,7 +395,7 @@ func TestScannerHandlesNestedDepth(t *testing.T) {
 
 // TestScannerIsSafeOnMultiByteInput guards the byte-indexed scan. Every byte of
 // a multi-byte UTF-8 sequence has its high bit set, so none can collide with an
-// ASCII delimiter — but only a test keeps that true after someone "optimizes"
+// ASCII delimiter - but only a test keeps that true after someone "optimizes"
 // the loop.
 func TestScannerIsSafeOnMultiByteInput(t *testing.T) {
 	const raw = "Voilà: {\"name\": \"Crème Brûlée 🍮\", \"brand\": null, \"category\": \"other\", \"confidence\": 0.5}"
@@ -445,7 +445,7 @@ func TestDecodeIdentifiedItemArrayNilVersusEmpty(t *testing.T) {
 func TestDecodeIdentifiedItemDoesNotAcceptAnArray(t *testing.T) {
 	const raw = "[{\"name\": \"Milk\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.9}]"
 	// Extraction finds the element object, but the caller asked for ONE item and
-	// gets exactly that one — it is never silently unwrapped from a list of many.
+	// gets exactly that one - it is never silently unwrapped from a list of many.
 	item, ok := DecodeIdentifiedItem(raw)
 	if !ok {
 		t.Fatal("DecodeIdentifiedItem over a one-element array: extraction finds the element")

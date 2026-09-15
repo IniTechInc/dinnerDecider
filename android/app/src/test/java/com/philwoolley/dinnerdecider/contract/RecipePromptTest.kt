@@ -149,7 +149,7 @@ class RecipePromptTest {
      * Not in the Swift suite: the exact line ORDER and the `\n` join, asserted as
      * one whole string. `contains` checks cannot catch a line emitted in the
      * wrong place, a join point turned into a newline by a formatter, or a
-     * wrapped clause — and all three are silent recognition regressions.
+     * wrapped clause - and all three are silent recognition regressions.
      */
     @Test
     fun testPromptAssemblesExactLinesInOrder() {

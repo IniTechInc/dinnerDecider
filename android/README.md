@@ -1,4 +1,4 @@
-# DinnerDecider — Android
+# DinnerDecider - Android
 
 Native Android port of the iOS app. Same on-device Gemma 4 E4B pipeline, same shared
 contracts (`../shared/`), same design language.
@@ -7,7 +7,7 @@ contracts (`../shared/`), same design language.
 
 | | |
 |---|---|
-| `ANDROID_HOME` | `~/Library/Android/sdk` (**not** exported by the shell profile — export it yourself) |
+| `ANDROID_HOME` | `~/Library/Android/sdk` (**not** exported by the shell profile - export it yourself) |
 | JDK | 21 (JetBrains Runtime, from Android Studio) |
 | Gradle | 8.13 (wrapper, `gradle-8.13-bin.zip`) |
 | AGP | 8.13.2 |
@@ -26,7 +26,7 @@ export PATH="$ANDROID_HOME/platform-tools:$PATH"
 ```sh
 ./gradlew :app:assembleDebug        # APK
 ./gradlew :app:lintDebug            # lint
-./gradlew :app:testDebugUnitTest    # host-JVM suite — the parity proof, no ABI, no device
+./gradlew :app:testDebugUnitTest    # host-JVM suite - the parity proof, no ABI, no device
 ./gradlew :app:connectedDebugAndroidTest   # arm64-v8a emulator or device
 ./gradlew :app:verifyNativeLibs     # native payload checks (skips while jniLibs is empty)
 ./gradlew :app:checkApkSize         # artifact size budget (skips while jniLibs is empty)

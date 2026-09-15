@@ -22,7 +22,7 @@ package com.philwoolley.dinnerdecider.contract
  *
  * ### The fallback is silent, so the strings must be copied literally
  * Anything unrecognized maps to [OTHER] without throwing and without dropping the
- * item. A port with a typo in one value (say `beverages`) fails no parsing test —
+ * item. A port with a typo in one value (say `beverages`) fails no parsing test  - 
  * it simply files every drink under "Other" forever. The nine strings here are
  * copied verbatim from `shared/taxonomy/categories.md`.
  */
@@ -48,7 +48,7 @@ enum class FoodCategory(
         /**
          * Map a **model-produced** category string onto the enum.
          *
-         * Lower-cases first, then matches exactly — no trimming, no fuzzy matching,
+         * Lower-cases first, then matches exactly - no trimming, no fuzzy matching,
          * no synonym table (`shared/taxonomy/categories.md` rule 2: "Do not add
          * any"). Unrecognized input falls back to [OTHER]; it never throws and never
          * drops the item, because an unexpected category is a display concern, not a
@@ -71,8 +71,8 @@ enum class FoodCategory(
          *
          * Deliberately does **not** lower-case: the value it reads was written by
          * [raw] itself and is already canonical (`shared/taxonomy/categories.md`
-         * rule 4 — "Keep the normalization at the boundary where untrusted model
-         * text enters, not deeper", and rule 5 — always persist `foodCategory.raw`,
+         * rule 4 - "Keep the normalization at the boundary where untrusted model
+         * text enters, not deeper", and rule 5 - always persist `foodCategory.raw`,
          * never the model's original string).
          *
          * Port of `InventoryItem.swift:65-68`:

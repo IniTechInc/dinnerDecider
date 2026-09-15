@@ -1,6 +1,6 @@
 // Package contract holds the cross-platform DinnerDecider contract: the wire
 // and persisted types, the food taxonomy, and (in later steps) the pure parity
-// core — parser, model lifecycle, scan budget, scan outcome and logic helpers.
+// core - parser, model lifecycle, scan budget, scan outcome and logic helpers.
 //
 // Everything here is a faithful port of the shipped iOS behavior as captured in
 // ../../../shared. Where Go and Swift disagree, Swift wins and the divergence is
@@ -21,8 +21,8 @@ import (
 // fridge, and the UI told the user to add more light.
 //
 // The constants are deliberately unprefixed. They are the names the rest of the
-// contract package spells out — contract.TerminalPhase returns `Finished`,
-// `Failed` or `Empty` — and the plan's pseudocode uses them bare.
+// contract package spells out - contract.TerminalPhase returns `Finished`,
+// `Failed` or `Empty` - and the plan's pseudocode uses them bare.
 //
 // The raw string is the wire form (the /api/scan/{id} snapshot's `phase` field).
 // Serialize the string, never an ordinal.
@@ -57,7 +57,7 @@ func (p ScanPhase) String() string { return string(p) }
 // DinnerDecider/Services/LLM/LLMService.swift:7-17 and
 // shared/schema/identified-item.schema.json.
 //
-// Decode it with UnmarshalIdentifiedItem, never with a bare json.Unmarshal —
+// Decode it with UnmarshalIdentifiedItem, never with a bare json.Unmarshal  -
 // see that function for why.
 type IdentifiedItem struct {
 	// Name is the item name as the model reports it, e.g. "Whole Milk". The
@@ -68,7 +68,7 @@ type IdentifiedItem struct {
 	// it is unreadable.
 	//
 	// A pointer on purpose. Swift decodes this with decodeIfPresent, so an
-	// ABSENT key and an explicit null are both valid and both produce nil —
+	// ABSENT key and an explicit null are both valid and both produce nil  -
 	// and both must stay distinguishable from the empty string, which is a
 	// third, different thing (the conformance fixtures pin this).
 	Brand *string `json:"brand"`
@@ -195,7 +195,7 @@ type RecipeBundleResponse struct {
 type PlannedMeal struct {
 	// ID is a stable identity generated at creation, formatted as a UUID.
 	// Hand-rolled UUIDv4 (crypto/rand plus version and variant bits) per plan
-	// §1.1 — this port does not take a UUID dependency.
+	// §1.1 - this port does not take a UUID dependency.
 	ID string `json:"id"`
 	// RecipeName is copied from RecipeSuggestion.Name.
 	RecipeName string `json:"recipeName"`
@@ -210,7 +210,7 @@ type PlannedMeal struct {
 	// as InventoryItem.DateAdded.
 	PlannedDate time.Time `json:"plannedDate"`
 	// CalendarEventId is the platform calendar event identifier
-	// (EKEvent.eventIdentifier on iOS). Nullable, and unused on Linux — the
+	// (EKEvent.eventIdentifier on iOS). Nullable, and unused on Linux - the
 	// column is kept so the field set stays compatible.
 	CalendarEventId *string `json:"calendarEventId"`
 }
@@ -255,7 +255,7 @@ type TasteProfile struct {
 // present value are three distinguishable outcomes. encoding/json silently
 // zero-fills a missing key into a non-pointer field, which would make
 // {"name": "Milk"} decode "successfully" into an item with an empty category
-// and a 0 confidence — Swift refuses that input outright, and the conformance
+// and a 0 confidence - Swift refuses that input outright, and the conformance
 // fixture object-missing-required-fields expects null.
 type identifiedItemShadow struct {
 	Name       *string  `json:"name"`
@@ -266,7 +266,7 @@ type identifiedItemShadow struct {
 
 // UnmarshalIdentifiedItem decodes one IdentifiedItem from a JSON object.
 //
-// It reports ok=false — "no value" — for malformed JSON, for a JSON null, and
+// It reports ok=false - "no value" - for malformed JSON, for a JSON null, and
 // for any input missing name, category or confidence (or supplying null for
 // one of them). Only `brand` may be absent or null; both land on a nil
 // IdentifiedItem.Brand, and neither is the same as "".

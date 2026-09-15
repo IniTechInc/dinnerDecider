@@ -10,7 +10,7 @@ package com.philwoolley.dinnerdecider.contract
 enum class ModelDownloadFile(
     /**
      * Destination filename. Must match what [ModelFileSelection] resolves, or the
-     * runtime will not pick the files up — pinned by a test.
+     * runtime will not pick the files up - pinned by a test.
      */
     val fileName: String,
     /** Public, no-auth direct download URL on Hugging Face. */
@@ -18,7 +18,7 @@ enum class ModelDownloadFile(
     /**
      * Approximate size, for sensible progress before the HEAD request returns the
      * exact `Content-Length`, and as a friendly label. **Deliberately approximate:
-     * never use it as a verification constant** — that is [exactBytes].
+     * never use it as a verification constant** - that is [exactBytes].
      */
     val approxBytes: Long,
     /**
@@ -109,7 +109,7 @@ object ModelDownloadLogic {
      * Whether a finished file's real size matches the expected size.
      *
      * A zero (unknown) expected size is treated as **invalid**: never accept a file
-     * you cannot vouch for. That is the whole point of the check — a server that
+     * you cannot vouch for. That is the whole point of the check - a server that
      * omits `Content-Length` must not be able to talk the app into loading an
      * arbitrary blob as GGUF.
      */
@@ -118,7 +118,7 @@ object ModelDownloadLogic {
     /**
      * Whether a download may begin given the network.
      *
-     * On a metered connection an explicit user confirmation is required first —
+     * On a metered connection an explicit user confirmation is required first  - 
      * this is a multi-gigabyte transfer. (iOS names this `isCellular`; `isMetered`
      * is the Android framing, and covers metered Wi-Fi too.)
      */
@@ -145,8 +145,8 @@ object ModelDownloadLogic {
      * Pure state transition.
      *
      * **Any unhandled pairing is a no-op**, returning the current state. That is not
-     * laziness: a transfer this long generates stray callbacks — a resume delivered
-     * after completion, a pause arriving mid-verification — and treating them as
+     * laziness: a transfer this long generates stray callbacks - a resume delivered
+     * after completion, a pause arriving mid-verification - and treating them as
      * errors, or letting them fall through to some "reset" branch, is how the UI
      * ends up showing a paused bar for a finished download.
      *

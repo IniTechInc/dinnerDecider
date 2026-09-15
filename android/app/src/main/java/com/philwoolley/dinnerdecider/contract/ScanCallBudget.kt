@@ -4,7 +4,7 @@ package com.philwoolley.dinnerdecider.contract
  * The scan-wide cap on heavy model calls.
  *
  * Port of `AppModel.swift:39-52`. Field fix: an 8 GB phone jetsammed on the
- * **fifth** heavy call of a scan, so a scan gets at most four — one whole-image
+ * **fifth** heavy call of a scan, so a scan gets at most four - one whole-image
  * pass plus at most three crops.
  *
  * The budget is **scan-wide across all photos**, not per photo, and it is spent by
@@ -29,7 +29,7 @@ class ScanCallBudget(limit: Int = DEFAULT_LIMIT) {
         private set
 
     /**
-     * Spend one call. Returns false when the budget is exhausted — and once
+     * Spend one call. Returns false when the budget is exhausted - and once
      * exhausted it stays exhausted for the life of the scan; there is no refill.
      */
     fun consume(): Boolean {

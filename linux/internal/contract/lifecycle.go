@@ -177,7 +177,7 @@ const (
 // while changing nothing. On iOS one user and one UI serialize this implicitly;
 // on a LAN service two phones, two tabs, or a recipe generation overlapping a
 // scan can reach BeginInference concurrently. Do NOT "fix" that here by adding
-// mutexes, slots or multi-state support — it is contract-pinned. Serialization
+// mutexes, slots or multi-state support - it is contract-pinned. Serialization
 // lives OUTSIDE this type, in the supervisor's capacity-1 inference gate which
 // is acquired BEFORE BeginInference is ever called, so the machine is only ever
 // asked when it can say yes (plan §0.1).
@@ -290,7 +290,7 @@ func (m *ModelLifecycle) FinishLoad(success bool) {
 //
 // A false return is NOT an inference failure for scan-outcome counting: it
 // never reached the model, and counting it would manufacture a spurious Failed
-// (plan §0.1). It must not be silently skipped either — that ends at
+// (plan §0.1). It must not be silently skipped either - that ends at
 // TerminalPhase(0, 0) = Empty, the "Nothing spotted" lie.
 func (m *ModelLifecycle) BeginInference() bool {
 	if m.state != Ready {
@@ -323,7 +323,7 @@ func (m *ModelLifecycle) FinishInference() {
 //
 // Note that at Ready this proceeds EVEN DURING AN ACTIVE SESSION: an explicit
 // request from the app or operator is trusted, and only *pressure* respects
-// sessions. So an operator restart during a scan is not necessarily immediate —
+// sessions. So an operator restart during a scan is not necessarily immediate  -
 // a scan alternates Ready between calls and Inferring during a call; at Ready it
 // proceeds, at Inferring it defers and fires on drain.
 func (m *ModelLifecycle) RequestUnload() UnloadDecision {
@@ -392,8 +392,8 @@ func (m *ModelLifecycle) HandleMemoryPressure(level MemoryPressureLevel) UnloadD
 
 // RequestDeferredUnload is a Linux-port addition that CHANGES NO BEHAVIOR.
 //
-// It is a thin alias for the PressureCritical branch of HandleMemoryPressure —
-// one implementation, not two — so that non-memory causes (a health-check
+// It is a thin alias for the PressureCritical branch of HandleMemoryPressure  -
+// one implementation, not two - so that non-memory causes (a health-check
 // failure, a config change, an idle timeout) stop having to lie about being
 // memory events just to get "unload as soon as it is safe" semantics. The
 // Swift has no such caller because iOS has no supervised child process to lose.
@@ -428,7 +428,7 @@ func (m *ModelLifecycle) FinishUnload() {
 // All three conditions are load-bearing. The caller runs this after EVERY load
 // and after EVERY inference, and at EndSession. The !sessionActive clause is
 // what stops a critical event that arrived during a scan from freeing the model
-// between crops — a mid-session drain would gut the remaining crops.
+// between crops - a mid-session drain would gut the remaining crops.
 func (m *ModelLifecycle) DrainPendingUnload() UnloadDecision {
 	if !m.pendingUnload || m.state != Ready || m.SessionActive() {
 		return UnloadNothingToDo
@@ -459,7 +459,7 @@ func (m *ModelLifecycle) BeginSession() {
 //	if sessionActive { return UnloadNothingToDo }   // others still running
 //	return drainPendingUnload()                     // last one out honors it
 //
-// Sessions NEST — counted, not boolean — because a scan and a recipe run can
+// Sessions NEST - counted, not boolean - because a scan and a recipe run can
 // overlap; the deferred unload fires only when the last one ends. The clamp at
 // 0 makes an unbalanced EndSession harmless.
 func (m *ModelLifecycle) EndSession() UnloadDecision {

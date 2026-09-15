@@ -38,19 +38,19 @@ is another reason the context must not be spent on prompt padding.
 - `TODO(unresolved): exact tokenizer token count, and any cap on N (the number of
   array elements). Neither the prompt nor the code bounds N; the pipeline bounds
   cost by call count, not by items per call.`
-- `TODO(unresolved): maximum generated tokens / stop sequences — none configured,
+- `TODO(unresolved): maximum generated tokens / stop sequences - none configured,
   same as identify-item.`
 
 ## Why it is worded this way
 
-- **`List ALL ... visible in this photo.`** with `ALL` capitalised — this prompt
+- **`List ALL ... visible in this photo.`** with `ALL` capitalised - this prompt
   was added in `222b956` specifically to catch items that fall *between* crop
   boxes. Its whole job is recall, so the instruction leans hard on completeness.
 - **Same 25-item "Common items include:" vocabulary anchor** as `identify-item`,
   for the same reason, and kept identical so the two passes agree on naming and
-  their results dedupe cleanly (dedupe is a normalized name+brand string match —
+  their results dedupe cleanly (dedupe is a normalized name+brand string match  - 
   see `pipeline/scan-pipeline.md`; divergent vocabularies would defeat it).
-- **`Text found in the image:`** (not "on the packaging") — a whole photo's OCR
+- **`Text found in the image:`** (not "on the packaging") - a whole photo's OCR
   spans many labels, so the narrower packaging framing would be misleading.
 - **No `unknown` escape hatch in this prompt.** The array form already lets the
   model answer "nothing here" with `[]`. The pipeline nevertheless applies the
@@ -58,7 +58,7 @@ is another reason the context must not be spent on prompt padding.
   (`AppModel.swift:329-331` and `370-373`), because models emit `unknown` rows
   anyway. Port the filter, not the omission.
 - **`Respond ONLY with a JSON array, no other words:`** plus the literal
-  `[{...}]` shape — the array brackets in the example are what make the model
+  `[{...}]` shape - the array brackets in the example are what make the model
   emit a top-level array rather than an object with an `items` key. The parser's
   array path requires a genuine top-level `[` (`firstJSONArray`), and an object
   reply is a hard miss: `decodeArray` on an object returns nil, which the pipeline

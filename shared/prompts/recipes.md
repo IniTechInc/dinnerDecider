@@ -9,14 +9,14 @@ Source of record: `DinnerDecider/Services/AppModel.swift:480-524`
 `DinnerDecider/Models/TasteProfile.swift:61-92` (`promptFragment()`) and
 `DinnerDecider/Services/InventoryLogic.swift:147-153` (`portionLine`).
 
-It is `nonisolated static` on iOS — a pure function of its arguments with no
+It is `nonisolated static` on iOS - a pure function of its arguments with no
 global reads. Keep it pure in ports; its tests (`RecipePromptTests.swift`) depend
 on that.
 
 ## Assembly
 
 The prompt is a list of lines **joined with `\n`** (`AppModel.swift:523`). Lines
-2 and 4-8 are conditional; lines 1, 9 and 10 are always present. Order matters —
+2 and 4-8 are conditional; lines 1, 9 and 10 are always present. Order matters  - 
 `RecipePromptTests.testPromptIncludesTasteProfileAllergyLineBeforeSchema` asserts
 the taste fragment sits **before** the JSON schema instruction "so it reads as
 context, not an afterthought".
@@ -56,7 +56,7 @@ when unset (`PrefKey.defaultHouseholdSize`, `Preferences.swift:69,86`).
 
 ### Portion line (verbatim)
 
-`InventoryLogic.portionLine(householdSize:)` — `InventoryLogic.swift:147-153`:
+`InventoryLogic.portionLine(householdSize:)` - `InventoryLogic.swift:147-153`:
 
 - `householdSize < 1` -> **omit the line entirely** (returns nil).
 - `householdSize == 1` -> `Cooking for 1 person; use single-serving portions.`
@@ -64,7 +64,7 @@ when unset (`PrefKey.defaultHouseholdSize`, `Preferences.swift:69,86`).
 
 ### Taste-profile fragment (verbatim)
 
-`TasteProfile.promptFragment()` — `TasteProfile.swift:61-92`. Lines joined with
+`TasteProfile.promptFragment()` - `TasteProfile.swift:61-92`. Lines joined with
 `\n`; each category line is emitted only when that category has content. A
 category's content is its selected pills plus its trimmed free-text "other"
 field, joined with `, ` (`combined()`, `TasteProfile.swift:53-58`).
@@ -92,7 +92,7 @@ The spice line is **always emitted**, even for an otherwise-empty profile
 | 5 | `very spicy, the hotter the better` |
 | any other | `medium spice` |
 
-`hasContent` — the gate on whether the fragment is included at all — is true if
+`hasContent` - the gate on whether the fragment is included at all - is true if
 **any** of the six pill lists is non-empty **or any** of the six "other" text
 fields is non-blank (`TasteProfile.swift:29-34`). It must cover all six
 categories: an earlier version only checked favorites/dislikes, which silently
@@ -103,11 +103,11 @@ port that checks fewer categories reintroduces a safety bug, not a cosmetic one.
 ## Token budget
 
 - Same 1024-token runtime context as the vision prompts
-  (`GemmaLLMService.swift:62`) — this call carries **no image**, so all 1024
+  (`GemmaLLMService.swift:62`) - this call carries **no image**, so all 1024
   tokens are text: prompt plus the full recipe bundle reply.
 - The tuning comment justifies 1024 partly on this call being "a compact recipe
   list". The inventory is passed as a **comma list, not prose** ("per spec",
-  `AppModel.swift:478`) precisely to keep it compact — `Inventory: Eggs, Milk,
+  `AppModel.swift:478`) precisely to keep it compact - `Inventory: Eggs, Milk,
   Cheese.` is the asserted shape
   (`RecipePromptTests.testPromptListsInventoryAsCommaList`).
 - `TODO(unresolved): the maximum safe inventory size before the reply is
@@ -115,11 +115,11 @@ port that checks fewer categories reintroduces a safety bug, not a cosmetic one.
   no measurement of this limit exists in the repo (searched AppModel.swift,
   eval/, MacHarness/). A port targeting a larger context should still emit the
   comma-list form for parity.`
-- `TODO(unresolved): maximum generated tokens / stop sequences — none configured.`
+- `TODO(unresolved): maximum generated tokens / stop sequences - none configured.`
 
 ## Why it is worded this way
 
-### The real-dishes clause — a deliberate bug fix (commit `45b99c3`)
+### The real-dishes clause - a deliberate bug fix (commit `45b99c3`)
 
 > `Suggest real, well-known dishes only, with their genuine standard ingredients.`
 > `Never invent a dish or force a dish to use only the inventory.`
@@ -127,7 +127,7 @@ port that checks fewer categories reintroduces a safety bug, not a cosmetic one.
 
 TestFlight feedback #3 (build 3, `testflight-feedback.md`): the generator
 invented a *"cheesy Italian dip"* from ketchup + cheddar. The cause was the
-prior wording, which told the model that `makeNow` "uses only inventory items" —
+prior wording, which told the model that `makeNow` "uses only inventory items"  - 
 so the model worked backwards from the inventory and fabricated a plausible
 dish name to fit it. Commit `45b99c3` removed the inventory-only rule and
 inverted the framing: pick a **real** dish first, then mark honestly which of its
@@ -163,7 +163,7 @@ missing items, which made every dish look unmakeable.
 - **`missing up to 3 ingredients`** bounds `almostThere` to things actually worth
   a grocery trip.
 - `almostThere":[...]` is deliberately abbreviated with `...` in the skeleton
-  rather than repeating the whole object — it keeps the prompt short (context is
+  rather than repeating the whole object - it keeps the prompt short (context is
   wired memory) and the model infers the repeat correctly.
 
 ### House style
@@ -189,4 +189,4 @@ We could not read the recipe ideas this time. Please try again.
 On success, `makeNow` and `almostThere` are replaced wholesale,
 `hasGeneratedRecipes` is set true, and the error is cleared. `hasGeneratedRecipes`
 exists so the UI can distinguish "never generated" from "generated, nothing
-matched" — port that distinction.
+matched" - port that distinction.

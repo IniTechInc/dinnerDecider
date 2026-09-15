@@ -30,10 +30,10 @@ data class Box(
  * backwards silently changes which photos take the tile fallback.
  * `CropService.swift:37-42` runs:
  *
- * 1. `detectBoxes(...)` — which calls [mergeOverlapping] **internally**, so the
+ * 1. `detectBoxes(...)` - which calls [mergeOverlapping] **internally**, so the
  *    boxes it returns are already merged;
  * 2. `pad(0.15)` over every returned box;
- * 3. `isTileFallback = boxes.count < 2` — the `< 2` test therefore sees the
+ * 3. `isTileFallback = boxes.count < 2` - the `< 2` test therefore sees the
  *    **padded** set.
  *
  * Padded boxes are deliberately **not** re-merged: padding two near-neighbours
@@ -96,7 +96,7 @@ object CropGeometry {
     /**
      * Greedily merge boxes whose IoU exceeds [MERGE_IOU_THRESHOLD].
      *
-     * **Greedy and order-dependent — this is not a clustering algorithm and must
+     * **Greedy and order-dependent - this is not a clustering algorithm and must
      * not be "improved" into one.** Walk the input in order; for each box with a
      * positive area, scan the already-kept boxes in order, union into the
      * **first** one whose IoU exceeds the threshold and **stop**; if none
@@ -157,7 +157,7 @@ object CropGeometry {
      * **top-left**, matching the image's own coordinate space.
      *
      * The y flip is the whole point: `y = (1 - normalized.maxY) * height`. Using
-     * `minY` here instead is the classic mirrored-crops bug — every box lands in
+     * `minY` here instead is the classic mirrored-crops bug - every box lands in
      * the wrong half of the photo and recognition quietly collapses.
      */
     fun pixelRect(normalized: Box, width: Int, height: Int): Box {
@@ -178,7 +178,7 @@ object CropGeometry {
      * **Per-axis, exactly as shipped.** `tileWidth = width / 3.0` and
      * `tileHeight = height / 3.0` are computed **independently**, and the steps
      * are `tile * (1 - 0.20)` on each axis. A `tile = size / 3` formulation using
-     * the image's **minimum** dimension emits **12** tiles for 2016x1512 — the
+     * the image's **minimum** dimension emits **12** tiles for 2016x1512 - the
      * right answer arrived at by the wrong arithmetic. Use the per-axis form.
      *
      * ```
@@ -205,7 +205,7 @@ object CropGeometry {
      *
      * **Do not "fix" this to 9 or 12 without re-running the eval harness.** Note
      * also that the 4-call scan budget means at most **3** of these 16 tiles are
-     * ever analyzed (Pass A spends one call before the crop loop) — a documented
+     * ever analyzed (Pass A spends one call before the crop loop) - a documented
      * non-goal, changed only alongside iOS.
      */
     fun tileGrid(width: Int, height: Int): List<Box> {

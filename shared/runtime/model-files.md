@@ -29,28 +29,28 @@ Provenance (public, no-auth direct downloads, `ModelDownloadService.swift:26-32`
 - mmproj: `https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/mmproj-gemma-4-E4B-it-Q8_0.gguf`
 
 The app's own progress UI uses `approxBytes` of **534,000,000** (mmproj) and
-**3,460,000,000** (weights) as pre-HEAD estimates — deliberately approximate, not
+**3,460,000,000** (weights) as pre-HEAD estimates - deliberately approximate, not
 a verification constant.
 
 ## Weights preference order
 
 `ModelFileLocator.defaultModelPreference`, most preferred first:
 
-1. `gemma-4-E4B-it-UD-IQ3_XXS.gguf` — **3.46 GiB**
-2. `gemma-4-E4B-it-Q3_K_S.gguf` — **3.60 GiB**
+1. `gemma-4-E4B-it-UD-IQ3_XXS.gguf` - **3.46 GiB**
+2. `gemma-4-E4B-it-Q3_K_S.gguf` - **3.60 GiB**
 
 Measured in the macOS harness against this GGUF (`ModelFileLocator.swift:23-28`,
 corroborated by `CLAUDE.md`):
 
 - **UD-IQ3_XXS** saves **~0.82 GiB** of wired memory vs Q4_0, emitted the
   cleanest and most compact JSON, and decoded **faster** than Q3_K_S on Apple
-  Metal — **10.3 vs 8.8 tok/s**. The usual "IQ quants are slow on Metal" caveat
+  Metal - **10.3 vs 8.8 tok/s**. The usual "IQ quants are slow on Metal" caveat
   did not hold on this hardware. Preferred.
 - **Q3_K_S** saves **~0.68 GiB**, also correct. Kept as the fallback.
 
 Smaller quants are preferred over Q4_0 / Q4_K_M *specifically* because the whole
 model runs GPU-resident, so a smaller weights file is directly less wired Metal
-memory — the thing that caused the on-device jetsam. This is a memory ranking,
+memory - the thing that caused the on-device jetsam. This is a memory ranking,
 not a quality ranking.
 
 `TODO(unresolved): sha256 and exact byte size for gemma-4-E4B-it-Q3_K_S.gguf. It
@@ -96,7 +96,7 @@ Details pinned by `ModelFileLocatorTests`:
 - A pin naming a file that is not present is ignored, falling through to steps
   2-3 (`testFallsBackToFirstMatchWhenPreferredMissing`).
 - With none of the preferred quants present, the first eligible candidate wins in
-  **candidate-list order** — which is directory-enumeration order, so it is not
+  **candidate-list order** - which is directory-enumeration order, so it is not
   deterministic across platforms. Do not depend on it.
 - The prefix match means fine-tuned builds are auto-eligible as long as they are
   named `gemma-4-E4B-it-finetuned-*.gguf` (`CLAUDE.md`: keep the stock mmproj,
@@ -121,8 +121,8 @@ prefix). There is no user pin for the projector.
 
 Per file, in priority order:
 
-1. The app's **documents directory** — so files transferred by the user win.
-2. The **app bundle** — for a bundled demo build.
+1. The app's **documents directory** - so files transferred by the user win.
+2. The **app bundle** - for a bundled demo build.
 
 The first directory containing the chosen filename supplies it. `TODO(unresolved):
 no search path is specified for a Linux or Android port. The Swift resolves
@@ -134,7 +134,7 @@ shipped location" ordering.`
 
 | Parameter | Value | Why |
 | --- | --- | --- |
-| `context` | **1024** | KV cache is wired memory. Was 2048 (library default), then 1536, then dropped to 1024 after a field crash at scan start on the IQ3_XXS build — "escalation lever 1". Prompts and replies are short by design. |
+| `context` | **1024** | KV cache is wired memory. Was 2048 (library default), then 1536, then dropped to 1024 after a field crash at scan start on the IQ3_XXS build - "escalation lever 1". Prompts and replies are short by design. |
 | `batch` | **512** | Must be **>= one image's vision-token chunk**. At 256 (builds 5/7) *every image chunk failed to evaluate and scans found nothing*. 512 is the proven value. |
 | `temperature` | 0.2 | Extraction task, not a creative one |
 | `topK` | 40 | |
@@ -156,10 +156,10 @@ Consequences a port on any memory-constrained device should internalize:
 
 - **The Increased Memory Limit entitlement does not help.** It raises the
   app-footprint ceiling; the kill is about wired memory. (It is enabled anyway,
-  and is portal-UI-only — not settable via API.)
+  and is portal-UI-only - not settable via API.)
 - **The only lever is shrinking wired memory**: a smaller quant, a smaller
   context, and not leaking per-request GPU state.
-- **Wired memory is why the scan is capped at 4 heavy calls** — see
+- **Wired memory is why the scan is capped at 4 heavy calls** - see
   `shared/pipeline/scan-pipeline.md`.
 
 ### What each lever costs
@@ -169,8 +169,8 @@ Consequences a port on any memory-constrained device should internalize:
 | Q4_0 -> UD-IQ3_XXS weights | ~0.82 GiB | Lower-precision weights; in practice output got *cleaner* and decode got *faster* (10.3 vs 8.8 tok/s) | **Shipped** |
 | Q4_0 -> Q3_K_S weights | ~0.68 GiB | Slower decode than IQ3_XXS on Metal | Fallback |
 | context 2048 -> 1536 -> 1024 | Proportional KV cache | Less room for prompt + reply; already tight, do not raise without re-reading the memory notes | **Shipped** |
-| mmproj on CPU instead of GPU | ~534 MB | **Vision fails instantly on device.** Tried in builds 5/7, reverted in build 8 | **Reverted — do not retry** |
-| batch 512 -> 256 | Smaller compute buffer | **Every image chunk fails to evaluate; scans find nothing** | **Reverted — do not retry** |
+| mmproj on CPU instead of GPU | ~534 MB | **Vision fails instantly on device.** Tried in builds 5/7, reverted in build 8 | **Reverted - do not retry** |
+| batch 512 -> 256 | Smaller compute buffer | **Every image chunk fails to evaluate; scans find nothing** | **Reverted - do not retry** |
 | Per-request session reset | Removes per-call creep of cached image chunks | None measured | **Shipped (mandatory)** |
 | 4-call scan budget | Bounds worst case | At most 3 crops analyzed per scan | **Shipped** |
 | Capture downscale to 2016 px | ~10x less resident pixel memory | Slightly smaller crops | **Shipped** |
@@ -189,11 +189,11 @@ or the mmproj `use_gpu` toggle; `use_mmap=true` and full GPU offload are
 hardcoded. Partial offload or a CPU-side KV cache would each save more wired
 memory than anything above, but required forking the package.
 
-The repo **does** vendor a fork (`Vendor/LocalLLMClient`) — its one surviving
+The repo **does** vendor a fork (`Vendor/LocalLLMClient`) - its one surviving
 change is adding `resetSession()` (KV clear **plus** prompt-cache wipe; clearing
 the KV cache alone desyncs the prompt cache). A Kotlin or Go port binding
 llama.cpp directly has all of these knobs available natively and is not bound by
-this limitation — but must still implement the per-request reset.
+this limitation - but must still implement the per-request reset.
 
 ## Fallback when files are absent
 
@@ -208,7 +208,7 @@ always crashes at load there.
 - Headless memory self-test: launch with `--llm-selftest`, which writes peak
   footprint and available memory to `Documents/selftest_result.txt`
   (`SelfTest.swift`; bundled test image `DinnerDecider/Resources/selftest.png`).
-  A port should keep an equivalent headless probe — it is how the memory levers
+  A port should keep an equivalent headless probe - it is how the memory levers
   were measured without a UI in the loop.
 - Accuracy harness: `eval/` (see `eval/README.md`), which needs photos in
   `eval/testset/photos/` plus `labels.csv`.

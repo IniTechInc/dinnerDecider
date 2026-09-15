@@ -22,8 +22,8 @@ import java.io.File
 /**
  * THE PARITY PROOF.
  *
- * Runs the 27 golden fixtures in `shared/conformance/cases.json` — the same file
- * the iOS suite was extracted from and the same file any other port reads — against
+ * Runs the 27 golden fixtures in `shared/conformance/cases.json` - the same file
+ * the iOS suite was extracted from and the same file any other port reads - against
  * the Kotlin [LlmResponseParser]. Passing all 27 is the acceptance gate for the
  * parser half of the Android port.
  *
@@ -31,13 +31,13 @@ import java.io.File
  * `dd.shared.dir` system property that `android/app/build.gradle.kts` sets on every
  * `Test` task. It is deliberately NOT copied into `src/test/resources`: a copy
  * invites drift, and reading the one true file makes editing-to-pass structurally
- * impossible — any "fix" would show up as a diff to a shared, cross-platform
+ * impossible - any "fix" would show up as a diff to a shared, cross-platform
  * contract file that this task is forbidden to touch.
  *
  * Rules taken verbatim from `shared/conformance/README.md`:
  * - Run **every** case. No skipping, no filtering, no "known failing" tags.
  * - **Never edit a case to make a port pass.** If the port disagrees with a
- *   fixture, either the port is wrong or the Swift changed — and then the Swift
+ *   fixture, either the port is wrong or the Swift changed - and then the Swift
  *   test and the fixture move in the same commit.
  * - Report failures by `id`, so a failure is traceable to the named Swift test.
  * - Strings compare exactly, including whitespace. **No trimming.**
@@ -131,7 +131,7 @@ class ConformanceTest {
     }
 
     /**
-     * Supplementary assertions — **not** fixtures, and deliberately not added to
+     * Supplementary assertions - **not** fixtures, and deliberately not added to
      * `cases.json`.
      *
      * `shared/parser/response-parsing.md` and `shared/schema/recipe.schema.json`
@@ -141,7 +141,7 @@ class ConformanceTest {
      * unreadable-recipes error rather than a silently truncated time.
      *
      * Adding a fixture for this would mean editing a shared cross-platform file
-     * from a port task, which is forbidden — and `cases.json` only accepts cases
+     * from a port task, which is forbidden - and `cases.json` only accepts cases
      * backed by a real Swift test or a real captured model reply. So the rule is
      * enforced here, against the Kotlin parser only, and flagged as a candidate
      * for a proper fixture in a follow-up that touches Swift too.
@@ -170,7 +170,7 @@ class ConformanceTest {
     }
 
     /**
-     * `firstJSONArray` has no fixture of its own — `cases.json` covers it
+     * `firstJSONArray` has no fixture of its own - `cases.json` covers it
      * transitively through the six `decodeIdentifiedItemArray` cases. The runner
      * below implements it as a first-class operation anyway (all six operations in
      * `shared/conformance/README.md` are implemented), and this pins the two
@@ -199,7 +199,7 @@ class ConformanceTest {
         // A missing `expected` with expectNull:false is a MALFORMED SUITE, never
         // "expect null" (shared/conformance/README.md, File format).
         if (!expectNull && expected == null) {
-            return listOf("$id: MALFORMED SUITE — expectNull is false but `expected` is absent")
+            return listOf("$id: MALFORMED SUITE - expectNull is false but `expected` is absent")
         }
 
         return when (operation) {
@@ -227,7 +227,7 @@ class ConformanceTest {
                 nullness(id, got, expectNull) ?: compareRecipeBundle(id, got!!, expected!!.jsonObject)
             }
 
-            else -> listOf("$id: unknown operation '$operation' — the runner must implement every operation in the suite")
+            else -> listOf("$id: unknown operation '$operation' - the runner must implement every operation in the suite")
         }
     }
 
@@ -252,7 +252,7 @@ class ConformanceTest {
         expected: JsonElement?,
     ): List<String> {
         if (expectNull) {
-            return listOf("$id: MALFORMED SUITE — this operation never returns null")
+            return listOf("$id: MALFORMED SUITE - this operation never returns null")
         }
         val want = expected!!.jsonPrimitive.content
         // Exact equality, including whitespace. No trimming.
@@ -278,7 +278,7 @@ class ConformanceTest {
     ): List<String> {
         // Order- and length-sensitive.
         if (got.size != expected.size) {
-            return listOf("$id: array length mismatch — expected ${expected.size}, got ${got.size}")
+            return listOf("$id: array length mismatch - expected ${expected.size}, got ${got.size}")
         }
         val failures = mutableListOf<String>()
         got.forEachIndexed { index, item ->
@@ -320,25 +320,25 @@ class ConformanceTest {
         got: List<RecipeSuggestion>,
         expected: JsonArray?,
     ): List<String> {
-        if (expected == null) return listOf("$id: MALFORMED SUITE — expected bucket is absent")
+        if (expected == null) return listOf("$id: MALFORMED SUITE - expected bucket is absent")
         if (got.size != expected.size) {
-            return listOf("$id: length mismatch — expected ${expected.size}, got ${got.size}")
+            return listOf("$id: length mismatch - expected ${expected.size}, got ${got.size}")
         }
         val failures = mutableListOf<String>()
         got.forEachIndexed { index, suggestion ->
             val want = expected[index].jsonObject
             val path = "$id[$index]"
             failures += eqString(path, "name", suggestion.name, want)
-            // timeMinutes is an INTEGER and compares EXACTLY — no tolerance.
+            // timeMinutes is an INTEGER and compares EXACTLY - no tolerance.
             failures += eqInt(path, "timeMinutes", suggestion.timeMinutes, want)
             failures += eqStringList(path, "steps", suggestion.steps, want)
             failures += eqStringList(path, "missingItems", suggestion.missingItems, want)
 
             val wantIngredients = want["ingredients"]?.jsonArray
             if (wantIngredients == null) {
-                failures += "$path.ingredients: MALFORMED SUITE — absent"
+                failures += "$path.ingredients: MALFORMED SUITE - absent"
             } else if (suggestion.ingredients.size != wantIngredients.size) {
-                failures += "$path.ingredients: length mismatch — expected ${wantIngredients.size}, got ${suggestion.ingredients.size}"
+                failures += "$path.ingredients: length mismatch - expected ${wantIngredients.size}, got ${suggestion.ingredients.size}"
             } else {
                 suggestion.ingredients.forEachIndexed { line, ingredient ->
                     val wantLine = wantIngredients[line].jsonObject
@@ -356,7 +356,7 @@ class ConformanceTest {
 
     private fun eqString(id: String, field: String, got: String, expected: JsonObject): List<String> {
         val want = expected[field]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content
-            ?: return listOf("$id.$field: MALFORMED SUITE — expected value absent or null for a non-optional field")
+            ?: return listOf("$id.$field: MALFORMED SUITE - expected value absent or null for a non-optional field")
         return if (got == want) emptyList() else listOf("$id.$field: expected ${quote(want)}, got ${quote(got)}")
     }
 
@@ -374,32 +374,32 @@ class ConformanceTest {
         tolerance: Double,
     ): List<String> {
         val want = expected[field]?.takeUnless { it is JsonNull }?.jsonPrimitive?.double
-            ?: return listOf("$id.$field: MALFORMED SUITE — expected value absent or null")
+            ?: return listOf("$id.$field: MALFORMED SUITE - expected value absent or null")
         return if (kotlin.math.abs(got - want) <= tolerance) emptyList()
         else listOf("$id.$field: expected $want +/- $tolerance, got $got")
     }
 
     private fun eqInt(id: String, field: String, got: Int, expected: JsonObject): List<String> {
         val primitive = expected[field]?.takeUnless { it is JsonNull }?.jsonPrimitive
-            ?: return listOf("$id.$field: MALFORMED SUITE — expected value absent or null")
+            ?: return listOf("$id.$field: MALFORMED SUITE - expected value absent or null")
         val want = runCatching { primitive.int }.getOrElse {
-            return listOf("$id.$field: MALFORMED SUITE — expected value ${primitive.content} is not an integer")
+            return listOf("$id.$field: MALFORMED SUITE - expected value ${primitive.content} is not an integer")
         }
         return if (got == want) emptyList() else listOf("$id.$field: expected exactly $want, got $got")
     }
 
     private fun eqBoolean(id: String, field: String, got: Boolean, expected: JsonObject): List<String> {
         val want = expected[field]?.takeUnless { it is JsonNull }?.jsonPrimitive?.boolean
-            ?: return listOf("$id.$field: MALFORMED SUITE — expected value absent or null")
+            ?: return listOf("$id.$field: MALFORMED SUITE - expected value absent or null")
         return if (got == want) emptyList() else listOf("$id.$field: expected $want, got $got")
     }
 
     private fun eqStringList(id: String, field: String, got: List<String>, expected: JsonObject): List<String> {
         val want = expected[field]?.takeUnless { it is JsonNull }?.jsonArray
-            ?: return listOf("$id.$field: MALFORMED SUITE — expected array absent or null")
+            ?: return listOf("$id.$field: MALFORMED SUITE - expected array absent or null")
         // [] and null are never conflated, and order matters.
         if (got.size != want.size) {
-            return listOf("$id.$field: length mismatch — expected ${want.size}, got ${got.size}")
+            return listOf("$id.$field: length mismatch - expected ${want.size}, got ${got.size}")
         }
         val failures = mutableListOf<String>()
         got.forEachIndexed { index, value ->

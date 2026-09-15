@@ -16,7 +16,7 @@ import "strings"
 // are copied literally from the table in categories.md.
 type FoodCategory string
 
-// The nine categories, in CaseIterable order — which is also the order the UI
+// The nine categories, in CaseIterable order - which is also the order the UI
 // iterates.
 const (
 	CategoryProduce   FoodCategory = "produce"
@@ -88,7 +88,7 @@ func (c FoodCategory) DisplayName() string {
 
 // FromModelString maps untrusted model output onto a FoodCategory.
 //
-// Mirrors LLMService.swift:14-16 — `FoodCategory(rawValue: category.lowercased())
+// Mirrors LLMService.swift:14-16 - `FoodCategory(rawValue: category.lowercased())
 // ?? .other`. The model frequently returns "Dairy" or "PRODUCE", so the value is
 // lowercased first; matching is otherwise exact.
 //
@@ -104,14 +104,14 @@ func FromModelString(s string) FoodCategory {
 
 // FromStorage maps a persisted categoryRaw string onto a FoodCategory.
 //
-// Mirrors InventoryItem.swift:65-68 — `FoodCategory(rawValue: categoryRaw) ??
+// Mirrors InventoryItem.swift:65-68 - `FoodCategory(rawValue: categoryRaw) ??
 // .other`. It deliberately does NOT lowercase: the value it reads was written by
 // the enum's own raw value and is already canonical.
 //
 // That asymmetry against FromModelString is the contract, not an oversight.
 // Normalization belongs at the boundary where untrusted model text enters, not
 // deeper. It stays safe because confirming an IdentifiedItem into inventory
-// persists FoodCategory's raw value, never the model's original string — so a
+// persists FoodCategory's raw value, never the model's original string - so a
 // mixed-case string never reaches the store. A port that lowercases here would
 // paper over exactly the bug that rule is meant to expose.
 //

@@ -5,7 +5,7 @@ pure, no I/O). Specification of record: `DinnerDeciderTests/LLMResponseParserTes
 (20 tests). Golden fixtures for every platform: `shared/conformance/cases.json`.
 
 Language models wrap their JSON in prose ("Sure, here you go:"), in markdown
-fences, and — with this particular Gemma 4 build — in a thinking-channel
+fences, and - with this particular Gemma 4 build - in a thinking-channel
 preamble. The parser's job is to salvage the payload without a schema-constrained
 decoder, because **a schema-constrained decoder is not usable here** (see the
 prohibition at the end; read it before you "simplify" any of this).
@@ -16,8 +16,8 @@ prohibition at the end; read it before you "simplify" any of this).
 | --- | --- |
 | `stripCodeFences(text)` | `string` |
 | `stripReasoning(text)` | `string` |
-| `firstJSONObject(text)` | `string?` — the raw substring |
-| `firstJSONArray(text)` | `string?` — the raw substring |
+| `firstJSONObject(text)` | `string?` - the raw substring |
+| `firstJSONArray(text)` | `string?` - the raw substring |
 | `decode<T>(text)` | `T?` |
 | `decodeArray<T>(text)` | `[T]?` |
 
@@ -80,7 +80,7 @@ have broken runners that were correct. Do it once the ports have landed.
 Until then, each port should pin the order with its own local test, as the
 Linux port does.
 
-## Step 1 — channel stripping (`stripReasoning`)
+## Step 1 - channel stripping (`stripReasoning`)
 
 The July 2026 Gemma 4 chat template wraps chain-of-thought as:
 
@@ -107,7 +107,7 @@ Details that matter:
 
 - The marker searched for is the **close** marker `<channel|>` only. The open
   marker `<|channel>thought` is never searched for and never needs to be present.
-- **LAST, not first** — nested or repeated reasoning blocks all get discarded.
+- **LAST, not first** - nested or repeated reasoning blocks all get discarded.
 - No trimming is applied. `"<channel|>{...}"` yields `"{...}"` with whatever
   whitespace followed the marker; the brace scanner skips leading junk anyway.
 - Text with no marker is returned **byte-identical** (`testStripReasoningLeavesPlainTextUnchanged`).
@@ -119,7 +119,7 @@ in:  <|channel>thought\nThe box says OATMEAL so name is Oatmeal.\n<channel|>{"na
 out: {"name": "Oatmeal"}
 ```
 
-## Step 2 — fence stripping (`stripCodeFences`)
+## Step 2 - fence stripping (`stripCodeFences`)
 
 Remove **all** occurrences of these four literals, in this order, by plain
 substring replacement:
@@ -130,7 +130,7 @@ substring replacement:
 
 Order is load-bearing: the language-tagged variants must be removed before the
 bare ``` ``` ``` , or you would be left with orphaned `json` tokens in the text.
-Only those three casings are handled — a hypothetical ` ```jSoN ` leaves a stray
+Only those three casings are handled - a hypothetical ` ```jSoN ` leaves a stray
 `jSoN` behind, which is harmless because the brace scanner ignores everything
 outside the braces.
 
@@ -138,7 +138,7 @@ This is unconditional replacement across the whole string, not a paired-fence
 parse. Nothing else is stripped: prose before and after stays, and the scanner
 skips it.
 
-## Step 3 — balanced extraction (`firstJSONObject` / `firstJSONArray`)
+## Step 3 - balanced extraction (`firstJSONObject` / `firstJSONArray`)
 
 A single scanner, parameterised only by the bracket pair (`{`/`}` or `[`/`]`):
 
@@ -171,7 +171,7 @@ Contractual behaviors:
 3. **Unbalanced input returns null**, it does not return a truncated prefix.
    `{ this never closes` -> null. `[{"name": "Milk"},` -> null.
 4. **The two extractors are independent and do not fall back to one another.**
-   `firstJSONArray` on a top-level object returns null — it finds no `[` at all.
+   `firstJSONArray` on a top-level object returns null - it finds no `[` at all.
    An object reply where an array was expected is a hard miss
    (`testReturnsNilForObjectWhenArrayExpected`).
 5. The scanner is **index-based over characters**. Swift iterates a `[Character]`
@@ -183,14 +183,14 @@ Contractual behaviors:
    bracket before the first open is impossible by construction (the scan starts at
    the first open).
 
-## Step 4 — decode
+## Step 4 - decode
 
 ```text
 decode<T>(text):      j = firstJSONObject(text); if null -> null; return jsonDecode<T>(j)  ?? null
 decodeArray<T>(text): j = firstJSONArray(text);  if null -> null; return jsonDecode<[T]>(j) ?? null
 ```
 
-Decode errors are swallowed into null — extraction succeeding does not mean the
+Decode errors are swallowed into null - extraction succeeding does not mean the
 payload is valid. `{ not: valid json }` is *balanced*, so `firstJSONObject`
 returns it, and `decode` then returns null because it is not legal JSON.
 Conformance cases cover both observations of that same input.
@@ -199,13 +199,13 @@ Type strictness inherited from Swift `Codable`, which a port must match:
 
 - **Missing non-optional key -> null.** `{"name": "Milk"}` fails to decode as an
   `IdentifiedItem` (no `category`, no `confidence`).
-- **Optional key may be absent OR explicitly null** — both yield nil for `brand`.
+- **Optional key may be absent OR explicitly null** - both yield nil for `brand`.
 - **`timeMinutes` is an integer.** A float there fails the whole recipe bundle.
 - **Unknown extra keys are ignored**, not an error.
-- **Category is never validated at decode time** — any string decodes, and the
+- **Category is never validated at decode time** - any string decodes, and the
   enum mapping happens later with an `other` fallback
   (`shared/taxonomy/categories.md`).
-- `[]` decodes to an **empty array, not null** — "the model saw nothing" and "the
+- `[]` decodes to an **empty array, not null** - "the model saw nothing" and "the
   model was unreadable" are different outcomes and must stay different.
 
 ## Failure semantics per call site
@@ -216,7 +216,7 @@ Type strictness inherited from Swift `Codable`, which a port must match:
 | `identifyAllItems` | returns **`[]`**, no error at all | `GemmaLLMService.swift:126` |
 | recipe bundle | leaves the existing recipes untouched and sets the user-facing error `We could not read the recipe ideas this time. Please try again.` | `AppModel.swift:467-474` |
 
-A scan is **never** aborted by a parse failure. That is deliberate — but it is
+A scan is **never** aborted by a parse failure. That is deliberate - but it is
 also why a systemic failure looks like an empty scan, which is the trap described
 in `shared/pipeline/model-lifecycle.md`.
 
@@ -242,7 +242,7 @@ And from `CLAUDE.md` (Known gotchas):
 Why this is fatal here specifically: the model is loaded **once and kept
 resident**, and a single scan makes up to 4 calls against it. Call 1 returns
 clean JSON, calls 2-4 return **nothing**. The scan loop swallows the resulting
-failures, and the user gets "Nothing spotted" — the same visible symptom as the
+failures, and the user gets "Nothing spotted" - the same visible symptom as the
 lifecycle bug, from a completely different cause. It would pass any single-call
 smoke test.
 
@@ -251,8 +251,8 @@ Rules for a port:
 1. Run **grammar-free**. Get JSON from prompt wording (`Respond ONLY with JSON,
    no other words:` plus a literal shape) plus this parser.
 2. If your runtime's grammar sampler *does* reset correctly per call, prove it
-   with a **multi-call** test on a resident model — at least 4 sequential calls,
-   asserting non-empty output on every one — before considering it. A first-call
+   with a **multi-call** test on a resident model - at least 4 sequential calls,
+   asserting non-empty output on every one - before considering it. A first-call
    test proves nothing.
 3. Even then, keep this parser. Channel stripping and fence salvage cost nothing
    and the conformance suite depends on them.

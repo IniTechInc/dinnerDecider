@@ -40,7 +40,7 @@ object ShoppingListLogic {
      *
      * Note the deliberate asymmetry, carried over verbatim from Swift: the
      * **existing** entries are trimmed *and* lower-cased to build the key set, while
-     * the final filter only lower-cases — because [aggregate] has already trimmed
+     * the final filter only lower-cases - because [aggregate] has already trimmed
      * its output. Trimming twice would be harmless; trimming neither would not, so
      * the asymmetry is the shape of the original and is kept rather than "tidied".
      */
@@ -60,7 +60,7 @@ object ShoppingListLogic {
      * `[ ] Name` per line, with the whole string trimmed (which removes the trailing
      * newline left by the last row).
      *
-     * An **empty list exports exactly** `"Shopping List\n\n(empty)"` — a distinct
+     * An **empty list exports exactly** `"Shopping List\n\n(empty)"` - a distinct
      * early return, not the general path with zero rows, which would collapse to
      * just the header.
      */

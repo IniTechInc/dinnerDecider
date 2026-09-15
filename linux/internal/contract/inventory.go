@@ -329,7 +329,7 @@ func CookPlan(usedKeys []string, stock []StockRef) []CookChange {
 // PortionLine is the recipe-prompt line describing how many people to cook for.
 //
 // Returns ok == false for an unset or nonsensical household size, in which case
-// the caller OMITS THE LINE ENTIRELY rather than emitting an empty one — the
+// the caller OMITS THE LINE ENTIRELY rather than emitting an empty one - the
 // prompt shares a 1024-token context with the reply, so a blank line is not
 // free. Swift returns `String?` and RecipePrompt pattern-matches on it; the
 // (value, ok) pair is the Go equivalent.

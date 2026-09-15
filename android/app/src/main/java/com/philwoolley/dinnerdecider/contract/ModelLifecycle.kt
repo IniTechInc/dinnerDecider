@@ -4,13 +4,13 @@ package com.philwoolley.dinnerdecider.contract
  * Explicit lifecycle state for the on-device model.
  *
  * Port of `DinnerDecider/Services/ModelLifecycle.swift`, specified by
- * `shared/pipeline/model-lifecycle.md` — the most important document in
+ * `shared/pipeline/model-lifecycle.md` - the most important document in
  * `shared/`. It took three TestFlight builds to get right, and a port that skips
  * it reproduces two specific field bugs:
  *
- * - the **"Nothing spotted" empty scan** — the scan counts N items, analyzes them
+ * - the **"Nothing spotted" empty scan** - the scan counts N items, analyzes them
  *   all, and reports nothing recognized, and
- * - the **mid-scan use-after-free crash** — the app dies the moment image
+ * - the **mid-scan use-after-free crash** - the app dies the moment image
  *   analysis starts.
  *
  * Both have the same root cause: the multi-GB inference client was freed while
@@ -77,7 +77,7 @@ enum class UnloadDecision {
  * **Every decision in this machine is the function's RETURN VALUE, and is never
  * inferred from the caller's reason for calling.** A caller that maps "the user
  * asked for an unload" straight to "free it now" will tear a client out from
- * under an in-flight encode — that is the build-1 use-after-free.
+ * under an in-flight encode - that is the build-1 use-after-free.
  */
 class ModelLifecycle {
 
@@ -157,9 +157,9 @@ class ModelLifecycle {
      *
      * | From | success | To | Side effect |
      * |---|---|---|---|
-     * | LOADING | true | READY | — |
+     * | LOADING | true | READY | - |
      * | LOADING | false | UNLOADED | `pendingUnload = false` |
-     * | anything else | any | unchanged (guard) | — |
+     * | anything else | any | unchanged (guard) | - |
      *
      * The `pendingUnload` reset matters: if the load failed there is nothing
      * resident to free, and leaving the flag set would make the next successful
@@ -209,16 +209,16 @@ class ModelLifecycle {
      *
      * | From | Returns | To | Side effect |
      * |---|---|---|---|
-     * | READY | PROCEED | UNLOADING | — |
+     * | READY | PROCEED | UNLOADING | - |
      * | LOADING | DEFERRED | LOADING | `pendingUnload = true` |
      * | INFERRING | DEFERRED | INFERRING | `pendingUnload = true` |
-     * | UNLOADED | NOTHING_TO_DO | UNLOADED | — |
-     * | UNLOADING | NOTHING_TO_DO | UNLOADING | — |
+     * | UNLOADED | NOTHING_TO_DO | UNLOADED | - |
+     * | UNLOADING | NOTHING_TO_DO | UNLOADING | - |
      *
      * Note this proceeds at READY **even during an active session**: an explicit
      * request from the app is trusted, and only *pressure* respects sessions.
      * That is why an Android `ON_STOP` must be routed to
-     * [handleMemoryPressure] with CRITICAL rather than to this function — it
+     * [handleMemoryPressure] with CRITICAL rather than to this function - it
      * would otherwise gut a scan the user merely backgrounded.
      */
     fun requestUnload(): UnloadDecision = when (state) {
@@ -240,14 +240,14 @@ class ModelLifecycle {
      *
      * | From | Level | Returns | To | Side effect |
      * |---|---|---|---|---|
-     * | UNLOADED | either | NOTHING_TO_DO | UNLOADED | — |
-     * | UNLOADING | either | NOTHING_TO_DO | UNLOADING | — |
-     * | READY, **no** session | either | PROCEED | UNLOADING | — |
-     * | READY, session active | WARNING | NOTHING_TO_DO | READY | — |
+     * | UNLOADED | either | NOTHING_TO_DO | UNLOADED | - |
+     * | UNLOADING | either | NOTHING_TO_DO | UNLOADING | - |
+     * | READY, **no** session | either | PROCEED | UNLOADING | - |
+     * | READY, session active | WARNING | NOTHING_TO_DO | READY | - |
      * | READY, session active | CRITICAL | DEFERRED | READY | `pendingUnload = true` |
-     * | LOADING | WARNING | NOTHING_TO_DO | LOADING | — |
+     * | LOADING | WARNING | NOTHING_TO_DO | LOADING | - |
      * | LOADING | CRITICAL | DEFERRED | LOADING | `pendingUnload = true` |
-     * | INFERRING | WARNING | NOTHING_TO_DO | INFERRING | — |
+     * | INFERRING | WARNING | NOTHING_TO_DO | INFERRING | - |
      * | INFERRING | CRITICAL | DEFERRED | INFERRING | `pendingUnload = true` |
      *
      * Two rules, stated as rules:
@@ -332,7 +332,7 @@ class ModelLifecycle {
      *
      * The clamp at 0 makes an unbalanced `endSession` harmless. Close the session
      * on **every** exit path including cancellation and thrown errors (Kotlin
-     * `try`/`finally`) — closing it is what runs a deferred unload, so skipping
+     * `try`/`finally`) - closing it is what runs a deferred unload, so skipping
      * it on the cancellation path leaves the model resident forever.
      */
     fun endSession(): UnloadDecision {

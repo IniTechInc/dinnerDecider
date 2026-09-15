@@ -178,7 +178,7 @@ class CropGeometryTest {
      * shipped behavior, reproduced deliberately for parity.
      *
      * A `tile = size / 3` formulation using the image's **minimum** dimension
-     * emits 12 for 2016x1512 — the right answer from the wrong arithmetic — so
+     * emits 12 for 2016x1512 - the right answer from the wrong arithmetic - so
      * the landscape, portrait and square cases are all asserted.
      *
      * Do not "fix" this without re-running `eval/`.

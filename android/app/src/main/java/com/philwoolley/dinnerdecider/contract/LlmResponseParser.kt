@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
  * `shared/conformance/cases.json`.
  *
  * Language models wrap their JSON in prose ("Sure, here you go:"), in markdown
- * fences, and — with this particular Gemma 4 build — in a thinking-channel
+ * fences, and - with this particular Gemma 4 build - in a thinking-channel
  * preamble. This salvages the payload without a schema-constrained decoder,
  * because a schema-constrained decoder is **not usable here**: the grammar
  * sampler in the runtime is never reset between calls, so a resident model
@@ -21,7 +21,7 @@ import kotlinx.serialization.json.Json
  * is always a null return, and every caller treats null as "this call
  * contributed nothing".
  *
- * Zero `android.*` imports on purpose — this runs on the host JVM so the parity
+ * Zero `android.*` imports on purpose - this runs on the host JVM so the parity
  * proof needs no emulator and no device.
  */
 object LlmResponseParser {
@@ -34,7 +34,7 @@ object LlmResponseParser {
      *
      * Order is load-bearing: the language-tagged variants must go before the bare
      * ``` or you are left with orphaned `json` tokens. Only these three casings
-     * are handled — a hypothetical ```jSoN leaves a stray `jSoN` behind, which is
+     * are handled - a hypothetical ```jSoN leaves a stray `jSoN` behind, which is
      * harmless because the brace scanner ignores everything outside the brackets.
      */
     private val FENCES = listOf("```json", "```JSON", "```Json", "```")
@@ -42,14 +42,14 @@ object LlmResponseParser {
     /**
      * The JSON configuration. **All three settings matter.**
      *
-     * - `ignoreUnknownKeys = true` — unknown extra keys are ignored, not an error
+     * - `ignoreUnknownKeys = true` - unknown extra keys are ignored, not an error
      *   (Swift `Codable` ignores them too).
-     * - `isLenient = false` — strict JSON. This is specifically what makes
+     * - `isLenient = false` - strict JSON. This is specifically what makes
      *   `{ not: valid json }` *extract* successfully (it is balanced) and then
      *   *fail* to decode. Fixtures `object-unquoted-keys-extracts` and
      *   `object-unquoted-keys-decodes-null` are two observations of that same
      *   input and both must hold.
-     * - `coerceInputValues = false` — a wrong-typed or null value for a
+     * - `coerceInputValues = false` - a wrong-typed or null value for a
      *   non-nullable field must fail the decode, not silently become a default.
      *   Coercion would let `{"name": "Milk"}`-shaped junk through.
      *
@@ -69,7 +69,7 @@ object LlmResponseParser {
      *
      * - Only the **close** marker is searched for. The open marker
      *   `<|channel>thought` is never searched for and never needs to be present.
-     * - **LAST, not first** — nested or repeated reasoning blocks all get
+     * - **LAST, not first** - nested or repeated reasoning blocks all get
      *   discarded along with any decoy JSON they contain.
      * - **No trimming.** `"<channel|>  {...}"` yields `"  {...}"`; the bracket
      *   scanner skips leading junk anyway.
@@ -85,7 +85,7 @@ object LlmResponseParser {
      * Remove markdown code fences so they do not confuse the scanner.
      *
      * Unconditional plain-substring replacement across the whole string, in
-     * [FENCES] order — not a paired-fence parse. Nothing else is stripped: prose
+     * [FENCES] order - not a paired-fence parse. Nothing else is stripped: prose
      * before and after stays, and the scanner skips it.
      */
     fun stripCodeFences(text: String): String {
@@ -150,7 +150,7 @@ object LlmResponseParser {
      *    single lookahead flag, so `\"` does not end the string.
      * 3. **Unbalanced input returns null**, never a truncated prefix.
      * 4. `depth` only reaches 0 at the matching close, so a stray leading close
-     *    bracket before the first open is impossible by construction — the scan
+     *    bracket before the first open is impossible by construction - the scan
      *    starts at the first open.
      *
      * Char-based rather than byte-based (Swift iterates a `[Character]` array).

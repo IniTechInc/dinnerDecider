@@ -17,14 +17,14 @@ import kotlinx.serialization.Serializable
  * [name], [category] and [confidence] deliberately carry **no** default. Swift's
  * synthesized `Decodable` has no defaults either, so a missing key fails the whole
  * decode. In Kotlin that surfaces as `MissingFieldException`, which the response
- * parser catches and turns into `null` — the same observable behavior. Adding a
+ * parser catches and turns into `null` - the same observable behavior. Adding a
  * default to any of the three would silently accept a malformed model reply and
  * break three conformance cases.
  *
  * Neither [category] nor [confidence] is validated at decode time. Any string
  * decodes for the category (mapped later via [FoodCategory.fromModelString],
  * falling back to `other`), and the confidence is a plain `Double` with no range
- * check — the pipeline, not the decoder, drops anything below 0.15.
+ * check - the pipeline, not the decoder, drops anything below 0.15.
  */
 @Serializable
 data class IdentifiedItem(

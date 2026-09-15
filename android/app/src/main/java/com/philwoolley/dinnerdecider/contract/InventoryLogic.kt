@@ -6,8 +6,8 @@ package com.philwoolley.dinnerdecider.contract
  * Port of `DinnerDecider/Services/InventoryLogic.swift`, pinned by
  * `DinnerDeciderTests/InventoryLogicTests.swift` (15 tests).
  *
- * Everything here is free of Compose, Room and DataStore — and of `android.*`
- * entirely — so the UI layer stays thin and the tricky bits (dedupe, quantity
+ * Everything here is free of Compose, Room and DataStore - and of `android.*`
+ * entirely - so the UI layer stays thin and the tricky bits (dedupe, quantity
  * merges, cooking decrements, portion scaling) are covered by fast host-JVM
  * tests.
  *
@@ -22,7 +22,7 @@ object InventoryLogic {
      * Case- and whitespace-insensitive on **name + brand**.
      *
      * Shape: `trim(lowercase(name)) + "|" + trim(lowercase(brand ?: ""))`.
-     * The pipe separator and the empty-brand rule are not cosmetic — they are
+     * The pipe separator and the empty-brand rule are not cosmetic - they are
      * pinned by the literals `"milk|horizon"` and `"eggs|"` in the Swift tests
      * and are the keys the confirm/cook plans are expressed in.
      */
@@ -121,7 +121,7 @@ object InventoryLogic {
      *
      * The running tally spans **the whole batch**, not just the pre-existing
      * stock: two confirmed entries with the same key produce an INSERT followed
-     * by an INCREMENT, and both are emitted in order. Never collapse them — the
+     * by an INCREMENT, and both are emitted in order. Never collapse them - the
      * caller replays them as database operations, so dropping the insert loses
      * the row and dropping the increment loses the quantity.
      *
@@ -207,7 +207,7 @@ object InventoryLogic {
      * The prompt line describing how many people to cook for. `null` for an unset
      * or nonsensical size so the prompt stays compact.
      *
-     * Verbatim strings — they ship to the model and are asserted character for
+     * Verbatim strings - they ship to the model and are asserted character for
      * character (`shared/prompts/recipes.md`, "Portion line (verbatim)").
      */
     fun portionLine(householdSize: Int): String? {

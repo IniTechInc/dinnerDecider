@@ -7,7 +7,7 @@ package com.philwoolley.dinnerdecider.contract
  * Port of the static half of `DinnerDecider/Services/ModelFileLocator.swift`;
  * contract of record `shared/runtime/model-files.md`. The filesystem half (search
  * directories, existence checks) is a platform concern and lives outside this
- * file — deliberately, because the Android search order **diverges** from iOS for
+ * file - deliberately, because the Android search order **diverges** from iOS for
  * security reasons and that divergence belongs with the code that touches disk.
  *
  * The runtime needs **both** files. Either one missing means no vision-capable
@@ -28,7 +28,7 @@ object ModelFileSelection {
      * changes which file loads.
      *
      * The prefix also means fine-tuned builds are automatically eligible as long as
-     * they are named `gemma-4-E4B-it-finetuned-*.gguf` (keep the stock mmproj —
+     * they are named `gemma-4-E4B-it-finetuned-*.gguf` (keep the stock mmproj  - 
      * vision layers are frozen in training).
      */
     const val MODEL_PREFIX: String = "gemma-4-E4B-it"
@@ -39,7 +39,7 @@ object ModelFileSelection {
      *
      * This is a **memory ranking, not a quality ranking**. Smaller quants win
      * because the iOS runtime held the whole model GPU-resident, so a smaller
-     * weights file was directly less wired Metal memory — the thing that caused the
+     * weights file was directly less wired Metal memory - the thing that caused the
      * on-device jetsam.
      *
      * - `UD-IQ3_XXS` (3.46 GiB): saves ~0.82 GiB of wired vs Q4_0, emitted the
@@ -60,7 +60,7 @@ object ModelFileSelection {
      * Preference key holding the user's pinned weights filename.
      *
      * A pin **survives app updates**, which is how a fine-tuned build stays selected
-     * — and also how a stale Q4_0 pin kept jetsamming every load on iOS. Whatever
+     * - and also how a stale Q4_0 pin kept jetsamming every load on iOS. Whatever
      * surfaces this must offer a one-tap clear.
      */
     const val SELECTED_MODEL_KEY: String = "selectedModelFileName"
@@ -77,11 +77,11 @@ object ModelFileSelection {
      * Eligible candidates start with [MODEL_PREFIX] (case-sensitively), end in
      * `.gguf` (case-insensitively) and do not contain `mmproj` (case-insensitively).
      * Selection order:
-     * 1. the user's explicitly pinned [preferred] file, if it is present — **a pin
+     * 1. the user's explicitly pinned [preferred] file, if it is present - **a pin
      *    always wins, even when it selects the memory hog**, because that is how a
      *    fine-tuned build is chosen from Settings;
      * 2. else the first available entry of [DEFAULT_MODEL_PREFERENCE];
-     * 3. else the first eligible candidate — in candidate-list order, which is
+     * 3. else the first eligible candidate - in candidate-list order, which is
      *    directory-enumeration order and therefore **not deterministic across
      *    platforms**. Do not depend on it;
      * 4. else null.

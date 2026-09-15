@@ -7,7 +7,7 @@ package com.philwoolley.dinnerdecider.contract
  *
  * The **raw string is the contract**, exactly as for [FoodCategory]: it is what is
  * persisted and what the prompt builder reads. Note that [GLUTEN_FREE] is
- * `glutenFree` — **camelCase, unlike every `FoodCategory` value**, which are all
+ * `glutenFree` - **camelCase, unlike every `FoodCategory` value**, which are all
  * lower-case single words. That inconsistency is shipped data; do not regularise
  * it to `gluten_free` or `glutenfree`.
  *
@@ -33,7 +33,7 @@ enum class DietPreference(val raw: String, val displayName: String) {
 /**
  * How the inventory list is ordered. Port of `Preferences.swift:27-47`.
  *
- * Raw values `category`, `dateAdded`, `name` — `dateAdded` is camelCase for the
+ * Raw values `category`, `dateAdded`, `name` - `dateAdded` is camelCase for the
  * same reason [DietPreference.GLUTEN_FREE] is.
  */
 enum class InventorySort(val raw: String, val displayName: String) {
@@ -89,7 +89,7 @@ object PrefKey {
  * A snapshot of the preferences that shape a recipe prompt.
  *
  * Port of `Preferences.swift:74-90`. A pure value type so the prompt builder is
- * fully testable without touching any store — the reading of those keys belongs to
+ * fully testable without touching any store - the reading of those keys belongs to
  * the preferences store, not here.
  */
 data class RecipePreferences(

@@ -4,7 +4,7 @@ import "testing"
 
 // Unit tests for the pure model lifecycle state machine.
 //
-// A 1:1 port of DinnerDeciderTests/ModelLifecycleTests.swift — all 17 tests,
+// A 1:1 port of DinnerDeciderTests/ModelLifecycleTests.swift - all 17 tests,
 // with the Swift names preserved (only the leading `test` capitalized, as Go
 // requires) so a failure here maps straight onto the iOS specification and onto
 // the guarantee table in shared/pipeline/model-lifecycle.md § The other bug:

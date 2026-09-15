@@ -17,7 +17,7 @@ import (
 // choice: see response-parsing.md § "PROHIBITION: no grammar / structured-output
 // constraint on a resident model". The runtime's grammar sampler is never reset
 // between calls, so call 1 returns clean JSON and calls 2-4 return nothing at
-// all — which the scan loop swallows into "Nothing spotted". Prompt wording plus
+// all - which the scan loop swallows into "Nothing spotted". Prompt wording plus
 // this salvage parser is the chosen path; do not replace it with a constrained
 // decoder without a multi-call proof on a resident model.
 
@@ -30,7 +30,7 @@ import (
 //
 // Only these three casings are handled. A hypothetical "```jSoN" leaves a stray
 // "jSoN" behind, which is harmless: the balanced scanner ignores everything
-// outside the brackets. Do not "improve" this into a case-insensitive regex —
+// outside the brackets. Do not "improve" this into a case-insensitive regex  -
 // the fixtures pin the literal behavior, and a regex would also start matching
 // fences inside string values.
 var codeFenceLiterals = [4]string{"```json", "```JSON", "```Json", "```"}
@@ -95,7 +95,7 @@ func clean(text string) string {
 	return StripCodeFences(StripReasoning(text))
 }
 
-// firstBalanced is THE scanner — one implementation, parameterised only by the
+// firstBalanced is THE scanner - one implementation, parameterised only by the
 // bracket pair. FirstJSONObject and FirstJSONArray differ by two bytes.
 //
 // It returns the first balanced value INCLUSIVE of its brackets, or no value.
@@ -105,7 +105,7 @@ func clean(text string) string {
 //     `{"a": {"nested": 1}}`. Trailing content is ignored, never an error.
 //  2. Brackets inside STRING LITERALS do not count toward depth, and a
 //     backslash-escaped quote does not end the string.
-//  3. UNBALANCED INPUT RETURNS NO VALUE — never a truncated prefix. A model that
+//  3. UNBALANCED INPUT RETURNS NO VALUE - never a truncated prefix. A model that
 //     ran out of tokens mid-array must not yield the elements that did arrive.
 //  4. depth only ever reaches 0 at the matching close bracket, because the scan
 //     starts AT the first open bracket. A stray leading close bracket is
@@ -180,7 +180,7 @@ func FirstJSONArray(text string) (string, bool) {
 // DecodeIdentifiedItem extracts and decodes one IdentifiedItem from a raw model
 // reply, or reports no value.
 //
-// Decode errors are swallowed into "no value" — a caller only ever learns that
+// Decode errors are swallowed into "no value" - a caller only ever learns that
 // the call contributed nothing, never why. Required-key strictness (name,
 // category and confidence must all be present and non-null) lives in
 // UnmarshalIdentifiedItem, which this MUST go through: a bare json.Unmarshal
@@ -198,7 +198,7 @@ func DecodeIdentifiedItem(response string) (IdentifiedItem, bool) {
 // from a raw model reply.
 //
 // THE RETURN SHAPE IS THE POINT. A nil slice MUST NEVER be used to mean "parse
-// failed" — that is what ok is for:
+// failed" - that is what ok is for:
 //
 //	"[]"  -> (non-nil empty slice, true)   the model answered: it saw nothing
 //	""    -> (nil,                 false)  the model was unreadable
@@ -225,7 +225,7 @@ func DecodeIdentifiedItemArray(response string) ([]IdentifiedItem, bool) {
 //
 // On no value the caller leaves the existing recipes untouched and shows the
 // user-facing error "We could not read the recipe ideas this time. Please try
-// again." — it never renders a half-decoded bundle.
+// again." - it never renders a half-decoded bundle.
 func DecodeRecipeBundle(response string) (RecipeBundleResponse, bool) {
 	raw, ok := FirstJSONObject(response)
 	if !ok {
@@ -246,7 +246,7 @@ type ingredientLineShadow struct {
 //
 // The list fields are pointers-to-slices-of-pointers so that three separate
 // failure modes are all caught: an ABSENT key (nil outer pointer), an explicit
-// null for the list itself (also nil outer pointer — encoding/json nils a
+// null for the list itself (also nil outer pointer - encoding/json nils a
 // pointer on null), and a null ELEMENT inside the list (nil inner pointer),
 // which Swift rejects but which plain encoding/json would silently decode as "".
 type recipeSuggestionShadow struct {
@@ -270,7 +270,7 @@ type recipeBundleShadow struct {
 //
 // TimeMinutes is an int on purpose: a JSON float there fails the WHOLE bundle in
 // Swift, and must fail the whole bundle here. Both decoders agree, and that
-// agreement is deliberate rather than incidental — do not relax it to a float
+// agreement is deliberate rather than incidental - do not relax it to a float
 // with a rounding step.
 //
 // Empty buckets decode to NON-NIL empty slices, mirroring the nil-versus-empty
@@ -295,7 +295,7 @@ func unmarshalRecipeBundle(data []byte) (RecipeBundleResponse, bool) {
 }
 
 // recipeSuggestionsFromShadow validates one bucket. A single bad suggestion
-// fails the bucket, and therefore the whole bundle — suggestions are not
+// fails the bucket, and therefore the whole bundle - suggestions are not
 // salvaged individually, exactly as Swift's array decode does not salvage them.
 func recipeSuggestionsFromShadow(shadows []recipeSuggestionShadow) ([]RecipeSuggestion, bool) {
 	out := make([]RecipeSuggestion, 0, len(shadows))

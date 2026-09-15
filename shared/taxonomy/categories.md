@@ -32,7 +32,7 @@ Notes on the table:
 
 ## Where the raw values appear
 
-1. **In both vision prompts, as a literal alternation** — the model is shown the
+1. **In both vision prompts, as a literal alternation** - the model is shown the
    closed set inline rather than being asked to invent a taxonomy:
 
    ```text
@@ -43,11 +43,11 @@ Notes on the table:
    both prompt strings must change in the same commit, or the model will keep
    emitting the old set.
 
-2. **On the wire**, as `IdentifiedItem.category` — typed as a plain `String`, not
+2. **On the wire**, as `IdentifiedItem.category` - typed as a plain `String`, not
    as the enum (`LLMService.swift:10`). This is deliberate: an unexpected value
    must never fail the decode.
 
-3. **In storage**, as `InventoryItem.categoryRaw` — a raw `String` column "per
+3. **In storage**, as `InventoryItem.categoryRaw` - a raw `String` column "per
    the spec ... so SwiftData keeps a stable value even if we reorder or rename
    cases later" (`InventoryItem.swift:53-56`).
 
@@ -79,7 +79,7 @@ Normative behavior for a port:
    normalization at the boundary where untrusted model text enters, not deeper.
 5. **Write back the canonical raw value.** When an `IdentifiedItem` is confirmed
    into inventory, persist `foodCategory.rawValue`, not the model's original
-   string. That is what keeps rule 4 safe — a mixed-case string never reaches the
+   string. That is what keeps rule 4 safe - a mixed-case string never reaches the
    store.
 
 ### Consequence worth stating plainly

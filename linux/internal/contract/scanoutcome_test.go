@@ -16,7 +16,7 @@ func TestItemsFoundFinishes(t *testing.T) {
 	}
 }
 
-// TestItemsFoundWinsOverFailures: partial failure still counts as a success —
+// TestItemsFoundWinsOverFailures: partial failure still counts as a success  -
 // the user gets what was found rather than an error that throws away real
 // results.
 func TestItemsFoundWinsOverFailures(t *testing.T) {
@@ -25,7 +25,7 @@ func TestItemsFoundWinsOverFailures(t *testing.T) {
 	}
 }
 
-// TestNothingFoundAndNoFailuresIsEmpty: the genuinely-empty case — every call
+// TestNothingFoundAndNoFailuresIsEmpty: the genuinely-empty case - every call
 // answered, none of them saw food. This is the only case where "Nothing
 // spotted" is honest.
 func TestNothingFoundAndNoFailuresIsEmpty(t *testing.T) {

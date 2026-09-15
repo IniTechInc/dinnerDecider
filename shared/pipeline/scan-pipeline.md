@@ -2,14 +2,14 @@
 
 Implementation-neutral spec for the recognition pipeline. Sources of record:
 
-- `DinnerDecider/Services/AppModel.swift:276-400` — the orchestration (`startScan`, `runScan`)
-- `DinnerDecider/Services/AppModel.swift:39-52` — `ScanCallBudget`
-- `DinnerDecider/Services/Vision/ImageDownscaler.swift` — capture downscale
-- `DinnerDecider/Services/Vision/CropService.swift` — crops, saliency, tile fallback
-- `DinnerDecider/Services/Vision/OCRService.swift` — OCR
-- `DinnerDecider/Services/LLM/GemmaLLMService.swift:154-190` — model-input preprocessing
-- `DinnerDecider/Services/InventoryLogic.swift` — dedupe, confirm, cook
-- `DinnerDeciderTests/ScanCallBudgetTests.swift`, `InventoryLogicTests.swift` — the specification of record
+- `DinnerDecider/Services/AppModel.swift:276-400` - the orchestration (`startScan`, `runScan`)
+- `DinnerDecider/Services/AppModel.swift:39-52` - `ScanCallBudget`
+- `DinnerDecider/Services/Vision/ImageDownscaler.swift` - capture downscale
+- `DinnerDecider/Services/Vision/CropService.swift` - crops, saliency, tile fallback
+- `DinnerDecider/Services/Vision/OCRService.swift` - OCR
+- `DinnerDecider/Services/LLM/GemmaLLMService.swift:154-190` - model-input preprocessing
+- `DinnerDecider/Services/InventoryLogic.swift` - dedupe, confirm, cook
+- `DinnerDeciderTests/ScanCallBudgetTests.swift`, `InventoryLogicTests.swift` - the specification of record
 
 ## Constants (all extracted, none invented)
 
@@ -32,7 +32,7 @@ Implementation-neutral spec for the recognition pipeline. Sources of record:
 | Model context / batch | **1024 / 512** | `GemmaLLMService.swift:62,67` |
 | Sampling | temperature **0.2**, topK **40**, topP **0.95** | `GemmaLLMService.swift:68-70` |
 
-## Stage 0 — capture intake
+## Stage 0 - capture intake
 
 Every photo entering the app (camera or picker) is immediately downscaled so its
 longest side is at most **2016 px**, then flattened to an opaque, scale-1,
@@ -47,9 +47,9 @@ cutting resident pixel memory roughly 10x" (`ImageDownscaler.swift:5-13`).
 
 Photos are staged in a batch keyed by **stable identity (UUID), not array index**
 (`PhotoBatch.swift`). Removal by a stale index is a no-op rather than a trap.
-That is a crash class, not a nicety — port it.
+That is a crash class, not a nicety - port it.
 
-## Stage 1 — orchestration
+## Stage 1 - orchestration
 
 ```text
 startScan(photos):
@@ -135,13 +135,13 @@ isNoise(item) = lowercase(item.name) == "unknown"  OR  item.confidence < 0.15
 ```
 
 Strictly less-than: an item at exactly `0.15` is **kept**. The `unknown` half
-only works if the identify-item prompt keeps its escape-hatch sentence — see
+only works if the identify-item prompt keeps its escape-hatch sentence - see
 `shared/prompts/identify-item.md`.
 
 Every model call must be bracketed by the lifecycle's inference bracket
 (`beginInference` / `finishInference` / drain). See `model-lifecycle.md`.
 
-## Stage 2 — crop / saliency strategy
+## Stage 2 - crop / saliency strategy
 
 ```text
 crops(from photo) -> (images, rects, isTileFallback):
@@ -172,7 +172,7 @@ redraw it at scale 1, non-opaque.
 
 Two real failure modes this exists for (`CropService.swift:134-139`):
 1. HDR/HEIC photos from the picker can decode to a deferred, non-pixel-backed
-   image whose bitmap accessor is null — which would silently yield **zero crops**.
+   image whose bitmap accessor is null - which would silently yield **zero crops**.
 2. Portrait phone photos are stored landscape with an EXIF rotation tag. Without
    baking it, the detector returns boxes in the wrong coordinate frame.
 
@@ -182,8 +182,8 @@ A port on a platform without EXIF-aware decoding must still normalize explicitly
 
 Two detectors run over the same normalized image and their outputs are pooled:
 
-1. **Objectness-based saliency** — every salient object's bounding box.
-2. **Rectangle detection** — max 8 observations, min confidence 0.15, min size
+1. **Objectness-based saliency** - every salient object's bounding box.
+2. **Rectangle detection** - max 8 observations, min confidence 0.15, min size
    0.05 of the image.
 
 Both report **normalized rects with a bottom-left origin**; convert to pixel
@@ -197,13 +197,13 @@ h = normalizedHeight * height
 ```
 
 Getting this flip wrong produces crops of the wrong half of the photo, and the
-model dutifully describes whatever is there — a silent wrong-answer bug, not a
+model dutifully describes whatever is there - a silent wrong-answer bug, not a
 crash.
 
 Then **greedy merge**: walk the pooled boxes in order; for each, merge it into
 the first already-kept box whose IoU with it exceeds **0.3** (union the two
 rects) and stop; otherwise keep it as a new box. Zero-area boxes are skipped.
-Greedy and order-dependent — not a clustering algorithm. Reproduce the order.
+Greedy and order-dependent - not a clustering algorithm. Reproduce the order.
 
 IoU is `intersectionArea / (areaA + areaB - intersectionArea)`, and `0` when the
 rects do not intersect or the union area is not positive.
@@ -223,7 +223,7 @@ most imaging APIs.
 
 ### Tile-grid fallback
 
-Triggered when detection yields **fewer than 2** padded boxes — meaning a packed
+Triggered when detection yields **fewer than 2** padded boxes - meaning a packed
 fridge shelf where nothing stood out, exactly the case where missing items is
 worst.
 
@@ -252,7 +252,7 @@ literally emits 9 tiles is not a parity implementation. In practice the 4-call
 budget means at most 3 tiles are ever analyzed, but the *first three tiles in
 emission order* are then what the scan sees, so the geometry still matters.
 
-Tiles are **not** padded — they already overlap by 20%.
+Tiles are **not** padded - they already overlap by 20%.
 
 `isTileFallback` is carried alongside the crops because it changes which prompt
 each crop gets: tiles are large regions -> `identify-all-items`; detected boxes
@@ -262,15 +262,15 @@ are single objects -> `identify-item`.
 
 Android and Linux have no equivalent of the platform saliency + rectangle
 detectors. A port with no detector available must go **straight to the tile grid**
-with `isTileFallback = true`. That is not a degraded special case — it is a path
+with `isTileFallback = true`. That is not a degraded special case - it is a path
 iOS already takes routinely, and the rest of the pipeline is identical. Do **not**
 substitute a different object detector without re-running the eval harness
 (`eval/`): crop geometry changes recall, and the confidence/dedupe constants were
 tuned against these crops.
 
-## Stage 3 — OCR
+## Stage 3 - OCR
 
-Run text recognition over each image just before it is sent to the model — once
+Run text recognition over each image just before it is sent to the model - once
 over the whole normalized photo for Pass A, once per crop for Pass B.
 
 - Accurate (not fast) recognition level; language correction **on**.
@@ -285,7 +285,7 @@ over the whole normalized photo for Pass A, once per crop for Pass B.
 Why OCR at all: image+OCR beats image-only on packaged goods, the "look-alike
 products" failure mode (`OCRService.swift:5-8`).
 
-## Stage 4 — model-input preprocessing
+## Stage 4 - model-input preprocessing
 
 Applied inside the LLM service to every image, *after* cropping and immediately
 before inference (`GemmaLLMService.downscaled`, `:160-190`):
@@ -317,7 +317,7 @@ Two preprocessing rules that are memory decisions, not style:
   regressed; build 8 restored GPU "to match the build-4 configuration, the last
   one proven to recognize items on device".
 
-## Stage 5 — the two-pass union and the call budget
+## Stage 5 - the two-pass union and the call budget
 
 The scan is a **union**, not a choice: Pass A (whole image) and Pass B (crops)
 both append into one `results` list, and dedupe reconciles them. Pass A exists
@@ -338,7 +338,7 @@ ScanCallBudget(limit = 4):
 Rules, all pinned by `ScanCallBudgetTests`:
 
 - Exactly **4** heavy calls per scan, **scan-wide across every photo**, not per
-  photo. A 3-photo batch still gets 4 calls total — photos after the budget runs
+  photo. A 3-photo batch still gets 4 calls total - photos after the budget runs
   out contribute nothing.
 - The whole-image pass spends one, leaving **3** for crops.
 - Crops are capped by `prefix(budget.remaining)` **before** the loop consumes
@@ -353,14 +353,14 @@ per-request context reset removed the per-call creep; the budget is the belt to
 that braces. The test comments the fifth call as "the one that crashed".
 
 A port on a machine without an 8 GB wired ceiling (a Linux box with 64 GB) may
-legitimately want a larger budget — make it a **named, documented parameter with
+legitimately want a larger budget - make it a **named, documented parameter with
 a default of 4**, keep the semantics (scan-wide, prefix-capping, stays
 exhausted), and never remove it.
 
 ### Per-request context reset (mandatory)
 
-Before **every** request — each crop, each whole-image pass, each recipe
-generation — reset the inference session: clear the KV cache **and** wipe the
+Before **every** request - each crop, each whole-image pass, each recipe
+generation - reset the inference session: clear the KV cache **and** wipe the
 prompt cache. Every request is independent, and without the reset the runtime
 "keeps KV state and cached image chunks from every previous request, and that
 creep is what jetsammed multi-crop scans around item 4"
@@ -369,7 +369,7 @@ creep is what jetsammed multi-crop scans around item 4"
 Note from the build-8 commit: clearing the KV cache alone **desyncs the prompt
 cache**. Both must be cleared together.
 
-## Stage 6 — dedupe
+## Stage 6 - dedupe
 
 Applied to the raw `results` list every time it grows, so the UI streams in
 deduplicated (`InventoryLogic.dedupe`, `InventoryLogic.swift:35-61`).
@@ -400,7 +400,7 @@ Guarantees a port must reproduce:
 1. **First-seen order is preserved**, even when a later, higher-confidence
    sighting replaces the stored item. Position comes from first sighting; content
    comes from the best sighting.
-2. **Highest confidence wins**, strictly greater-than — ties keep the earlier item.
+2. **Highest confidence wins**, strictly greater-than - ties keep the earlier item.
 3. **Brand is part of identity.** `Milk/Horizon` and `Milk/Fairlife` are two rows.
    `Milk/nil` and `Milk/""` are the same row.
 4. The **count** (how many crops resolved to this item) is retained separately and
@@ -408,7 +408,7 @@ Guarantees a port must reproduce:
 
 `dedupe()` is exactly `dedupeWithCounts()` with the counts dropped.
 
-## Stage 7 — terminal states
+## Stage 7 - terminal states
 
 | Phase | Meaning |
 | --- | --- |
@@ -451,7 +451,7 @@ genuine emptiness looked identical from here. Two obligations for a port:
    cases, including the boundary one: a single failure is enough to make
    "Nothing spotted" a lie.
 
-## Stage 8 — confirm into inventory
+## Stage 8 - confirm into inventory
 
 `InventoryLogic.confirmPlan` (`InventoryLogic.swift:81-106`). Input: the
 confirmed `(mergeKey, quantity)` pairs plus a snapshot of existing rows as
@@ -474,12 +474,12 @@ confirmPlan(confirming, existing):
 ```
 
 Subtlety pinned by `testConfirmStacksRepeatedKeysAcrossTheBatch`: two confirmed
-entries with the same key produce `INSERT(key, 1)` then `INCREMENT(key, 2)` —
+entries with the same key produce `INSERT(key, 1)` then `INCREMENT(key, 2)`  - 
 the running tally spans the batch, and `INSERT` carries the entry's own quantity
 while `INCREMENT` carries the running total. Emit both actions in order; do not
 collapse them.
 
-## Stage 9 — cooking (quantity decrement)
+## Stage 9 - cooking (quantity decrement)
 
 `InventoryLogic.cookPlan` (`InventoryLogic.swift:122-141`). Ingredients have no
 brand, so matching uses the **name-only key** `trim(lowercase(name))`.
@@ -500,10 +500,10 @@ cookPlan(usedKeys, stock):
   effect here).
 - Output is ordered by **stock order**, not by `usedKeys` order.
 - Quantity is clamped at 0; a row reaching 0 is flagged `removed`.
-- A repeated key in `usedKeys` decrements more than once — there is no
+- A repeated key in `usedKeys` decrements more than once - there is no
   de-duplication of `usedKeys`.
 
-## Stage 10 — shopping list
+## Stage 10 - shopping list
 
 `ShoppingListLogic` (`ShoppingListLogic.swift`).
 
@@ -524,5 +524,5 @@ the asymmetry pinned by the tests: `aggregate` trims each candidate before
 comparing, and `newItems` trims the existing entries too, but the final filter
 compares `lowercase(it)` on the already-trimmed aggregate output.
 
-Export format (`exportText`) is contractual — see the `$comment` in
+Export format (`exportText`) is contractual - see the `$comment` in
 `shared/schema/shopping-list-item.schema.json`.

@@ -100,7 +100,7 @@ type ShoppingLine struct {
 //	[ ] Onion
 //	[x] Milk
 //
-// with NO trailing newline — the whole string is trimmed at the end, which is
+// with NO trailing newline - the whole string is trimmed at the end, which is
 // what removes the last line's "\n". The checkbox is "[x] " or "[ ] ", three
 // characters plus one space, so both forms align.
 //

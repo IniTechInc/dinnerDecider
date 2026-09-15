@@ -16,14 +16,14 @@ import (
 // shared/conformance/cases.json holds 27 golden fixtures extracted verbatim from
 // the shipped Swift unit tests. The Go parser is conformant when it runs those
 // exact fixtures, unmodified, and matches every expected output. Because the
-// parser is pure — no model, no network, no filesystem beyond reading this one
-// file — the whole suite runs in milliseconds and is the cheapest possible proof
+// parser is pure - no model, no network, no filesystem beyond reading this one
+// file - the whole suite runs in milliseconds and is the cheapest possible proof
 // that the port and the iOS app agree.
 //
 // TWO RULES, BOTH ABSOLUTE:
 //
 //  1. NEVER edit a case to make this pass. If the port disagrees with a fixture,
-//     either the port is wrong or the Swift changed — and the latter means the
+//     either the port is wrong or the Swift changed - and the latter means the
 //     Swift test AND the fixture are updated together, in one commit.
 //  2. NEVER t.Skip. A skipped parity proof is worse than none: it reports green
 //     while proving nothing. A missing or unreadable fixture file is a FATAL
@@ -46,7 +46,7 @@ const (
 // NOTE the absence of "firstJSONArray": it has NO DIRECT FIXTURE. It is
 // exercised transitively through all 8 decodeIdentifiedItemArray cases, which
 // cannot reach a decoder without it. That is expected and is not a gap in the
-// suite — direct coverage lives in parser_extra_test.go
+// suite - direct coverage lives in parser_extra_test.go
 // (TestFirstJSONArrayDirect and friends). Do not go hunting for missing cases.
 var conformanceOperationCounts = map[string]int{
 	"decodeIdentifiedItem":      8,
@@ -130,7 +130,7 @@ func loadConformanceSuite(t *testing.T) conformanceSuite {
 	return suite
 }
 
-// validateConformanceSuite fails the whole test — not one subtest — if the suite
+// validateConformanceSuite fails the whole test - not one subtest - if the suite
 // itself is wrong. Every check here guards against a green run that proves less
 // than it claims.
 func validateConformanceSuite(t *testing.T, suite conformanceSuite) {
@@ -165,7 +165,7 @@ func validateConformanceSuite(t *testing.T, suite conformanceSuite) {
 
 		if !c.ExpectNull && c.Expected == nil {
 			t.Fatalf("case %q (%s) has expectNull:false and no `expected` key. "+
-				"That is a MALFORMED SUITE, not \"expect null\" — fix the fixture, "+
+				"That is a MALFORMED SUITE, not \"expect null\" - fix the fixture, "+
 				"never reinterpret it.", c.ID, c.Source)
 		}
 		if c.ExpectNull && c.Expected != nil {
@@ -289,7 +289,7 @@ func runConformanceCase(t *testing.T, c conformanceCase, tolerance float64) {
 
 // conformanceCheckExtraction applies the shared rules for the two extractors:
 // no value when expectNull, otherwise the BYTE-EXACT raw substring. No trimming,
-// no re-serialization — the extractor hands back a slice of its input and the
+// no re-serialization - the extractor hands back a slice of its input and the
 // fixture pins it character for character.
 func conformanceCheckExtraction(t *testing.T, c conformanceCase, fn, got string, ok bool) {
 	t.Helper()
@@ -340,7 +340,7 @@ func conformanceCompareItem(t *testing.T, c conformanceCase, path string, got Id
 
 // conformanceCompareBundle compares a decoded recipe bundle field by field.
 //
-// The bundle carries no floats, so every comparison here is exact — and
+// The bundle carries no floats, so every comparison here is exact - and
 // timeMinutes is an integer that must compare EXACTLY, never within a tolerance.
 func conformanceCompareBundle(t *testing.T, c conformanceCase, got, want RecipeBundleResponse) {
 	t.Helper()
@@ -429,7 +429,7 @@ func conformanceUnmarshalExpected(t *testing.T, c conformanceCase, target any) {
 }
 
 // conformanceOptionalEqual treats "no value" on both sides as equal, and "no
-// value" versus any string — INCLUDING the empty string — as unequal.
+// value" versus any string - INCLUDING the empty string - as unequal.
 func conformanceOptionalEqual(got, want *string) bool {
 	if got == nil || want == nil {
 		return got == nil && want == nil

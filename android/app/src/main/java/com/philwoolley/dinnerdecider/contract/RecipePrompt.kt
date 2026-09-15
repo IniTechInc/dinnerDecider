@@ -6,7 +6,7 @@ package com.philwoolley.dinnerdecider.contract
  * - [hasContent] gates whether the fragment is included **at all**. It must be
  *   true if any of the six pill lists is non-empty **or** any of the six "other"
  *   free-text fields is non-blank. An earlier iOS version checked only
- *   favorites/dislikes and silently dropped allergies-only profiles — logged in
+ *   favorites/dislikes and silently dropped allergies-only profiles - logged in
  *   the source as a **safety** bug, not a cosmetic one.
  * - [promptFragment] is the verbatim block described in
  *   `shared/prompts/recipes.md`, whose spice line is **always** emitted.
@@ -25,7 +25,7 @@ interface TastePromptSource {
  * `shared/prompts/recipes.md` and pinned by
  * `DinnerDeciderTests/RecipePromptTests.swift` (8 tests).
  *
- * A **pure function of its arguments** with no global reads — `nonisolated
+ * A **pure function of its arguments** with no global reads - `nonisolated
  * static` on iOS, an `object` function here, zero `android.*` imports. Its tests
  * depend on that.
  */
@@ -35,27 +35,27 @@ object RecipePrompt {
     /**
      * Build the prompt.
      *
-     * Lines are joined with `\n` in exactly this order — the taste fragment sits
+     * Lines are joined with `\n` in exactly this order - the taste fragment sits
      * **before** the JSON schema clause "so it reads as context, not an
      * afterthought" (`testPromptIncludesTasteProfileAllergyLineBeforeSchema`):
      *
-     * 1. `You are a helpful home cooking assistant.` — always
-     * 2. `Inventory: {comma list}.` — always (may be empty, producing `Inventory: .`)
-     * 3. mood line — when the trimmed mood is non-empty
-     * 4. taste fragment — when a profile exists and `hasContent`
-     * 5. `Diet: ...` — when `diet != "none"`
-     * 6. `Avoid (allergies): ...` — when trimmed non-empty
-     * 7. `Preferred cuisines: ...` — when trimmed non-empty
-     * 8. portion line — when [InventoryLogic.portionLine] returns non-null
-     * 9. the real-dishes clause — always
-     * 10. the JSON schema clause — always
+     * 1. `You are a helpful home cooking assistant.` - always
+     * 2. `Inventory: {comma list}.` - always (may be empty, producing `Inventory: .`)
+     * 3. mood line - when the trimmed mood is non-empty
+     * 4. taste fragment - when a profile exists and `hasContent`
+     * 5. `Diet: ...` - when `diet != "none"`
+     * 6. `Avoid (allergies): ...` - when trimmed non-empty
+     * 7. `Preferred cuisines: ...` - when trimmed non-empty
+     * 8. portion line - when [InventoryLogic.portionLine] returns non-null
+     * 9. the real-dishes clause - always
+     * 10. the JSON schema clause - always
      *
      * The inventory is a **comma list, not prose**, deliberately: the whole call
      * shares a small runtime context with the reply, and `Inventory: Eggs, Milk,
      * Cheese.` is the asserted shape.
      *
      * Lines 9 and 10 are assembled by **concatenation with single spaces at the
-     * join points**. Each is a single line — do not wrap them, and do not let a
+     * join points**. Each is a single line - do not wrap them, and do not let a
      * formatter turn a join point into a newline.
      */
     fun build(
@@ -91,7 +91,7 @@ object RecipePrompt {
         // The real-dishes clause. A deliberate bug fix (commit 45b99c3): the
         // prior wording told the model that makeNow "uses only inventory items",
         // so it worked backwards from the inventory and fabricated a plausible
-        // dish name to fit it — the field-reported "cheesy Italian dip" from
+        // dish name to fit it - the field-reported "cheesy Italian dip" from
         // ketchup and cheddar. Pick a REAL dish first, then mark honestly which
         // of its genuine ingredients the user has. The salt/pepper/water/oil
         // sentence stops staples being listed as missing, which made every dish

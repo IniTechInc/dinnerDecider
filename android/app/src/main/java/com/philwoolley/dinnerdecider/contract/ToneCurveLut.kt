@@ -25,7 +25,7 @@ import kotlin.math.sqrt
  *
  * **Order matters where it is applied:** the tone curve runs at **full
  * resolution, before** the downscale to 896 px, mirroring iOS. Moving it after
- * the downscale silently changes what the model sees — a looks-like-success
+ * the downscale silently changes what the model sees - a looks-like-success
  * recognition regression, not a compile error.
  */
 object ToneCurveLut {
