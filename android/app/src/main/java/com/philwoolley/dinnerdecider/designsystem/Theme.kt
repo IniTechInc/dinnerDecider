@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -25,12 +26,16 @@ fun DinnerDeciderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DinnerDeciderDarkColors else DinnerDeciderLightColors,
-        typography = DinnerDeciderTypography,
-        shapes = DinnerDeciderShapes,
-        content = content,
-    )
+    // Read the Reduce-Motion setting once here and hand it down, rather than letting every
+    // animated element register its own ContentObserver. See LocalReduceMotion.
+    CompositionLocalProvider(LocalReduceMotion provides observeSystemReduceMotion()) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DinnerDeciderDarkColors else DinnerDeciderLightColors,
+            typography = DinnerDeciderTypography,
+            shapes = DinnerDeciderShapes,
+            content = content,
+        )
+    }
 }
 
 /**
