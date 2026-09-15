@@ -31,21 +31,33 @@ No 16GB re-download is required. Use these for every on-device/on-target test.
 
 | Device | Use |
 |---|---|
-| **Samsung Galaxy XCover Pro 6** (physical, arm64) | The real Android target. Step 39's self-test, the vision smoke test, CPU latency and peak PSS all run here. Android is NOT limited to mock-mode validation. |
+| **Samsung Galaxy XCover6 Pro** (physical, arm64) | ⚠️ **Reported as 6 GB RAM, single configuration worldwide** (SM-G736B/U). After kernel carveouts `totalMem` lands near 5.4-5.7 GiB, **below the ~7.0 GiB floor the model needs**. Expect `DeviceCapabilityPolicy` to route it to mock mode. **CONFIRM ON THE DEVICE before planning around it** -- `adb shell cat /proc/meminfo` is definitive; a spec sheet is not. What it CAN prove: the native ABI smoke test (loading all seven `.so` and resolving `mtmd` symbols needs no model), the entire mock path, and that the app never crashes on `UnsatisfiedLinkError`. What it CANNOT prove: CPU latency, peak PSS, or the vision smoke test -- all of which need the model resident. |
 | **iPhone 17 Pro** (physical) | iOS device verification. NOTE: the open TestFlight crash items #1/#4 were reported on an iPhone 16 Pro Max (8GB). A 17 Pro is a different memory envelope, so it can confirm the app runs but CANNOT by itself close a jetsam report filed against an 8GB phone. Say which device a result came from. |
 | arm64 Android emulator (Apple Silicon host) | Room, DataStore, ML Kit, CameraX, Compose UI tests. Native ABI matches the host, so this is the verified ABI. |
 | iPhone simulator (iPhone 17 Pro, UDID pinned in CLAUDE.md) | The 138-test iOS suite. Forces MockLLMService, so it proves nothing about memory. |
 | Docker + colima buildx (linux/arm64 via QEMU) | Linux port builds and functional tests only. |
+
+**No 8 GB+ Android device is confirmed available either.** That has a real consequence for
+the Android port: the on-device measurements that were supposed to resolve CPU-only latency,
+peak memory, and whether the vision path works at all are **BLOCKED**, not merely pending.
+Do not substitute estimates for them. An earlier version of this file claimed "Android is NOT
+limited to mock-mode validation" -- that was written from the existence of a device rather
+than its specification, and it was wrong in the same way the `LLAMA_BUILD_TOOLS=OFF` advice
+was wrong: a committed doc telling workers something verifiably false.
+
+Forcing the real model onto a 6 GB device is not a workaround. With roughly 3.0-3.5 GiB
+actually free against a 3.5 GB weight file, decode touches essentially every weight page per
+token, producing major-fault thrash against UFS and an LMKD kill -- the same class of failure
+as the iOS jetsam, reached through a different killer.
 
 **No Raspberry Pi, Jetson, or physical Linux box is available.** Consequence for the
 Linux port: `linux/docs/BENCHMARKS.md` must carry `not measured` for every real-hardware
 row. The QEMU row is explicitly labelled not representative. Do not estimate Pi numbers
 from a Mac: publishing a guessed number is worse than publishing none.
 
-Check the XCover Pro 6's RAM before assuming it clears the model floor. It is a rugged
-mid-range device, and `DeviceCapabilityPolicy` (Android Step 9) may correctly route it to
-mock mode. If it does, that is the capability check working, not a bug -- but it also
-means real-inference numbers need a different phone.
+If a device's capability check routes it to mock mode, that is the check working
+correctly, not a bug. Record which device produced any result, and never let a green run
+on hardware that refused the model read as a verification of the model path.
 
 ## Android: llama.cpp cross-compile VERIFIED WORKING
 
