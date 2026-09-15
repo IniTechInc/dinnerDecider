@@ -27,6 +27,30 @@ No 16GB re-download is required. Use these for every on-device/on-target test.
   VERIFIED buildx platforms: `linux/arm64`, `linux/amd64`, `linux/amd64/v2`, `linux/386`,
   so multi-arch images for Pi (arm64) and x86 boxes both build on this Mac.
 
+## Advertised RAM is not MemTotal: leave room for carveouts
+
+A device sold as "8 GB" does not report 8 GiB. Firmware, GPU, modem, ISP and
+TrustZone carveouts come off the top before the kernel ever sees it, so
+`MemTotal` lands a few percent low:
+
+| Device | Advertised | Approx `MemTotal` |
+|---|---|---|
+| Raspberry Pi 5 | 8 GB | ~7.88 GiB |
+| Galaxy XCover6 Pro | 6 GB | ~5.4-5.7 GiB |
+
+**A literal `>= 8 GiB` supported-tier floor therefore demotes a Pi 5 to the
+marginal tier - the Linux port's primary target, refused by its own preflight.**
+Caught during implementation. Both ports now allow a carveout margin: the Linux
+preflight uses ~92% of the nominal figure, and Android's 7.0 GiB floor is chosen
+for the same reason (an "8 GB" phone reports 7.4-7.8 GiB).
+
+The margin is only for picking a tier. The decision that actually matters is
+gated on **`MemAvailable` at load time**, not `MemTotal`: an 8 GB box already
+running three other services is a 4 GB box.
+
+Always read `/proc/meminfo` on the real device rather than reasoning from the
+spec sheet.
+
 ## Available test hardware (confirmed Sept 14, 2026)
 
 | Device | Use |
