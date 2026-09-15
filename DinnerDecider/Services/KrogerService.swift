@@ -371,6 +371,14 @@ final class KrogerService: ObservableObject {
         delete(key: "tokenExpiry")
     }
 
+    /// Reload store selection from UserDefaults (call on view appear to pick up
+    /// changes made by other screens, e.g. Settings).
+    func reloadState() {
+        storeId = UserDefaults.standard.string(forKey: "krogerStoreId") ?? ""
+        storeName = UserDefaults.standard.string(forKey: "krogerStoreName") ?? ""
+        loadTokens()
+    }
+
     private func loadStorePreference() {
         storeId = UserDefaults.standard.string(forKey: "krogerStoreId") ?? ""
         storeName = UserDefaults.standard.string(forKey: "krogerStoreName") ?? ""

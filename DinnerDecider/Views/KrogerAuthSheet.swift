@@ -6,6 +6,7 @@ struct KrogerAuthSheet: View {
     @ObservedObject var kroger: KrogerService
     @Environment(\.dismiss) private var dismiss
     @State private var authError: String?
+    @State private var isAuthenticating = false
 
     var body: some View {
         NavigationStack {
@@ -36,6 +37,7 @@ struct KrogerAuthSheet: View {
                 .font(.dmBodyBold)
                 .buttonStyle(.borderedProminent)
                 .tint(.brandPrimary)
+                .disabled(isAuthenticating)
 
                 Spacer()
                 Spacer()
@@ -56,39 +58,59 @@ struct KrogerAuthSheet: View {
                 return
             }
 
-            // Use ASWebAuthenticationSession via the continuation-based API
-            do {
-                let callbackURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
-                    let session = ASWebAuthenticationSession(
-                        url: authURL,
-                        callback: .customScheme("dinnerdecider")
-                    ) { url, error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else if let url {
-                            continuation.resume(returning: url)
-                        } else {
-                            continuation.resume(throwing: URLError(.cancelled))
-                        }
-                    }
-                    session.prefersEphemeralWebBrowserSession = false
-                    session.start()
-                }
+            isAuthenticating = true
+            authError = nil
 
+            do {
+                let callbackURL = try await authenticate(url: authURL)
                 let success = await kroger.handleCallback(callbackURL)
                 if success {
                     dismiss()
                 } else {
                     authError = "Failed to complete sign-in. Please try again."
                 }
+            } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+                // User tapped cancel — just stay on this sheet
             } catch {
-                if (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin {
-                    // User tapped cancel in the browser — just dismiss
-                    dismiss()
+                authError = "Sign-in was interrupted: \(error.localizedDescription)"
+            }
+
+            isAuthenticating = false
+        }
+    }
+
+    @MainActor
+    private func authenticate(url: URL) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callback: .customScheme("dinnerdecider")
+            ) { callbackURL, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let callbackURL {
+                    continuation.resume(returning: callbackURL)
                 } else {
-                    authError = "Sign-in was interrupted. Please try again."
+                    continuation.resume(throwing: URLError(.cancelled))
                 }
             }
+            session.presentationContextProvider = PresentationContextProvider.shared
+            session.prefersEphemeralWebBrowserSession = false
+            session.start()
         }
+    }
+}
+
+/// Provides the key window as the presentation anchor for ASWebAuthenticationSession.
+private final class PresentationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = PresentationContextProvider()
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let window = scene.windows.first(where: \.isKeyWindow)
+        else {
+            return ASPresentationAnchor()
+        }
+        return window
     }
 }

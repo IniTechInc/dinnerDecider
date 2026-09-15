@@ -580,6 +580,8 @@ private struct ShoppingListView: View {
 
     @State private var newItem = ""
     @State private var showKrogerResult = false
+    @State private var showKrogerAuth = false
+    @State private var showStorePicker = false
     @FocusState private var addFieldFocused: Bool
 
     private var hasChecked: Bool { items.contains(where: \.isChecked) }
@@ -606,10 +608,16 @@ private struct ShoppingListView: View {
                     }
                     .onDelete(perform: delete)
 
-                    if kroger.isConnected && !uncheckedItems.isEmpty {
+                    if !uncheckedItems.isEmpty {
                         Section {
                             Button {
-                                sendToKroger()
+                                if !kroger.isConnected {
+                                    showKrogerAuth = true
+                                } else if kroger.storeId.isEmpty {
+                                    showStorePicker = true
+                                } else {
+                                    sendToKroger()
+                                }
                             } label: {
                                 Label(
                                     kroger.isExporting ? "Sending to Kroger..." : "Send to Kroger Cart",
@@ -650,6 +658,18 @@ private struct ShoppingListView: View {
                 Text(error)
             } else if kroger.exportSuccess {
                 Text("Items added to your Kroger cart! Open the Kroger app to check out.")
+            }
+        }
+        .onAppear {
+            kroger.reloadState()
+        }
+        .sheet(isPresented: $showKrogerAuth) {
+            KrogerAuthSheet(kroger: kroger)
+        }
+        .sheet(isPresented: $showStorePicker) {
+            KrogerStorePickerSheet(kroger: kroger) {
+                // Store selected — now send to cart
+                sendToKroger()
             }
         }
     }
