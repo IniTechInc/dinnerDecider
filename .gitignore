@@ -53,3 +53,5 @@ android/.cxx/
 linux/bin/
 linux/dist/
 linux/web/node_modules/
+linux/.state/
+linux/internal/llm/runtime-cache/
