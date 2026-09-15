@@ -28,7 +28,12 @@ iOS app: photograph your fridge, Gemma 4 E4B identifies items 100% on-device, bu
 - Headless builds MUST pass `-skipMacroValidation` (LocalLLMClient ships a Swift macro).
 - App target uses Manual signing (profile above); do not pass signing overrides on the xcodebuild command line, they leak onto SPM package targets and fail the build.
 - Simulator to use: iPhone 17 Pro (no 16-series sims in Xcode 26.3).
-- Test command: `xcodebuild -project DinnerDecider.xcodeproj -scheme DinnerDecider -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -skipMacroValidation build test`
+- Simulator destination: pin the UDID, do NOT use `name=iPhone 17 Pro`. Three simulators share
+  that name, so xcodebuild fails with "Unable to find a device matching the provided destination
+  specifier" AND STILL EXITS 0, which silently looks like a passing build. List with
+  `xcrun simctl list devices available`.
+- Test command: `xcodebuild -project DinnerDecider.xcodeproj -scheme DinnerDecider -destination 'platform=iOS Simulator,id=A3501984-27B3-4E78-93E1-9C8743FB8ED1' -skipMacroValidation build test`
+  (132 tests green, Sept 14 2026. Takes ~6 min from clean.)
 
 ## Model files (never commit; git-ignored)
 
