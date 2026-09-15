@@ -251,8 +251,29 @@ Guarantees that prevent it, each with a named test:
 | Warning at `READY` **outside** a session still unloads | `testWarningAtReadyOutsideSessionStillUnloads` |
 | Nested sessions only end when all end | `testNestedSessionsOnlyEndWhenAllEnd` |
 | No pressure during a session leaves the model resident | `testEndSessionWithoutPendingUnloadKeepsModelResident` |
+| `WARNING` at `READY` while **idle** proceeds and unloads | `testWarningPressureWhenReadyIdleUnloads` |
+| `finishUnload` returns to `UNLOADED` and clears `pendingUnload` | `testUnloadCycleReturnsToUnloaded` |
 
-Port these tests. They are pure and synchronous; there is no excuse not to.
+That is **17 tests**, matching `ModelLifecycleTests.swift` exactly. Port all of them.
+They are pure and synchronous; there is no excuse not to.
+
+The last two were missing from this table until Sept 14 2026. The first of them
+is load-bearing and is easy to get wrong in a port whose "model" is a supervised
+child process rather than an in-process client: it pins that `WARNING` is only
+ignored while the machine is BUSY (`LOADING`/`INFERRING`) or inside a session. At
+`READY` and idle, a plain `WARNING` really does unload. A port that treats
+`WARNING` as always-ignorable keeps a multi-GB model resident through exactly the
+pressure it was supposed to relieve.
+
+Related trap, for the same reason: **every decision in this machine is the
+function's RETURN VALUE, and is never inferred from the caller's reason for
+calling.** `requestUnload()` returns `PROCEED` only at `READY`; at `LOADING` and
+`INFERRING` it returns `DEFERRED` and sets `pendingUnload`
+(`testExplicitUnloadWhileInferringDefers`). A supervisor that maps "the operator
+asked for a restart" straight to "send SIGTERM now" will kill a child mid-encode,
+which is the build-1 use-after-free class wearing a different hat: the in-flight
+request fails with connection-refused, the scan loop swallows it, and the user
+sees a failed scan. Always act on the returned decision.
 
 There is a **second** layer of safety in the iOS runtime adapter worth copying:
 an in-flight token stream holds its own strong reference to the client it started
