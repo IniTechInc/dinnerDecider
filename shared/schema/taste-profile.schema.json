@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dinnerdecider.local/shared/schema/taste-profile.schema.json",
+  "title": "TasteProfile",
+  "description": "The user's taste preferences, collected by the first-launch wizard and editable from Settings. PERSISTED AS JSON: Swift encodes it with JSONEncoder and stores the blob in UserDefaults under the key \"tasteProfile\" (TasteProfile.swift:38-49), so unlike the SwiftData models this schema IS the real on-disk shape. Source of record: DinnerDecider/Models/TasteProfile.swift:8-34. Each category is a list of tapped pills plus a free-text \"other\" field.",
+  "type": "object",
+  "properties": {
+    "favoriteFoods": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "favoriteFoodsOther": { "type": "string", "default": "" },
+    "dislikedFoods": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "dislikedFoodsOther": { "type": "string", "default": "" },
+    "cuisinesLoved": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "cuisinesLovedOther": { "type": "string", "default": "" },
+    "cuisinesAvoided": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "cuisinesAvoidedOther": { "type": "string", "default": "" },
+    "allergies": { "type": "array", "items": { "type": "string" }, "default": [], "description": "SAFETY-RELEVANT. Rendered as \"Allergies: X. Never include these.\" in the prompt fragment." },
+    "allergiesOther": { "type": "string", "default": "" },
+    "texturesAvoided": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "texturesAvoidedOther": { "type": "string", "default": "" },
+    "spiceLevel": {
+      "type": "integer",
+      "default": 3,
+      "description": "1 (mild) to 5 (bring it on); 3 is the default. Values outside 1-5 fall back to the \"medium spice\" wording rather than erroring. The spice line is ALWAYS emitted in the prompt fragment, even for an otherwise-empty profile."
+    }
+  },
+  "required": [
+    "favoriteFoods", "favoriteFoodsOther",
+    "dislikedFoods", "dislikedFoodsOther",
+    "cuisinesLoved", "cuisinesLovedOther",
+    "cuisinesAvoided", "cuisinesAvoidedOther",
+    "allergies", "allergiesOther",
+    "texturesAvoided", "texturesAvoidedOther",
+    "spiceLevel"
+  ],
+  "additionalProperties": true,
+  "$comment": "Every key is listed as required because Swift's synthesized Decodable init does NOT fall back to a property's default value for a missing key on a non-optional property: a blob written by an older/partial writer fails to decode entirely, and `TasteProfile.load()` returns nil (try? swallows the error), silently losing the profile including allergies. A port that tolerates missing keys is more forgiving than iOS, which is safe in the direction that matters; a port that WRITES partial blobs would break iOS. Always write all 13 keys. The `hasContent` gate (any of the 6 pill lists non-empty, OR any of the 6 other-fields non-blank after trimming) decides whether the profile reaches the prompt at all - see shared/prompts/recipes.md."
+}

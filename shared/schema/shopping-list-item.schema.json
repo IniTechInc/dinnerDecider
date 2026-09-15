@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dinnerdecider.local/shared/schema/shopping-list-item.schema.json",
+  "title": "ShoppingListItem",
+  "description": "A single line on the shopping list. PERSISTED so the list survives relaunch. Source of record: DinnerDecider/Models/ShoppingListItem.swift:9-27. On iOS this is a SwiftData @Model class, NOT Codable; this schema describes the persisted field set. Items arrive here either from an \"almost there\" recipe's missingItems or by manual entry. TODO(unresolved): canonical wire encoding for `dateAdded`, same caveat as inventory-item.schema.json.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Ingredient name as it will be shopped for. Deduplicated case-insensitively against the existing list before insertion, with the FIRST-SEEN casing preserved (ShoppingListLogic.aggregate / newItems, ShoppingListLogic.swift:9-28). Blank and whitespace-only names are dropped, never stored."
+    },
+    "isChecked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Checked off in the UI. Drives the check-off and \"clear checked\" features, and the export marker."
+    },
+    "dateAdded": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the line was added. Defaults to now."
+    },
+    "isManual": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the user typed this in by hand rather than adding it from a recipe."
+    }
+  },
+  "required": ["name", "isChecked", "dateAdded", "isManual"],
+  "additionalProperties": true,
+  "$comment": "Plain-text export format (ShoppingListLogic.exportText, ShoppingListLogic.swift:38-46) is part of the contract: header \"Shopping List\" then a blank line, then one line per item as \"[x] Name\" when checked and \"[ ] Name\" when not, and the whole string trimmed of trailing whitespace. An EMPTY list exports the exact string \"Shopping List\\n\\n(empty)\"."
+}

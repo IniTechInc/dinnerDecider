@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dinnerdecider.local/shared/schema/inventory-item.schema.json",
+  "title": "InventoryItem",
+  "description": "A row of the user's food inventory. PERSISTED. Source of record: DinnerDecider/Models/InventoryItem.swift:50-92. Note: on iOS this is a SwiftData @Model class, NOT Codable, so there is no shipped JSON encoding of it. This schema describes the persisted field set field-for-field so a port's store (Room, SQLite, JSON file) stays compatible. TODO(unresolved): the canonical cross-platform wire encoding for `dateAdded`. No JSON encoding of InventoryItem exists in the Swift (searched Models/, Services/, and the Kroger export path), so RFC 3339 date-time below is this document's recommendation, not an extraction.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Item name. Half of the merge key."
+    },
+    "brand": {
+      "type": ["string", "null"],
+      "description": "Brand, or null. The other half of the merge key: two rows with the same name but different brands are DISTINCT items."
+    },
+    "categoryRaw": {
+      "type": "string",
+      "description": "The category stored as a RAW STRING, deliberately, so the store keeps a stable value even if the enum is reordered or renamed later (InventoryItem.swift:54). The typed `category` accessor maps it through FoodCategory and falls back to `.other` for anything unrecognized; the setter writes back rawValue. Ports must persist the string, never an ordinal.",
+      "examples": ["produce", "dairy", "meat", "pantry", "snack", "beverage", "condiment", "frozen", "other"]
+    },
+    "quantity": {
+      "type": "integer",
+      "description": "How many of this item are on hand. Merged on confirm (duplicate keys stack) and decremented by 1 per use when a recipe is cooked. A row reaching 0 is flagged for removal. See shared/pipeline/scan-pipeline.md."
+    },
+    "dateAdded": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the row was created. Defaults to now. Drives the `dateAdded` inventory sort option."
+    },
+    "sourcePhotoID": {
+      "type": ["string", "null"],
+      "description": "Identifier of the photo this item came from, or null for manual entry."
+    },
+    "isStaple": {
+      "type": "boolean",
+      "default": false,
+      "description": "A staple the user almost always has (salt, oil). Shown collapsed so it does not clutter the main list. MUST default to false: the Swift declares `var isStaple: Bool = false` specifically to keep SwiftData lightweight migration happy for stores written before the field existed (InventoryItem.swift:59-62). A port adding this field to an existing store must default it the same way."
+    }
+  },
+  "required": ["name", "categoryRaw", "quantity", "dateAdded"],
+  "additionalProperties": true,
+  "$comment": "The merge key is NOT a stored field: it is computed as trim(lowercase(name)) + \"|\" + trim(lowercase(brand ?? \"\")) - InventoryLogic.mergeKey, InventoryLogic.swift:12-16. The name-only key used to match recipe ingredients is trim(lowercase(name)) - InventoryLogic.nameKey, InventoryLogic.swift:20-22. Both must be reproduced exactly; InventoryLogicTests pins the pipe separator via literals such as \"milk|horizon\" and \"eggs|\"."
+}

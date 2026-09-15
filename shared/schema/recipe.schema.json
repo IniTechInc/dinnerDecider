@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dinnerdecider.local/shared/schema/recipe.schema.json",
+  "title": "RecipeBundleResponse",
+  "description": "The whole reply to the recipes prompt: two buckets of suggestions from one model call. Source of record: DinnerDecider/Models/Recipe.swift (IngredientLine, RecipeSuggestion, RecipeBundleResponse). RecipeSuggestion is NOT persisted; it is produced on the fly by the model. PlannedMeal (below) is the persisted projection of one.",
+  "type": "object",
+  "properties": {
+    "makeNow": {
+      "type": "array",
+      "description": "Dishes whose ingredients are all in the inventory. Their missingItems should be empty.",
+      "items": { "$ref": "#/$defs/RecipeSuggestion" }
+    },
+    "almostThere": {
+      "type": "array",
+      "description": "Dishes missing up to 3 ingredients; each missing one is listed in missingItems.",
+      "items": { "$ref": "#/$defs/RecipeSuggestion" }
+    }
+  },
+  "required": ["makeNow", "almostThere"],
+  "additionalProperties": true,
+  "$defs": {
+    "IngredientLine": {
+      "title": "IngredientLine",
+      "description": "One ingredient row in a suggested recipe. Source: Recipe.swift:5-9. Identifiable by `name` on iOS (id == name), so names should be unique within a recipe.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Ingredient name. Matched against inventory by the name-only key (trimmed + lowercased) when cooking decrements stock."
+        },
+        "hasIt": {
+          "type": "boolean",
+          "description": "True only if the ingredient is in the user's inventory. The prompt demands this be honest; the UI's have/missing display and the add-to-shopping-list flow both depend on it."
+        }
+      },
+      "required": ["name", "hasIt"],
+      "additionalProperties": true
+    },
+    "RecipeSuggestion": {
+      "title": "RecipeSuggestion",
+      "description": "One suggested dish. Source: Recipe.swift:12-20. Identifiable by `name` on iOS (id == name), so names should be unique within a bundle.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Dish name. Must be a real, well-known dish (see shared/prompts/recipes.md)." },
+        "ingredients": {
+          "type": "array",
+          "description": "The dish's genuine standard ingredients, each marked have/missing.",
+          "items": { "$ref": "#/$defs/IngredientLine" }
+        },
+        "steps": {
+          "type": "array",
+          "description": "Cooking steps in order.",
+          "items": { "type": "string" }
+        },
+        "timeMinutes": {
+          "type": "integer",
+          "description": "Total time in minutes. Swift decodes this as Int: a JSON float here FAILS the whole bundle decode, which surfaces to the user as the unreadable-recipes error."
+        },
+        "missingItems": {
+          "type": "array",
+          "description": "Names the user would need to buy. Empty for makeNow dishes. Feeds the shopping-list aggregation (case-insensitive dedupe, first-seen order preserved).",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["name", "ingredients", "steps", "timeMinutes", "missingItems"],
+      "additionalProperties": true
+    },
+    "PlannedMeal": {
+      "title": "PlannedMeal",
+      "description": "A RecipeSuggestion saved to the meal plan and synced to the calendar. PERSISTED (SwiftData @Model, not Codable). Source: DinnerDecider/Models/PlannedMeal.swift. It flattens the recipe deliberately so the deep link can render the meal without the model regenerating it: ingredients collapse to names only and hasIt/missingItems are dropped.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid", "description": "Stable identity, generated at creation." },
+        "recipeName": { "type": "string", "description": "Copied from RecipeSuggestion.name." },
+        "ingredientNames": {
+          "type": "array",
+          "description": "RecipeSuggestion.ingredients mapped to their names. hasIt is intentionally not carried over.",
+          "items": { "type": "string" }
+        },
+        "steps": { "type": "array", "items": { "type": "string" } },
+        "timeMinutes": { "type": "integer" },
+        "plannedDate": { "type": "string", "format": "date-time", "description": "When the meal is planned for. See the encoding note in inventory-item.schema.json." },
+        "calendarEventId": {
+          "type": ["string", "null"],
+          "description": "Platform calendar event identifier (EKEvent.eventIdentifier on iOS), used to update or delete the event. Null until the event is created, and platform-specific by nature."
+        }
+      },
+      "required": ["id", "recipeName", "ingredientNames", "steps", "timeMinutes", "plannedDate"],
+      "additionalProperties": true
+    }
+  }
+}

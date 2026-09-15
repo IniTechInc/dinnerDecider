@@ -44,7 +44,9 @@ iOS app: photograph your fridge, Gemma 4 E4B identifies items 100% on-device, bu
 
 ## Memory / OOM notes
 
-- The crash is a systemwide `vm-pageshortage` jetsam (not app-footprint), driven by WIRED Metal memory: llama.cpp uploads all weights + mmproj + KV cache into GPU buffers. The Increased Memory Limit entitlement does NOT help this. Lever = shrink wired: smaller quant + smaller `context` (1536, in GemmaLLMService).
+- The crash is a systemwide `vm-pageshortage` jetsam (not app-footprint), driven by WIRED Metal memory: llama.cpp uploads all weights + mmproj + KV cache into GPU buffers. The Increased Memory Limit entitlement does NOT help this. Lever = shrink wired: smaller quant + smaller `context` (now **1024**, in GemmaLLMService;
+  it went 2048 -> 1536 -> 1024). `batch` must stay >= 512: build 5 tried 256 and every image
+  vision chunk silently failed to fit one batch, which broke recognition entirely.
 - LocalLLMClient 0.5.0 does NOT expose `n_gpu_layers`, KV-cache type (q8 KV), flash-attention, or the mmproj `use_gpu` toggle. `LlamaClient.Parameter` only exposes `context` and `batch` (and sampling). `Model.swift` hardcodes full GPU offload + `use_mmap=true`; `Multimodal.swift` hardcodes `use_gpu=true`. Reducing GPU-resident weights (partial offload) or running the mmproj on CPU would each save more wired memory but require forking the package.
 - Headless memory self-test: launch with `--llm-selftest` (see SelfTest.swift). Writes `Documents/selftest_result.txt` with peak footprint + available memory. Bundled test image is `DinnerDecider/Resources/selftest.png`.
 

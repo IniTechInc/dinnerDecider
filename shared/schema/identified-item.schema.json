@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dinnerdecider.local/shared/schema/identified-item.schema.json",
+  "title": "IdentifiedItem",
+  "description": "One grocery item recognized by the vision model. Wire type only: this is what the model emits and what the scan pipeline consumes; it is never persisted directly. Source of record: DinnerDecider/Services/LLM/LLMService.swift:7-17 (struct IdentifiedItem: Codable, Hashable, Sendable). The identify-item prompt returns a single object of this shape; identify-all-items returns an array of them.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Item name as the model reports it, e.g. \"Whole Milk\". The literal value \"unknown\" (compared case-insensitively) is the model's no-item escape hatch and is filtered out by the pipeline. Also the basis of the dedupe key (see shared/pipeline/scan-pipeline.md)."
+    },
+    "brand": {
+      "type": ["string", "null"],
+      "description": "Brand read off the packaging, or null when there is none / it is unreadable. Swift decodes this with decodeIfPresent, so an ABSENT key and an explicit null are both valid and both produce nil. Part of the dedupe key."
+    },
+    "category": {
+      "type": "string",
+      "description": "Raw category string from the model. NOT validated at decode time: any string decodes successfully and is mapped to the FoodCategory enum later, lowercased, falling back to \"other\" for anything unrecognized. See shared/taxonomy/categories.md. The enum values are listed under examples, but they are not an enforced constraint.",
+      "examples": ["produce", "dairy", "meat", "pantry", "snack", "beverage", "condiment", "frozen", "other"]
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Model confidence, prompted as 0-1. NOT range-validated at decode time in Swift (it is a plain Double). The pipeline drops any item with confidence < 0.15. The dedupe step keeps the highest-confidence sighting of a given name+brand."
+    }
+  },
+  "required": ["name", "category", "confidence"],
+  "additionalProperties": true
+}

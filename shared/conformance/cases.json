@@ -1,0 +1,393 @@
+{
+  "$comment": "Golden parser fixtures for DinnerDecider. Extracted verbatim from the Swift unit tests listed in each case's `source`. See shared/conformance/README.md for the runner contract. Do not edit a case to make a port pass; fix the port.",
+  "version": 1,
+  "floatTolerance": 0.0001,
+  "cases": [
+    {
+      "id": "object-fenced-happy-path",
+      "description": "Happy path: a single IdentifiedItem wrapped in a ```json code fence.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesJSONInsideCodeFences",
+      "operation": "decodeIdentifiedItem",
+      "input": "```json\n{\"name\": \"Whole Milk\", \"brand\": \"Horizon\", \"category\": \"dairy\", \"confidence\": 0.92}\n```",
+      "expectNull": false,
+      "expected": {
+        "name": "Whole Milk",
+        "brand": "Horizon",
+        "category": "dairy",
+        "confidence": 0.92
+      }
+    },
+    {
+      "id": "object-leading-and-trailing-prose",
+      "description": "Model wraps the object in conversational prose on both sides. Both must be ignored.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesJSONWithLeadingProse",
+      "operation": "decodeIdentifiedItem",
+      "input": "Sure! Here is what I found: {\"name\": \"Large Eggs\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.8} Hope that helps.",
+      "expectNull": false,
+      "expected": {
+        "name": "Large Eggs",
+        "brand": null,
+        "category": "dairy",
+        "confidence": 0.8
+      }
+    },
+    {
+      "id": "object-null-brand",
+      "description": "Explicit JSON null for the optional brand decodes to nil, not to the string \"null\".",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testNullBrandDecodesSuccessfully",
+      "operation": "decodeIdentifiedItem",
+      "input": "{\"name\": \"Eggs\", \"brand\": null, \"category\": \"produce\", \"confidence\": 0.8}",
+      "expectNull": false,
+      "expected": {
+        "name": "Eggs",
+        "brand": null,
+        "category": "produce",
+        "confidence": 0.8
+      }
+    },
+    {
+      "id": "object-no-json-at-all",
+      "description": "Plain prose with no brace anywhere: extraction returns null.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testReturnsNilForMalformedJSON",
+      "operation": "firstJSONObject",
+      "input": "there is no json here at all",
+      "expectNull": true
+    },
+    {
+      "id": "object-truncated-never-closes",
+      "description": "TRUNCATED OUTPUT: an opening brace that never closes. Must return null, NOT a truncated prefix.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testReturnsNilForMalformedJSON",
+      "operation": "firstJSONObject",
+      "input": "{ this never closes",
+      "expectNull": true
+    },
+    {
+      "id": "object-unquoted-keys-extracts",
+      "description": "Balanced but illegal JSON: extraction SUCCEEDS because the scanner only balances braces.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testReturnsNilForMalformedJSON",
+      "operation": "firstJSONObject",
+      "input": "{ not: valid json }",
+      "expectNull": false,
+      "expected": "{ not: valid json }"
+    },
+    {
+      "id": "object-unquoted-keys-decodes-null",
+      "description": "Same input as object-unquoted-keys-extracts: extraction succeeds but the JSON decode fails, so decode returns null. The pair proves extraction and decoding are separate stages.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testReturnsNilForMalformedJSON",
+      "operation": "decodeIdentifiedItem",
+      "input": "{ not: valid json }",
+      "expectNull": true
+    },
+    {
+      "id": "object-missing-required-fields",
+      "description": "Valid JSON, but category and confidence are absent. Swift Codable requires both, so decode returns null.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testMissingRequiredFieldReturnsNil",
+      "operation": "decodeIdentifiedItem",
+      "input": "{\"name\": \"Milk\"}",
+      "expectNull": true
+    },
+    {
+      "id": "object-empty-output",
+      "description": "EMPTY OUTPUT: the model returned nothing at all (what a stuck grammar sampler produces, and what AppModel substitutes when generateText throws). Must return null, never crash.",
+      "source": "DinnerDecider/Services/AppModel.swift:458 (raw = \"\" fallback)",
+      "operation": "decodeIdentifiedItem",
+      "input": "",
+      "expectNull": true
+    },
+    {
+      "id": "object-braces-inside-string-extracts",
+      "description": "Braces inside a string literal must not affect depth counting.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testIgnoresBracesInsideStrings",
+      "operation": "firstJSONObject",
+      "input": "{\"name\": \"weird}name{here\", \"brand\": null, \"category\": \"other\", \"confidence\": 0.5}",
+      "expectNull": false,
+      "expected": "{\"name\": \"weird}name{here\", \"brand\": null, \"category\": \"other\", \"confidence\": 0.5}"
+    },
+    {
+      "id": "object-braces-inside-string-decodes",
+      "description": "Same input, decoded: the name keeps its literal braces.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testIgnoresBracesInsideStrings",
+      "operation": "decodeIdentifiedItem",
+      "input": "{\"name\": \"weird}name{here\", \"brand\": null, \"category\": \"other\", \"confidence\": 0.5}",
+      "expectNull": false,
+      "expected": {
+        "name": "weird}name{here",
+        "brand": null,
+        "category": "other",
+        "confidence": 0.5
+      }
+    },
+    {
+      "id": "object-first-balanced-only",
+      "description": "Two top-level objects: only the first balanced one is returned, nesting handled, trailing content ignored (not an error).",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testExtractsFirstBalancedObjectOnly",
+      "operation": "firstJSONObject",
+      "input": "{\"a\": {\"nested\": 1}} trailing {\"b\": 2}",
+      "expectNull": false,
+      "expected": "{\"a\": {\"nested\": 1}}"
+    },
+    {
+      "id": "strip-reasoning-keeps-answer-after-marker",
+      "description": "CHANNEL-PREFIXED OUTPUT: everything up to and including the last <channel|> close marker is discarded.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testStripReasoningKeepsAnswerAfterLastChannelMarker",
+      "operation": "stripReasoning",
+      "input": "<|channel>thought\nThe box says OATMEAL so name is Oatmeal.\n<channel|>{\"name\": \"Oatmeal\"}",
+      "expectNull": false,
+      "expected": "{\"name\": \"Oatmeal\"}"
+    },
+    {
+      "id": "strip-reasoning-no-marker-unchanged",
+      "description": "No channel marker: the text is returned byte-identical.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testStripReasoningLeavesPlainTextUnchanged",
+      "operation": "stripReasoning",
+      "input": "{\"name\": \"Oatmeal\"}",
+      "expectNull": false,
+      "expected": "{\"name\": \"Oatmeal\"}"
+    },
+    {
+      "id": "object-thinking-channel-with-decoy-json",
+      "description": "CHANNEL-PREFIXED OUTPUT with a decoy: the reasoning contains {\"name\": \"WRONG\"}, which a naive first-brace scanner would return. Stripping the channel first discards it.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesJSONAfterThinkingChannelPreamble",
+      "operation": "decodeIdentifiedItem",
+      "input": "<|channel>thought\nLet me build the JSON. Something like {\"name\": \"WRONG\"} but let me reconsider the category.\n<channel|>{\"name\": \"Oatmeal\", \"brand\": null, \"category\": \"pantry\", \"confidence\": 0.95}",
+      "expectNull": false,
+      "expected": {
+        "name": "Oatmeal",
+        "brand": null,
+        "category": "pantry",
+        "confidence": 0.95
+      }
+    },
+    {
+      "id": "object-thinking-channel-inside-code-fence",
+      "description": "Channel preamble AND a code fence around the answer. Proves the order of operations: strip reasoning first, then fences.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesJSONWithThinkingChannelInsideCodeFence",
+      "operation": "firstJSONObject",
+      "input": "<|channel>thought\nReasoning about the recipe.\n<channel|>```json\n{\"name\": \"Omelet\"}\n```",
+      "expectNull": false,
+      "expected": "{\"name\": \"Omelet\"}"
+    },
+    {
+      "id": "array-fenced-happy-path",
+      "description": "Happy path for the identify-all-items path: a one-element array inside a code fence.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesJSONArrayInsideCodeFences",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "```json\n[{\"name\": \"Milk\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.92}]\n```",
+      "expectNull": false,
+      "expected": [
+        {
+          "name": "Milk",
+          "brand": null,
+          "category": "dairy",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "id": "array-leading-prose",
+      "description": "Array preceded by prose.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesJSONArrayWithLeadingProse",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "Here are the items: [{\"name\": \"Eggs\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.9}]",
+      "expectNull": false,
+      "expected": [
+        {
+          "name": "Eggs",
+          "brand": null,
+          "category": "dairy",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "id": "array-multi-item",
+      "description": "Multi-item array spanning several lines; element order is preserved.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesMultiItemArray",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "[{\"name\": \"Milk\", \"brand\": \"Horizon\", \"category\": \"dairy\", \"confidence\": 0.9},\n {\"name\": \"Eggs\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.85},\n {\"name\": \"Butter\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.88}]",
+      "expectNull": false,
+      "expected": [
+        {
+          "name": "Milk",
+          "brand": "Horizon",
+          "category": "dairy",
+          "confidence": 0.9
+        },
+        {
+          "name": "Eggs",
+          "brand": null,
+          "category": "dairy",
+          "confidence": 0.85
+        },
+        {
+          "name": "Butter",
+          "brand": null,
+          "category": "dairy",
+          "confidence": 0.88
+        }
+      ]
+    },
+    {
+      "id": "array-object-when-array-expected",
+      "description": "A top-level OBJECT where an array was expected is a hard miss: there is no fallback from the array path to the object path.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testReturnsNilForObjectWhenArrayExpected",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "{\"name\": \"Milk\", \"brand\": null, \"category\": \"dairy\", \"confidence\": 0.9}",
+      "expectNull": true
+    },
+    {
+      "id": "array-truncated",
+      "description": "TRUNCATED OUTPUT: the array was cut off mid-stream. Must return null, not a one-element array.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testReturnsNilForMalformedArray",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "[{\"name\": \"Milk\"},",
+      "expectNull": true
+    },
+    {
+      "id": "array-after-thinking-channel",
+      "description": "CHANNEL-PREFIXED OUTPUT on the array path.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesArrayAfterThinkingChannel",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "<|channel>thought\nI see several items in this fridge photo.\n<channel|>[{\"name\": \"Yogurt\", \"brand\": \"Fage\", \"category\": \"dairy\", \"confidence\": 0.91}]",
+      "expectNull": false,
+      "expected": [
+        {
+          "name": "Yogurt",
+          "brand": "Fage",
+          "category": "dairy",
+          "confidence": 0.91
+        }
+      ]
+    },
+    {
+      "id": "array-empty",
+      "description": "An empty array decodes to an EMPTY ARRAY, not null. \"The model saw nothing\" and \"the model was unreadable\" must stay distinguishable.",
+      "source": "DinnerDeciderTests/LLMResponseParserTests.swift:testDecodesEmptyArray",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "[]",
+      "expectNull": false,
+      "expected": []
+    },
+    {
+      "id": "array-empty-output",
+      "description": "EMPTY OUTPUT on the array path returns null (no bracket found), which callers treat as zero items.",
+      "source": "derived from DinnerDecider/Services/AppModel.swift:458 (raw = \"\" fallback)",
+      "operation": "decodeIdentifiedItemArray",
+      "input": "",
+      "expectNull": true
+    },
+    {
+      "id": "recipe-bundle-prose-and-fence",
+      "description": "Happy path for the recipe bundle: the exact reply MockLLMService emits, deliberately wrapped in prose AND a code fence 'exactly like a real model tends to, so the parser is genuinely exercised'.",
+      "source": "DinnerDecider/Services/LLM/MockLLMService.swift:71-130 (MockLLMService.generateText)",
+      "operation": "decodeRecipeBundle",
+      "input": "Sure! Based on what you have, here are some ideas:\n\n```json\n{\n  \"makeNow\": [\n    {\n      \"name\": \"Cheesy Scrambled Eggs\",\n      \"ingredients\": [\n        {\"name\": \"Large Eggs\", \"hasIt\": true},\n        {\"name\": \"Cheddar Cheese\", \"hasIt\": true},\n        {\"name\": \"Whole Milk\", \"hasIt\": true}\n      ],\n      \"steps\": [\n        \"Whisk the eggs with a splash of milk.\",\n        \"Cook gently in a nonstick pan over low heat.\",\n        \"Fold in grated cheddar just before serving.\"\n      ],\n      \"timeMinutes\": 10,\n      \"missingItems\": []\n    },\n    {\n      \"name\": \"Simple Spaghetti Pomodoro\",\n      \"ingredients\": [\n        {\"name\": \"Spaghetti\", \"hasIt\": true},\n        {\"name\": \"Roma Tomatoes\", \"hasIt\": true},\n        {\"name\": \"Olive Oil\", \"hasIt\": true}\n      ],\n      \"steps\": [\n        \"Boil the spaghetti until al dente.\",\n        \"Simmer chopped tomatoes in olive oil.\",\n        \"Toss the pasta in the sauce and serve.\"\n      ],\n      \"timeMinutes\": 20,\n      \"missingItems\": []\n    }\n  ],\n  \"almostThere\": [\n    {\n      \"name\": \"Weeknight Black Bean Chili\",\n      \"ingredients\": [\n        {\"name\": \"Black Beans\", \"hasIt\": true},\n        {\"name\": \"Roma Tomatoes\", \"hasIt\": true},\n        {\"name\": \"Onion\", \"hasIt\": false},\n        {\"name\": \"Chili Powder\", \"hasIt\": false}\n      ],\n      \"steps\": [\n        \"Saute the onion until soft.\",\n        \"Add tomatoes, beans, and chili powder.\",\n        \"Simmer for 20 minutes and serve.\"\n      ],\n      \"timeMinutes\": 30,\n      \"missingItems\": [\"Onion\", \"Chili Powder\"]\n    }\n  ]\n}\n```\n\nEnjoy your dinner!",
+      "expectNull": false,
+      "expected": {
+        "makeNow": [
+          {
+            "name": "Cheesy Scrambled Eggs",
+            "ingredients": [
+              {
+                "name": "Large Eggs",
+                "hasIt": true
+              },
+              {
+                "name": "Cheddar Cheese",
+                "hasIt": true
+              },
+              {
+                "name": "Whole Milk",
+                "hasIt": true
+              }
+            ],
+            "steps": [
+              "Whisk the eggs with a splash of milk.",
+              "Cook gently in a nonstick pan over low heat.",
+              "Fold in grated cheddar just before serving."
+            ],
+            "timeMinutes": 10,
+            "missingItems": []
+          },
+          {
+            "name": "Simple Spaghetti Pomodoro",
+            "ingredients": [
+              {
+                "name": "Spaghetti",
+                "hasIt": true
+              },
+              {
+                "name": "Roma Tomatoes",
+                "hasIt": true
+              },
+              {
+                "name": "Olive Oil",
+                "hasIt": true
+              }
+            ],
+            "steps": [
+              "Boil the spaghetti until al dente.",
+              "Simmer chopped tomatoes in olive oil.",
+              "Toss the pasta in the sauce and serve."
+            ],
+            "timeMinutes": 20,
+            "missingItems": []
+          }
+        ],
+        "almostThere": [
+          {
+            "name": "Weeknight Black Bean Chili",
+            "ingredients": [
+              {
+                "name": "Black Beans",
+                "hasIt": true
+              },
+              {
+                "name": "Roma Tomatoes",
+                "hasIt": true
+              },
+              {
+                "name": "Onion",
+                "hasIt": false
+              },
+              {
+                "name": "Chili Powder",
+                "hasIt": false
+              }
+            ],
+            "steps": [
+              "Saute the onion until soft.",
+              "Add tomatoes, beans, and chili powder.",
+              "Simmer for 20 minutes and serve."
+            ],
+            "timeMinutes": 30,
+            "missingItems": [
+              "Onion",
+              "Chili Powder"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "recipe-bundle-empty-buckets",
+      "description": "A well-formed but empty bundle decodes to two empty arrays, not null.",
+      "source": "DinnerDeciderTests/AppModelMemoryTests.swift:33 (GatedLLMService.generateText)",
+      "operation": "decodeRecipeBundle",
+      "input": "{\"makeNow\":[],\"almostThere\":[]}",
+      "expectNull": false,
+      "expected": {
+        "makeNow": [],
+        "almostThere": []
+      }
+    },
+    {
+      "id": "recipe-bundle-unreadable",
+      "description": "TRUNCATED/MALFORMED OUTPUT: the exact string AppModel's hidden debug switch injects to demonstrate the retry UI. Must return null so the caller shows the retry error.",
+      "source": "DinnerDecider/Services/AppModel.swift:456 (debugSimulateFailure)",
+      "operation": "decodeRecipeBundle",
+      "input": "Sure! Here are some ideas: { this response is not valid json at all",
+      "expectNull": true
+    }
+  ]
+}
