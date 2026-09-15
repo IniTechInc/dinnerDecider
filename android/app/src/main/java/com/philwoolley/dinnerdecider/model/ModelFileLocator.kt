@@ -82,7 +82,17 @@ data class ResolvedModelFile(
  * APK and measured in the working tree, and is appended to by the downloader and the
  * SAF importer as they verify files they wrote themselves.
  */
-class TrustedDigests(private val modelsDir: File) {
+class TrustedDigests(
+    private val modelsDir: File,
+    /**
+     * Digests compiled into the APK. Defaults to [PINNED]; a different map is only
+     * ever passed by a test, which cannot produce a 3.46 GB file to exercise the real
+     * ones against.
+     */
+    private val pinned: Map<String, String> = PINNED,
+    /** Exact sizes for the same set. Defaults to [PINNED_SIZES]. */
+    private val pinnedSizes: Map<String, Long> = PINNED_SIZES,
+) {
 
     private val recordFile: File get() = File(modelsDir, RECORD_FILE_NAME)
 
@@ -96,12 +106,20 @@ class TrustedDigests(private val modelsDir: File) {
      * shipped weights are allowed to be.
      */
     fun digestFor(fileName: String): String? {
-        PINNED[fileName]?.let { return it }
+        pinned[fileName]?.let { return it }
         return readRecords()[fileName]
     }
 
+    /**
+     * The compiled-in digest for [fileName], or null when this is not one of the
+     * shipped files. Distinct from [digestFor], which also consults recorded entries:
+     * an importer must be able to tell "this must match exactly" from "we have simply
+     * seen this name before".
+     */
+    fun pinnedDigestFor(fileName: String): String? = pinned[fileName]
+
     /** The exact byte size expected for [fileName], when it is one of the pinned pair. */
-    fun exactBytesFor(fileName: String): Long? = PINNED_SIZES[fileName]
+    fun exactBytesFor(fileName: String): Long? = pinnedSizes[fileName]
 
     /**
      * Record a digest for a file this app wrote and verified itself.
@@ -111,7 +129,7 @@ class TrustedDigests(private val modelsDir: File) {
      */
     @Synchronized
     fun record(fileName: String, sha256: String) {
-        if (fileName in PINNED) return
+        if (fileName in pinned) return
         val records = readRecords().toMutableMap()
         records[fileName] = sha256.lowercase()
         modelsDir.mkdirs()
