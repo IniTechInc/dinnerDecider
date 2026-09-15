@@ -152,13 +152,20 @@ object CropGeometry {
     }
 
     /**
-     * Convert a detector's normalized rect (origin **bottom-left**, as Vision and
-     * ML Kit's normalized space both report) to pixel coordinates with origin
+     * Convert a detector's normalized rect (origin **bottom-left**, which is what
+     * Apple's Vision requests report) to pixel coordinates with origin
      * **top-left**, matching the image's own coordinate space.
      *
      * The y flip is the whole point: `y = (1 - normalized.maxY) * height`. Using
      * `minY` here instead is the classic mirrored-crops bug - every box lands in
      * the wrong half of the photo and recognition quietly collapses.
+     * **Do NOT feed ML Kit ObjectDetector output through this.**
+     * `DetectedObject.getBoundingBox()` returns an Android [android.graphics.Rect],
+     * which is already **pixel space with a top-left origin**. Passing it here
+     * would apply a y-flip it does not need, placing every crop in the wrong half
+     * of the image. Nothing would crash; recognition would just quietly get worse.
+     * This function exists for a future normalized, bottom-left detector.
+     *
      */
     fun pixelRect(normalized: Box, width: Int, height: Int): Box {
         val w = width.toDouble()

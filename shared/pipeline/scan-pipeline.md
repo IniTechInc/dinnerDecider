@@ -196,6 +196,15 @@ w = normalizedWidth  * width
 h = normalizedHeight * height
 ```
 
+**This flip is Apple-Vision-specific. Check your detector before reusing it.**
+The bottom-left origin is a property of `VNGenerateObjectnessBasedSaliencyImageRequest`
+and `VNDetectRectanglesRequest`, not of detectors in general. ML Kit's
+`ObjectDetector.getBoundingBox()`, for instance, returns an Android `Rect` that is
+already in **pixel space with a top-left origin**: running it through the formula
+above applies a flip it does not need and puts every crop in the wrong half of the
+image. Nothing crashes, and recognition simply gets worse -- the same silent
+wrong-answer shape as the other traps in this document.
+
 Getting this flip wrong produces crops of the wrong half of the photo, and the
 model dutifully describes whatever is there - a silent wrong-answer bug, not a
 crash.
