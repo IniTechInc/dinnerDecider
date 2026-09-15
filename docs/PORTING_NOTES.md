@@ -142,6 +142,18 @@ Gemma 4 falls through to the `gemma-7b-it` scaffolding. Mechanically it works an
 `<__media__>` marker survives, but expect degraded instruction-following. That is a
 fallback, not an equivalent.
 
+### APK size: the native payload is not the only large thing
+
+Measured on the scaffold before any native code landed: **the debug APK is 91 MB.**
+That is unminified and dominated by **ML Kit's bundled native models** (text-recognition
+and object-detection together carry roughly 22 MB of their own `.so` and model assets).
+Bundled variants are the right choice -- the Play-Services variants download at first run,
+and the app must work offline -- but the cost is real and it is paid in release too.
+
+Budget accordingly: the ~19.2 MB llama.cpp payload is additive to ML Kit, not a total.
+Scope any APK-size gate to **release** artifacts; a build-wide check fails on the debug
+variant for reasons that have nothing to do with what is being guarded.
+
 ### 16 KB page alignment: satisfied by default, but assert it
 
 `targetSdk >= 35` requires 16 KB-aligned LOAD segments. NDK r28 already emits
