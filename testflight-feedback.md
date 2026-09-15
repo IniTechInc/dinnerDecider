@@ -46,7 +46,11 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 - **Root cause:** after the multi-GB model load the system reliably delivers a memory warning. The moments between per-crop inferences are lifecycle state `.ready`, where the pressure handler treated the model as idle and freed it. Every remaining identify then threw modelNotLoaded, silently caught, scan ended "Nothing spotted". Also explains build 1's crash-at-analyze (its handler freed the client mid-inference, use-after-free).
 - **Fix:** commit 45b99c3. Scans and recipe runs are one lifecycle "session": `.warning` ignored during a session, `.critical` deferred to session end. Repro tests in ModelLifecycleTests.
 - **Status:** 🔧 In progress, ships in build 4, verify on device
-- **Follow-up (P2):** if identifies fail systemically mid-scan, the UI should say "something went wrong" instead of the misleading "Nothing spotted" empty state.
+- **Follow-up (P2): ADDRESSED Sept 14, 2026 (commit b9268ef).** Inference failures are now
+  counted at both swallow sites, `ScanPhase.failed` is distinct from `.empty`, and the
+  decision lives in a pure `ScanOutcome.terminalPhase` covered by six tests. A scan where
+  every model call throws now says the scan could not finish instead of blaming the photo.
+  NOT yet verified on a physical device.
 
 ### #4: Build 4 crash at item 4 of 9 (memory ceiling during real inference)
 - **Source:** Phil, chat, ~2:40 PM MDT, build 4
@@ -62,6 +66,30 @@ Status legend: ✅ Addressed · 🔧 In progress · ⏳ Open / not started · �
 - **Status:** 🔧 In progress, ships in build 4; recipe quality needs on-device judgment (P1 for demo)
 
 ---
+
+## Build status since this tracker was last updated
+
+Builds 6, 7 and 8 shipped after the last entry below and were never logged here.
+Build 8 (`658a685`) is the current head of main: GPU vision restored, context reset
+between requests, 4-call scan budget. **None of builds 6 to 8 have been verified on a
+physical device**, so items #1 and #4 remain open on evidence, not on code.
+
+Sept 14, 2026 session (branch `fix/kroger-store-picker-flow`), all simulator-verified
+at 138 tests green, none device-verified:
+
+- `b9268ef` P2 failed-vs-empty scan state (see #2 follow-up)
+- `8d12822` Kroger sign-in and store-picker flow reachable from the shopping list
+- `c1a8897` fixed the documented test command, which named an ambiguous simulator and
+  exited 0 without building anything
+
+### Recall is capped by the call budget, not the model
+
+`CropService.tileGrid` is commented as a 3x3 grid but actually emits 4x4 = 16 tiles
+(`stepX` is `tileWidth * 0.8`). The scan budget allows 4 model calls scan-wide, so at
+most 4 of those 16 tiles are ever examined. That is the most plausible cause of the
+33.5% recall in `eval/RESULTS.md`: the model is barely being asked. Raising the budget
+is a one-line change but reintroduces jetsam risk on an 8GB phone, so it needs an eval
+run and a device test together. Left unchanged for now.
 
 ## Open follow-ups / decisions tied to feedback
 
