@@ -55,7 +55,7 @@ data class TasteProfile(
     val texturesAvoidedOther: String = "",
     /** 1 (mild) to 5 (bring it on); 3 is the default. */
     val spiceLevel: Int = DEFAULT_SPICE_LEVEL,
-) {
+) : TastePromptSource {
 
     /**
      * True once the user has answered anything at all: any pill selected in **any**
@@ -69,7 +69,7 @@ data class TasteProfile(
      * The default spice level alone is not "content": a profile nobody touched must
      * not read as complete.
      */
-    val hasContent: Boolean
+    override val hasContent: Boolean
         get() {
             val pillGroups = listOf(
                 favoriteFoods, dislikedFoods, cuisinesLoved,
@@ -104,7 +104,7 @@ data class TasteProfile(
      * No em dash (U+2014) appears anywhere in the output, and none may be
      * introduced — the recipe prompt asserts its absence.
      */
-    fun promptFragment(): String {
+    override fun promptFragment(): String {
         val lines = mutableListOf<String>()
         combined(favoriteFoods, favoriteFoodsOther)?.let {
             lines.add("Favorite foods: $it.")

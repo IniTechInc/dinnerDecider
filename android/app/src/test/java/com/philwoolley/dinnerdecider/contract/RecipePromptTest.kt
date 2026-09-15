@@ -18,11 +18,11 @@ import org.junit.Test
 class RecipePromptTest {
 
     private fun prefs(
-        diet: String = RecipePrompt.DIET_NONE,
+        diet: String = DietPreference.NONE.raw,
         allergies: String = "",
         cuisines: String = "",
         household: Int = 2,
-    ) = RecipePromptPreferences(
+    ) = RecipePreferences(
         diet = diet,
         allergies = allergies,
         cuisines = cuisines,

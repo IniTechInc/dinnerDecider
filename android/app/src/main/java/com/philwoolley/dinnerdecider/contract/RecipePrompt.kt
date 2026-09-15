@@ -1,37 +1,5 @@
 package com.philwoolley.dinnerdecider.contract
 
-// -----------------------------------------------------------------------------
-// PROVISIONAL INPUT TYPES — RECONCILE AT MERGE.
-//
-// [RecipePromptPreferences] stands in for `RecipePreferences.kt` and
-// [TastePromptSource] for `TasteProfile.kt`, both of which belong to plan Steps
-// 13/14 and are being written in a PARALLEL worktree. The prompt cannot be
-// written or tested without them.
-//
-// AT MERGE:
-//   - delete [RecipePromptPreferences] and take the fields from RecipePreferences;
-//   - make the real TasteProfile implement [TastePromptSource] (it already has
-//     both members, with exactly these semantics) or drop the interface and take
-//     `TasteProfile?` directly here.
-// Nothing else in this file changes: the assembly below reads only `hasContent`
-// and `promptFragment()` off the profile and four fields off the preferences.
-// -----------------------------------------------------------------------------
-
-/**
- * The preference snapshot the recipe prompt reads.
- *
- * Source of record: `DinnerDecider/Models/Preferences.swift` (`RecipePreferences`).
- * `diet` holds a `DietPreference` **raw value**, not a display name — see
- * [RecipePrompt.DIET_NONE].
- */
-data class RecipePromptPreferences(
-    val diet: String,
-    val allergies: String,
-    val cuisines: String,
-    /** Defaults to 2 when unset (`PrefKey.defaultHouseholdSize`). */
-    val householdSize: Int = 2,
-)
-
 /**
  * The only two things the prompt needs from a taste profile.
  *
@@ -63,16 +31,6 @@ interface TastePromptSource {
  */
 object RecipePrompt {
 
-    /**
-     * The raw value of `DietPreference.none`. The diet line is emitted for every
-     * other value.
-     *
-     * AT MERGE: replace with `DietPreference.NONE.raw` from the parallel
-     * worktree's file. The raw values are `none`, `vegetarian`, `vegan`,
-     * `pescatarian`, `keto`, `glutenFree` — note `glutenFree` is camelCase,
-     * unlike every `FoodCategory` value.
-     */
-    const val DIET_NONE: String = "none"
 
     /**
      * Build the prompt.
@@ -102,7 +60,7 @@ object RecipePrompt {
      */
     fun build(
         itemNames: List<String>,
-        prefs: RecipePromptPreferences,
+        prefs: RecipePreferences,
         mood: String = "",
         tasteProfile: TastePromptSource? = null,
     ): String {
@@ -119,7 +77,7 @@ object RecipePrompt {
         if (tasteProfile != null && tasteProfile.hasContent) {
             lines.add(tasteProfile.promptFragment())
         }
-        if (prefs.diet != DIET_NONE) {
+        if (prefs.diet != DietPreference.NONE.raw) {
             lines.add("Diet: ${prefs.diet}.")
         }
         if (prefs.allergies.trim().isNotEmpty()) {
