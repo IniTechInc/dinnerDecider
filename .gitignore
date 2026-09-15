@@ -36,3 +36,20 @@ eval/testset/photos/
 
 # Kroger API credentials (local only, never commit)
 DinnerDecider/Resources/KrogerCredentials.plist
+
+# Staged GGUF weights for Android/Linux dev (large; never commit)
+models/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.cxx/
+*.apk
+*.aab
+
+# Go / Linux service
+linux/bin/
+linux/dist/
+linux/web/node_modules/
