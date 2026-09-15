@@ -188,10 +188,10 @@ func TestExportTextFormat(t *testing.T) {
 
 // The trailing newline of the last line is trimmed, and nothing else is.
 func TestExportTextTrimsOnlyTheTrailingNewline(t *testing.T) {
-	got := exportText([]ExportLine{{Name: "Eggs"}})
+	got := contract.ExportText([]contract.ShoppingLine{{Name: "Eggs"}})
 	const want = "Shopping List\n\n[ ] Eggs"
 	if got != want {
-		t.Errorf("exportText = %q, want %q", got, want)
+		t.Errorf("contract.ExportText = %q, want %q", got, want)
 	}
 }
 

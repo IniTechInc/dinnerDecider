@@ -328,33 +328,18 @@ struct ScanningView: View {
     // MARK: - Confirm
 
     private func addAllToInventory() {
-        let photoID = UUID().uuidString
-        let existing = inventory.map { InventoryLogic.StockRef(key: $0.mergeKey, quantity: $0.quantity) }
-        let confirming = reviewItems.map {
-            (key: InventoryLogic.mergeKey(name: $0.name, brand: $0.brand), quantity: 1)
-        }
-        let actions = InventoryLogic.confirmPlan(confirming: confirming, existing: existing)
-
-        for (index, action) in actions.enumerated() {
-            switch action {
-            case let .increment(key, newQuantity):
-                if let match = inventory.first(where: { $0.mergeKey == key }) {
-                    match.quantity = newQuantity
-                }
-            case let .insert(_, quantity):
-                let review = reviewItems[index]
-                let trimmed = review.name.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { continue }
-                let item = InventoryItem(
-                    name: trimmed,
-                    brand: review.brand?.isEmpty == true ? nil : review.brand,
-                    category: review.category,
-                    quantity: quantity,
-                    sourcePhotoID: photoID
-                )
-                modelContext.insert(item)
-            }
-        }
+        // The apply step lives in ConfirmApplier so it can be tested. Doing it
+        // inline here hid a real bug: an increment for a key inserted earlier in
+        // the same batch was resolved against the @Query snapshot, which does not
+        // refresh mid loop, so it matched nothing and was silently dropped.
+        ConfirmApplier.apply(
+            entries: reviewItems.map {
+                ConfirmEntry(name: $0.name, brand: $0.brand, category: $0.category)
+            },
+            existing: Array(inventory),
+            context: modelContext,
+            photoID: UUID().uuidString
+        )
         Haptics.success()
         appModel.resetScan()
         dismiss()

@@ -12,87 +12,6 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// MERGE NOTE — provisional definitions, pending internal/contract/inventory.go
-//
-// Plan task T4 (steps 13-14) owns contract/inventory.go: the merge/name keys,
-// DedupeWithCounts, ConfirmPlan and CookPlan, pinned by InventoryLogicTests.swift.
-// That file had not landed when this store was written, so the four types the
-// appliers consume, and the two key functions, are defined here against the
-// shapes the plan documents and the shipped Swift and Kotlin ports agree on.
-//
-// At merge, delete everything between this note and the END MERGE NOTE marker
-// and replace it with the contract package's own types. The shapes are chosen
-// to make that a rename and nothing more:
-//
-//	store.StockRef        -> contract.StockRef        {Key, Quantity}
-//	store.ConfirmAction   -> contract.ConfirmAction   {Kind|Key|Quantity|NewQuantity}
-//	store.CookChange      -> contract.CookChange      {Key, NewQuantity, Removed}
-//	store.mergeKey/nameKey-> contract.MergeKey/NameKey
-//
-// If the contract package expresses ConfirmAction as two concrete types behind
-// an interface rather than as a kind-tagged struct, the only change needed is in
-// ApplyConfirmPlan's switch. Nothing else in this package inspects an action.
-// ---------------------------------------------------------------------------
-
-// StockRef is a lightweight view of an existing inventory row, for plan input.
-type StockRef struct {
-	Key      string
-	Quantity int
-}
-
-// ConfirmActionKind distinguishes the two confirm outcomes.
-type ConfirmActionKind int
-
-const (
-	// ConfirmInsert inserts a brand new row carrying the entry's OWN quantity.
-	ConfirmInsert ConfirmActionKind = iota
-	// ConfirmIncrement bumps an existing row to the RUNNING TOTAL. The two
-	// quantities are different numbers and live in different fields on purpose.
-	ConfirmIncrement
-)
-
-// ConfirmAction is the decision for one item being confirmed into inventory.
-type ConfirmAction struct {
-	Kind ConfirmActionKind
-	Key  string
-	// Quantity is meaningful for ConfirmInsert: the entry's own quantity.
-	Quantity int
-	// NewQuantity is meaningful for ConfirmIncrement: the running total across
-	// the whole batch, not a delta.
-	NewQuantity int
-}
-
-// CookChange is the result of cooking a recipe for one inventory row.
-type CookChange struct {
-	Key         string
-	NewQuantity int
-	// Removed is true when the row hit zero and should be deleted.
-	Removed bool
-}
-
-// mergeKey is trim(lower(name)) + "|" + trim(lower(brand ?? "")).
-//
-// The pipe separator and the empty-brand rule are not cosmetic: they are pinned
-// by the literals "milk|horizon" and "eggs|" in InventoryLogicTests.swift, and
-// they are the keys every plan is expressed in. Swift trims
-// .whitespacesAndNewlines; strings.TrimSpace trims every Unicode space, which
-// agrees on everything the model and the UI actually produce.
-func mergeKey(name string, brand *string) string {
-	n := strings.ToLower(strings.TrimSpace(name))
-	b := ""
-	if brand != nil {
-		b = strings.ToLower(strings.TrimSpace(*brand))
-	}
-	return n + "|" + b
-}
-
-// nameKey is the name-only key, used to match recipe ingredients — which carry
-// no brand — against inventory when cooking.
-func nameKey(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
-}
-
-// --------------------------- END MERGE NOTE --------------------------------
 
 // InventoryRow is a stored inventory row: the contract's field set plus the
 // identity the HTTP API addresses it by.
@@ -106,7 +25,7 @@ type InventoryRow struct {
 
 // ConfirmItem is the full row payload for one item being confirmed.
 //
-// Paired POSITIONALLY with the ConfirmAction at the same index, exactly as the
+// Paired POSITIONALLY with the contract.ConfirmAction at the same index, exactly as the
 // shipped Swift does (`case let .insert(_, quantity): let review =
 // reviewItems[index]`) — the insert action deliberately ignores its own key and
 // takes the payload from the matching slot.
@@ -286,26 +205,26 @@ func (d *DB) DeleteInventoryItem(ctx context.Context, id string) error {
 
 // MergeKeyStock snapshots the inventory as merge-keyed StockRefs, the input
 // ConfirmPlan expects.
-func (d *DB) MergeKeyStock(ctx context.Context) ([]StockRef, error) {
-	return d.stock(ctx, func(row InventoryRow) string { return mergeKey(row.Name, row.Brand) })
+func (d *DB) MergeKeyStock(ctx context.Context) ([]contract.StockRef, error) {
+	return d.stock(ctx, func(row InventoryRow) string { return contract.MergeKey(row.Name, row.Brand) })
 }
 
 // NameKeyStock snapshots the inventory as name-keyed StockRefs, the input
 // CookPlan expects. Recipe ingredients carry no brand, so two rows that differ
 // only by brand collapse to the same key here — deliberately, and matching the
 // shipped call site.
-func (d *DB) NameKeyStock(ctx context.Context) ([]StockRef, error) {
-	return d.stock(ctx, func(row InventoryRow) string { return nameKey(row.Name) })
+func (d *DB) NameKeyStock(ctx context.Context) ([]contract.StockRef, error) {
+	return d.stock(ctx, func(row InventoryRow) string { return contract.NameKey(row.Name) })
 }
 
-func (d *DB) stock(ctx context.Context, key func(InventoryRow) string) ([]StockRef, error) {
+func (d *DB) stock(ctx context.Context, key func(InventoryRow) string) ([]contract.StockRef, error) {
 	rows, err := d.ListInventoryItems(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	out := make([]StockRef, 0, len(rows))
+	out := make([]contract.StockRef, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, StockRef{Key: key(row), Quantity: row.Quantity})
+		out = append(out, contract.StockRef{Key: key(row), Quantity: row.Quantity})
 	}
 	return out, nil
 }
@@ -342,7 +261,7 @@ func (d *DB) stock(ctx context.Context, key func(InventoryRow) string) ([]StockR
 //
 // The whole plan lands in one transaction: a half-applied confirm would leave
 // rows inserted with their matching increments missing.
-func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []ConfirmAction, confirming []ConfirmItem) error {
+func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []contract.ConfirmAction, confirming []ConfirmItem) error {
 	if len(actions) != len(confirming) {
 		return fmt.Errorf("store: confirm plan has %d actions for %d items; they are paired positionally",
 			len(actions), len(confirming))
@@ -356,7 +275,7 @@ func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []ConfirmAction, conf
 		// Read the key -> id map inside the transaction, under the write lock
 		// taken by BEGIN IMMEDIATE, so nothing moves under the applier.
 		idByKey, err := inventoryIDsByKey(ctx, tx, func(name string, brand *string) string {
-			return mergeKey(name, brand)
+			return contract.MergeKey(name, brand)
 		})
 		if err != nil {
 			return err
@@ -364,7 +283,7 @@ func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []ConfirmAction, conf
 
 		for i, action := range actions {
 			switch action.Kind {
-			case ConfirmIncrement:
+			case contract.ConfirmIncrement:
 				id, ok := idByKey[action.Key]
 				if !ok {
 					// No row for this key. The shipped Swift skips silently
@@ -375,11 +294,11 @@ func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []ConfirmAction, conf
 				}
 				if _, err := tx.ExecContext(ctx,
 					`UPDATE inventory_item SET quantity = ? WHERE id = ?`,
-					action.NewQuantity, id); err != nil {
+					action.Quantity, id); err != nil {
 					return fmt.Errorf("store: incrementing %q: %w", action.Key, err)
 				}
 
-			case ConfirmInsert:
+			case contract.ConfirmInsert:
 				item := confirming[i]
 				name := strings.TrimSpace(item.Name)
 				if name == "" {
@@ -400,8 +319,8 @@ func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []ConfirmAction, conf
 					return fmt.Errorf("store: inserting %q: %w", action.Key, err)
 				}
 				// Register it so a later increment in this same batch lands.
-				if _, exists := idByKey[mergeKey(name, brand)]; !exists {
-					idByKey[mergeKey(name, brand)] = id
+				if _, exists := idByKey[contract.MergeKey(name, brand)]; !exists {
+					idByKey[contract.MergeKey(name, brand)] = id
 				}
 
 			default:
@@ -424,13 +343,13 @@ func (d *DB) ApplyConfirmPlan(ctx context.Context, actions []ConfirmAction, conf
 //
 // One transaction: a partly-cooked recipe that decremented three ingredients
 // and lost the fourth is worse than one that did nothing.
-func (d *DB) ApplyCookPlan(ctx context.Context, changes []CookChange) error {
+func (d *DB) ApplyCookPlan(ctx context.Context, changes []contract.CookChange) error {
 	if len(changes) == 0 {
 		return nil
 	}
 	return d.WithTx(ctx, func(tx *sql.Tx) error {
 		idByKey, err := inventoryIDsByKey(ctx, tx, func(name string, _ *string) string {
-			return nameKey(name)
+			return contract.NameKey(name)
 		})
 		if err != nil {
 			return err

@@ -223,54 +223,11 @@ func (d *DB) ExportText(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	lines := make([]ExportLine, 0, len(rows))
+	lines := make([]contract.ShoppingLine, 0, len(rows))
 	for _, row := range rows {
-		lines = append(lines, ExportLine{Name: row.Name, IsChecked: row.IsChecked})
+		lines = append(lines, contract.ShoppingLine{Name: row.Name, IsChecked: row.IsChecked})
 	}
-	return exportText(lines), nil
+	return contract.ExportText(lines), nil
 }
 
 // ---------------------------------------------------------------------------
-// MERGE NOTE — provisional, pending internal/contract/shoppinglist.go
-//
-// Plan task T4 (steps 15-16) owns contract/shoppinglist.go: Aggregate, NewItems
-// and ExportText, pinned by ShoppingListLogicTests.swift. That file had not
-// landed when this store was written, so the export renderer is reproduced here
-// from ShoppingListLogic.exportText (ShoppingListLogic.swift:38-46) and the
-// $comment in shopping-list-item.schema.json, which make the format part of the
-// contract rather than a presentation detail.
-//
-// At merge: delete exportText and ExportLine, and have DB.ExportText call
-// contract.ExportText over contract.Line. Nothing else changes — DB.ExportText
-// already does only the loading.
-// ---------------------------------------------------------------------------
-
-// ExportLine is one plain line for export.
-type ExportLine struct {
-	Name      string
-	IsChecked bool
-}
-
-// exportText renders the list. Checked items are marked done so a shared list
-// still reads clearly.
-//
-// The empty case is the exact string "Shopping List\n\n(empty)" — not a bare
-// header, not an empty string. It is asserted literally.
-func exportText(lines []ExportLine) string {
-	if len(lines) == 0 {
-		return "Shopping List\n\n(empty)"
-	}
-	var b strings.Builder
-	b.WriteString("Shopping List\n\n")
-	for _, line := range lines {
-		box := "[ ]"
-		if line.IsChecked {
-			box = "[x]"
-		}
-		b.WriteString(box + " " + line.Name + "\n")
-	}
-	// Swift trims .whitespacesAndNewlines from both ends; the header means
-	// there is never anything to trim from the front, so this removes exactly
-	// the trailing newline of the last line.
-	return strings.TrimSpace(b.String())
-}

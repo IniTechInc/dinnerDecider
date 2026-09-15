@@ -27,9 +27,9 @@ func quantityOf(t *testing.T, db *DB, name string, brand *string) (int, bool) {
 	if err != nil {
 		t.Fatalf("ListInventoryItems: %v", err)
 	}
-	want := mergeKey(name, brand)
+	want := contract.MergeKey(name, brand)
 	for _, row := range rows {
-		if mergeKey(row.Name, row.Brand) == want {
+		if contract.MergeKey(row.Name, row.Brand) == want {
 			return row.Quantity, true
 		}
 	}
@@ -221,7 +221,7 @@ func TestStockSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MergeKeyStock: %v", err)
 	}
-	want := []StockRef{{Key: "milk|horizon", Quantity: 2}, {Key: "eggs|", Quantity: 6}}
+	want := []contract.StockRef{{Key: "milk|horizon", Quantity: 2}, {Key: "eggs|", Quantity: 6}}
 	if len(merge) != len(want) {
 		t.Fatalf("MergeKeyStock = %v, want %v", merge, want)
 	}
@@ -246,7 +246,7 @@ func TestApplyConfirmPlanIncrementsExistingRow(t *testing.T) {
 		Name: "Milk", Brand: ptr("Horizon"), CategoryRaw: "dairy", Quantity: 2})
 
 	// What ConfirmPlan produces for one more Horizon milk against a stock of 2.
-	actions := []ConfirmAction{{Kind: ConfirmIncrement, Key: "milk|horizon", NewQuantity: 3}}
+	actions := []contract.ConfirmAction{{Kind: contract.ConfirmIncrement, Key: "milk|horizon", Quantity: 3}}
 	items := []ConfirmItem{{Name: "Milk", Brand: ptr("Horizon"), Category: contract.CategoryDairy}}
 
 	if err := db.ApplyConfirmPlan(context.Background(), actions, items); err != nil {
@@ -263,7 +263,7 @@ func TestApplyConfirmPlanIncrementsExistingRow(t *testing.T) {
 
 func TestApplyConfirmPlanInsertsAndPersistsCanonicalCategory(t *testing.T) {
 	db := openTestDB(t)
-	actions := []ConfirmAction{{Kind: ConfirmInsert, Key: "milk|horizon", Quantity: 1}}
+	actions := []contract.ConfirmAction{{Kind: contract.ConfirmInsert, Key: "milk|horizon", Quantity: 1}}
 	items := []ConfirmItem{{
 		Name:          "  Whole Milk  ",
 		Brand:         ptr("Horizon"),
@@ -298,9 +298,9 @@ func TestApplyConfirmPlanInsertsAndPersistsCanonicalCategory(t *testing.T) {
 // row; dropping the increment loses the quantity.
 func TestApplyConfirmPlanInsertThenIncrementInOneBatch(t *testing.T) {
 	db := openTestDB(t)
-	actions := []ConfirmAction{
-		{Kind: ConfirmInsert, Key: "milk|", Quantity: 1},
-		{Kind: ConfirmIncrement, Key: "milk|", NewQuantity: 2},
+	actions := []contract.ConfirmAction{
+		{Kind: contract.ConfirmInsert, Key: "milk|", Quantity: 1},
+		{Kind: contract.ConfirmIncrement, Key: "milk|", Quantity: 2},
 	}
 	items := []ConfirmItem{
 		{Name: "Milk", Category: contract.CategoryDairy},
@@ -322,9 +322,9 @@ func TestApplyConfirmPlanInsertThenIncrementInOneBatch(t *testing.T) {
 // actions stays aligned for everything after it.
 func TestApplyConfirmPlanSkipsBlankNamesWithoutLosingAlignment(t *testing.T) {
 	db := openTestDB(t)
-	actions := []ConfirmAction{
-		{Kind: ConfirmInsert, Key: "|", Quantity: 1},
-		{Kind: ConfirmInsert, Key: "eggs|", Quantity: 3},
+	actions := []contract.ConfirmAction{
+		{Kind: contract.ConfirmInsert, Key: "|", Quantity: 1},
+		{Kind: contract.ConfirmInsert, Key: "eggs|", Quantity: 3},
 	}
 	items := []ConfirmItem{
 		{Name: "   ", Category: contract.CategoryOther},
@@ -347,7 +347,7 @@ func TestApplyConfirmPlanSkipsBlankNamesWithoutLosingAlignment(t *testing.T) {
 func TestApplyConfirmPlanNormalizesEmptyBrandToNull(t *testing.T) {
 	db := openTestDB(t)
 	err := db.ApplyConfirmPlan(context.Background(),
-		[]ConfirmAction{{Kind: ConfirmInsert, Key: "eggs|", Quantity: 1}},
+		[]contract.ConfirmAction{{Kind: contract.ConfirmInsert, Key: "eggs|", Quantity: 1}},
 		[]ConfirmItem{{Name: "Eggs", Brand: ptr(""), Category: contract.CategoryProduce}})
 	if err != nil {
 		t.Fatalf("ApplyConfirmPlan: %v", err)
@@ -361,7 +361,7 @@ func TestApplyConfirmPlanNormalizesEmptyBrandToNull(t *testing.T) {
 func TestApplyConfirmPlanRejectsMismatchedLengths(t *testing.T) {
 	db := openTestDB(t)
 	err := db.ApplyConfirmPlan(context.Background(),
-		[]ConfirmAction{{Kind: ConfirmInsert, Key: "a|", Quantity: 1}},
+		[]contract.ConfirmAction{{Kind: contract.ConfirmInsert, Key: "a|", Quantity: 1}},
 		nil)
 	if err == nil {
 		t.Fatal("ApplyConfirmPlan accepted a length mismatch")
@@ -373,9 +373,9 @@ func TestApplyConfirmPlanRejectsMismatchedLengths(t *testing.T) {
 // nothing.
 func TestApplyConfirmPlanIsAtomic(t *testing.T) {
 	db := openTestDB(t)
-	actions := []ConfirmAction{
-		{Kind: ConfirmInsert, Key: "eggs|", Quantity: 1},
-		{Kind: ConfirmActionKind(99), Key: "boom|"},
+	actions := []contract.ConfirmAction{
+		{Kind: contract.ConfirmInsert, Key: "eggs|", Quantity: 1},
+		{Kind: contract.ConfirmActionKind(99), Key: "boom|"},
 	}
 	items := []ConfirmItem{
 		{Name: "Eggs", Category: contract.CategoryProduce},
@@ -399,7 +399,7 @@ func TestApplyCookPlanDecrementsAndRemoves(t *testing.T) {
 
 	// What CookPlan produces for one egg and one butter: stock order, butter
 	// clamped to zero and flagged for removal, salt untouched and absent.
-	changes := []CookChange{
+	changes := []contract.CookChange{
 		{Key: "eggs", NewQuantity: 2, Removed: false},
 		{Key: "butter", NewQuantity: 0, Removed: true},
 	}
@@ -422,7 +422,7 @@ func TestApplyCookPlanDecrementsAndRemoves(t *testing.T) {
 func TestApplyCookPlanSkipsUnknownKeys(t *testing.T) {
 	db := openTestDB(t)
 	mustInsert(t, db, contract.InventoryItem{Name: "Eggs", CategoryRaw: "produce", Quantity: 3})
-	err := db.ApplyCookPlan(context.Background(), []CookChange{
+	err := db.ApplyCookPlan(context.Background(), []contract.CookChange{
 		{Key: "saffron", NewQuantity: 0, Removed: true},
 		{Key: "eggs", NewQuantity: 2},
 	})
@@ -436,7 +436,7 @@ func TestApplyCookPlanSkipsUnknownKeys(t *testing.T) {
 
 // Name-only keys mean two rows differing only by brand share a key, and the
 // first row in the canonical order absorbs the change. Shipped behavior, not an
-// accident: `inventory.first(where: { nameKey($0.name) == change.key })`.
+// accident: `inventory.first(where: { contract.NameKey($0.name) == change.key })`.
 func TestApplyCookPlanResolvesDuplicateNamesToTheFirstRow(t *testing.T) {
 	db := openTestDB(t)
 	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -445,7 +445,7 @@ func TestApplyCookPlanResolvesDuplicateNamesToTheFirstRow(t *testing.T) {
 	second := mustInsert(t, db, contract.InventoryItem{
 		Name: "Milk", Brand: ptr("Fairlife"), CategoryRaw: "dairy", Quantity: 2, DateAdded: base.Add(time.Hour)})
 
-	if err := db.ApplyCookPlan(context.Background(), []CookChange{{Key: "milk", NewQuantity: 1}}); err != nil {
+	if err := db.ApplyCookPlan(context.Background(), []contract.CookChange{{Key: "milk", NewQuantity: 1}}); err != nil {
 		t.Fatalf("ApplyCookPlan: %v", err)
 	}
 	got, err := db.GetInventoryItem(context.Background(), first.ID)
