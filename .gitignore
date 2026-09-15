@@ -53,3 +53,4 @@ android/.cxx/
 linux/bin/
 linux/dist/
 linux/web/node_modules/
+.claude/worktrees/
