@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules for API 31 and below (android:fullBackupContent).
+  Keep in sync with data_extraction_rules.xml, which covers API 31+.
+
+  WHY THIS IS NOT EMPTY: without explicit excludes, everything in filesDir defaults into
+  Auto Backup to the user's Google Drive. The taste profile carries ALLERGIES
+  (health-adjacent PII) and the Kroger store carries OAuth credentials. Neither belongs
+  in a cloud backup. files/models would also blow past Auto Backup's 25 MB cap.
+
+  The paths below are a CONTRACT for the steps that create them:
+    plan Step 32 -> datastore/taste_profile.preferences_pb
+    plan Step 59 -> datastore/kroger_tokens.preferences_pb (+ kroger_tokens.bin if a raw
+                    AndroidKeyStore AES/GCM blob is used instead)
+    plan Steps 40/41/42 -> files/models
+-->
+<full-backup-content>
+    <exclude domain="file" path="datastore/taste_profile.preferences_pb" />
+    <exclude domain="file" path="datastore/kroger_tokens.preferences_pb" />
+    <exclude domain="file" path="kroger_tokens.bin" />
+    <exclude domain="file" path="models" />
+</full-backup-content>

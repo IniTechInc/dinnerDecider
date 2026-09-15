@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal platform theme. The real palette, typography and shapes are Compose tokens
+  (plan Step 22); this exists only so the window has the right background before the
+  first frame. Value is SurfacePrimary (light) from the shipped iOS asset catalog.
+-->
+<resources>
+    <style name="Theme.DinnerDecider" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FFF6E8</item>
+    </style>
+</resources>

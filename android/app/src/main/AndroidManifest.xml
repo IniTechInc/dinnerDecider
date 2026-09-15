@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OWNERSHIP: created once (plan Step 4) and not edited by later steps. Permissions,
+  foreground-service types, the application entry, backup attributes and every intent
+  filter are declared here up front so screen/service tasks never contend for this file.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Required on API 33+ before the model transfer can post its progress notification. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!--
+      RUN_USER_INITIATED_JOBS (API 34+): the 3.5 GB weights ship as a JobScheduler
+      user-initiated data transfer job. A plain dataSync foreground service is capped at
+      6 h/24 h pooled on Android 15 and gets a fatal RemoteServiceException on timeout.
+    -->
+    <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
+
+    <!-- The app is fully usable without a camera (gallery import), so do not filter on it. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
+    <application
+        android:name=".DinnerDeciderApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.DinnerDecider">
+        <!--
+          NOTE: android:largeHeap is deliberately absent and would be IRRELEVANT here.
+          llama.cpp allocates natively and mmaps the weights; none of it is Java heap.
+          This is the exact analogue of the iOS Increased Memory Limit entitlement, which
+          "does NOT help" the jetsam it was added for. Memory is managed by
+          DeviceCapabilityPolicy plus the pressure adapter, not by a manifest flag.
+
+          android:icon / android:roundIcon are added with the adaptive launcher icon in
+          plan Step 63; declaring them before the mipmaps exist would fail the build.
+        -->
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.DinnerDecider"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              Kroger OAuth callback. singleTask + onNewIntent is the Custom Tabs
+              equivalent of the iOS ASWebAuthenticationSession return.
+              SECURITY: a bare custom scheme is interceptable by any installed app, so
+              plan Step 59 must ship PKCE (S256) and/or a verified App Link
+              (android:autoVerify="true" + hosted assetlinks.json) on top of this filter.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="kroger-callback"
+                    android:scheme="dinnerdecider" />
+            </intent-filter>
+
+            <!-- dinnerdecider://meal/<id> — deep link into a planned meal. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="meal"
+                    android:scheme="dinnerdecider" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Model transfer (plan Step 41). The class name is a contract fixed here so the
+          manifest never needs a second owner: JobService subclass, exported false,
+          BIND_JOB_SERVICE, started with setUserInitiated(true).
+        -->
+        <service
+            android:name=".model.ModelTransferJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!--
+          WorkManager keeps the small post-download bookkeeping. Its foreground service
+          needs an explicit FGS type on API 34+ or startForeground throws.
+        -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+    </application>
+
+</manifest>
