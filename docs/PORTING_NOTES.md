@@ -149,6 +149,17 @@ Gemma 4 falls through to the `gemma-7b-it` scaffolding. Mechanically it works an
 `<__media__>` marker survives, but expect degraded instruction-following. That is a
 fallback, not an equivalent.
 
+### Kotlin gotcha: `/*` inside a KDoc block opens a NESTED comment
+
+Kotlin supports nested block comments, so a `/*` sequence inside a `/** ... */`
+KDoc does not terminate at the next `*/` -- it silently swallows the rest of the
+file. This bites when documenting a path: writing `Assets.xcassets/*.colorset`
+in a doc comment makes everything after it disappear from compilation, usually
+surfacing as a baffling "expecting a top level declaration" far below.
+
+Hit twice while porting the design system. Write `<Token>.colorset`, or escape
+it, whenever a path with a glob appears in KDoc.
+
 ### APK size: the native payload is not the only large thing
 
 Measured on the scaffold before any native code landed: **the debug APK is 91 MB.**
