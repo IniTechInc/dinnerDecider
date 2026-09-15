@@ -57,10 +57,30 @@ enum ScanPhase: Equatable {
     case scanning(ScanProgress)
     /// Finished with at least one item found.
     case finished
-    /// Finished but nothing recognisable was spotted.
+    /// Finished, every model call answered, and none of them saw food.
     case empty
+    /// Finished with nothing found because the model calls themselves failed.
+    /// Distinct from `.empty`: the fridge may well be full, we just never got
+    /// an answer.
+    case failed
     /// The user cancelled part way through.
     case cancelled
+}
+
+/// Decides how a finished scan is reported to the user.
+///
+/// TestFlight feedback P2: inference errors were swallowed (`try?` on the
+/// whole-image pass, a bare `catch { print(...) }` in the crop loop) and the
+/// terminal phase was chosen purely on `scannedItems.isEmpty`. So a scan where
+/// every single model call threw looked exactly like a scan of an empty
+/// fridge, and the UI told the user to add more light and get closer. Keeping
+/// this decision in one pure function makes the distinction testable.
+enum ScanOutcome {
+    static func terminalPhase(itemsFound: Int, inferenceFailures: Int) -> ScanPhase {
+        // Anything found is worth showing, even if some calls failed alongside it.
+        if itemsFound > 0 { return .finished }
+        return inferenceFailures > 0 ? .failed : .empty
+    }
 }
 
 /// The single source of truth the UI observes. It owns the `LLMService` behind
@@ -300,6 +320,10 @@ final class AppModel: ObservableObject {
         var results: [IdentifiedItem] = []
         // Scan-wide: at most 4 heavy model calls total, across all photos.
         var budget = ScanCallBudget()
+        // Every inference that threw. Drives the terminal phase so a scan that
+        // found nothing because the model never answered is not reported as an
+        // empty fridge (see ScanOutcome).
+        var inferenceFailures = 0
 
         for (photoIndex, image) in images.enumerated() {
             if Task.isCancelled { return }
@@ -321,8 +345,15 @@ final class AppModel: ObservableObject {
                 if budget.consume(),
                    let cgImage = await Task.detached(operation: { CropService.normalizedCGImage(from: image) }).value {
                     let fullOCR = await Task.detached { OCRService.recognizeText(in: cgImage) }.value
-                    let wholeImageItems = try? await runInference {
-                        try await self.llm.identifyAllItems(image: cgImage, ocrText: fullOCR)
+                    let wholeImageItems: [IdentifiedItem]?
+                    do {
+                        wholeImageItems = try await runInference {
+                            try await self.llm.identifyAllItems(image: cgImage, ocrText: fullOCR)
+                        }
+                    } catch {
+                        print("[Scan] Whole-image pass failed: \(error)")
+                        inferenceFailures += 1
+                        wholeImageItems = nil
                     }
                     if let items = wholeImageItems {
                         for item in items {
@@ -391,12 +422,16 @@ final class AppModel: ObservableObject {
                     }
                 } catch {
                     print("[Scan] Crop \(index+1)/\(total) failed: \(error)")
+                    inferenceFailures += 1
                 }
             }
         }
 
         if Task.isCancelled { return }
-        scanPhase = scannedItems.isEmpty ? .empty : .finished
+        scanPhase = ScanOutcome.terminalPhase(
+            itemsFound: scannedItems.count,
+            inferenceFailures: inferenceFailures
+        )
     }
 
     /// Stop an in-progress scan (user tapped Cancel).

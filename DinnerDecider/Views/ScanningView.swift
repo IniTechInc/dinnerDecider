@@ -81,6 +81,7 @@ struct ScanningView: View {
 
     private var isFinished: Bool { appModel.scanPhase == .finished }
     private var isEmpty: Bool { appModel.scanPhase == .empty }
+    private var isFailed: Bool { appModel.scanPhase == .failed }
     private var isCancelled: Bool { appModel.scanPhase == .cancelled }
 
     private func seedReviewItems() {
@@ -141,6 +142,8 @@ struct ScanningView: View {
             return "Review the items, then add them to your inventory."
         case .empty:
             return "We could not spot anything to add."
+        case .failed:
+            return "The scan could not finish."
         case .cancelled:
             return "Scan cancelled."
         }
@@ -154,6 +157,8 @@ struct ScanningView: View {
             modelWarmupState
         } else if isEmpty {
             emptyResults
+        } else if isFailed {
+            failedResults
         } else if isCancelled {
             cancelledState
         } else if isFinished {
@@ -236,6 +241,9 @@ struct ScanningView: View {
         .dinnerSurfaceBackground()
     }
 
+    /// Shown when the model answered every time and simply saw no food. The
+    /// advice here is only honest in that case, which is why `.failed` gets its
+    /// own state below rather than reusing this one.
     private var emptyResults: some View {
         ContentUnavailableView {
             Label("Nothing spotted", systemImage: "eye.slash")
@@ -246,6 +254,24 @@ struct ScanningView: View {
                 dismiss()
             } label: {
                 Label("Try another photo", systemImage: "camera")
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    /// The scan ran but the model calls themselves failed, so we genuinely do
+    /// not know what was in the photo. Saying "Nothing spotted" here blames the
+    /// user's photo for our failure, which is what the P2 feedback was about.
+    private var failedResults: some View {
+        ContentUnavailableView {
+            Label("Scan could not finish", systemImage: "exclamationmark.triangle")
+        } description: {
+            Text("Something went wrong while identifying your food, so we could not read this photo. This usually clears up after closing other apps and trying again.")
+        } actions: {
+            Button {
+                dismiss()
+            } label: {
+                Label("Try again", systemImage: "arrow.clockwise")
             }
             .buttonStyle(.borderedProminent)
         }
