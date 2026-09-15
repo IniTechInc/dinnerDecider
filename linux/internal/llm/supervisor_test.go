@@ -1104,3 +1104,23 @@ func TestParseFailureAsymmetryThroughTheSupervisor(t *testing.T) {
 		t.Fatalf("failures = %d, want still 1: an unreadable answer is not an inference failure", got)
 	}
 }
+
+// TestIdleUnloadPolicyHonoursTheMarginalTier closes the loop between the
+// preflight and the supervisor: the 6 to 8 GiB band forces the idle unload on,
+// and a field the preflight sets that nothing reads would be worse than not
+// having it.
+func TestIdleUnloadPolicyHonoursTheMarginalTier(t *testing.T) {
+	marginal := Classify(7*GiB, 6*GiB, false)
+	if !marginal.ForceIdleUnload {
+		t.Fatalf("expected the marginal tier to force the idle unload: %+v", marginal)
+	}
+	if got := IdleUnloadPolicy(marginal); got != DefaultIdleUnloadDelay {
+		t.Fatalf("marginal policy = %v, want %v", got, DefaultIdleUnloadDelay)
+	}
+	if got := IdleUnloadPolicy(Classify(32*GiB, 30*GiB, false)); got != 0 {
+		t.Fatalf("a 32 GiB box = %v, want the idle unload off", got)
+	}
+	if got := IdleUnloadPolicy(Classify(8261548*KiB, 7*GiB, false)); got != DefaultIdleUnloadDelay {
+		t.Fatalf("a Pi 5 8 GB = %v, want 15m", got)
+	}
+}

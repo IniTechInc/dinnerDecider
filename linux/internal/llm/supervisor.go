@@ -273,8 +273,9 @@ type Options struct {
 	DrainTimeout   time.Duration
 	TerminateGrace time.Duration
 
-	// IdleUnload unloads a resident, idle, session-free model after this long.
-	// Zero disables it. See IdleUnloadFor.
+	// IdleUnload unloads a resident, idle model after this long. Zero disables
+	// it entirely, so the caller must set it explicitly; IdleUnloadPolicy turns
+	// a preflight result into the right value.
 	IdleUnload        time.Duration
 	IdleCheckInterval time.Duration
 
@@ -347,6 +348,20 @@ func IdleUnloadFor(memTotalBytes uint64) time.Duration {
 		return 0
 	}
 	return DefaultIdleUnloadDelay
+}
+
+// IdleUnloadPolicy resolves Options.IdleUnload from a Step 41 preflight result.
+//
+// It exists so the marginal tier's "force idle-unload" is not a field that the
+// preflight sets and nobody reads. A 6 to 8 GiB box keeps the idle unload on
+// even if some future size rule would have switched it off, because on that box
+// residency is what makes the kernel evict weight pages and re-read them from an
+// SD card mid-decode.
+func IdleUnloadPolicy(status MemoryStatus) time.Duration {
+	if status.ForceIdleUnload {
+		return DefaultIdleUnloadDelay
+	}
+	return IdleUnloadFor(status.TotalBytes)
 }
 
 // EventKind names a supervisor event.
