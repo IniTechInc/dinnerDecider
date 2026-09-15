@@ -33,9 +33,16 @@ No 16GB re-download is required. Use these for every on-device/on-target test.
 |---|---|
 | **Samsung Galaxy XCover6 Pro** (physical, arm64) | ⚠️ **Reported as 6 GB RAM, single configuration worldwide** (SM-G736B/U). After kernel carveouts `totalMem` lands near 5.4-5.7 GiB, **below the ~7.0 GiB floor the model needs**. Expect `DeviceCapabilityPolicy` to route it to mock mode. **CONFIRM ON THE DEVICE before planning around it** -- `adb shell cat /proc/meminfo` is definitive; a spec sheet is not. What it CAN prove: the native ABI smoke test (loading all seven `.so` and resolving `mtmd` symbols needs no model), the entire mock path, and that the app never crashes on `UnsatisfiedLinkError`. What it CANNOT prove: CPU latency, peak PSS, or the vision smoke test -- all of which need the model resident. |
 | **iPhone 17 Pro** (physical) | iOS device verification. NOTE: the open TestFlight crash items #1/#4 were reported on an iPhone 16 Pro Max (8GB). A 17 Pro is a different memory envelope, so it can confirm the app runs but CANNOT by itself close a jetsam report filed against an 8GB phone. Say which device a result came from. |
-| arm64 Android emulator (Apple Silicon host) | Room, DataStore, ML Kit, CameraX, Compose UI tests. Native ABI matches the host, so this is the verified ABI. |
+| arm64 Android emulator (Apple Silicon host) | **AVD `dd_arm64_36` created Sept 15, 2026** (`system-images;android-36;google_apis;arm64-v8a`). Room, DataStore, ML Kit, CameraX, Compose UI, and the **instrumented conformance run** -- which is what lets the parser rows claim the contract's "verified on device" legend honestly. Native ABI matches the host, so this IS the verified ABI. Launch: `$ANDROID_HOME/emulator/emulator -avd dd_arm64_36 -no-window -no-audio &`. |
 | iPhone simulator (iPhone 17 Pro, UDID pinned in CLAUDE.md) | The 138-test iOS suite. Forces MockLLMService, so it proves nothing about memory. |
 | Docker + colima buildx (linux/arm64 via QEMU) | Linux port builds and functional tests only. |
+
+**Toolchain gotcha that cost three attempts:** `avdmanager` resolves its SDK root from
+its own install location, so the Homebrew copy at `/opt/homebrew/bin/avdmanager` cannot
+see system images installed under `~/Library/Android/sdk` and fails with the unhelpful
+`Package path is not valid ... null`. Setting `ANDROID_HOME`/`ANDROID_SDK_ROOT` does not
+help. Install `cmdline-tools;latest` **into the real SDK root** and use
+`$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager` instead.
 
 **No 8 GB+ Android device is confirmed available either.** That has a real consequence for
 the Android port: the on-device measurements that were supposed to resolve CPU-only latency,
