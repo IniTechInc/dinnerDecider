@@ -75,7 +75,7 @@ func TestRequestShapeMirrorsTheEvalHarness(t *testing.T) {
 	cs := newCaptureServer(t, `{"name":"Whole Milk","brand":"Horizon","category":"dairy","confidence":0.82}`)
 	c := cs.client()
 
-	if _, err := c.IdentifyItem(context.Background(), contract.IdentifyItemPrompt(""), []byte{0xFF, 0xD8, 0xFF}); err != nil {
+	if _, _, err := c.IdentifyItem(context.Background(), contract.IdentifyItemPrompt(""), []byte{0xFF, 0xD8, 0xFF}); err != nil {
 		t.Fatalf("IdentifyItem: %v", err)
 	}
 
@@ -128,7 +128,7 @@ func TestRequestShapeMirrorsTheEvalHarness(t *testing.T) {
 func TestBodyOmitsResponseFormatAndKeepsSamplingParams(t *testing.T) {
 	cs := newCaptureServer(t, `[]`)
 	c := cs.client()
-	if _, err := c.IdentifyAllItems(context.Background(), contract.IdentifyAllItemsPrompt("none"), []byte{1, 2, 3}); err != nil {
+	if _, _, err := c.IdentifyAllItems(context.Background(), contract.IdentifyAllItemsPrompt("none"), []byte{1, 2, 3}); err != nil {
 		t.Fatalf("IdentifyAllItems: %v", err)
 	}
 
@@ -166,7 +166,7 @@ func TestBodyOmitsResponseFormatAndKeepsSamplingParams(t *testing.T) {
 // the llama-server equivalent of iOS's resetSession() between requests.
 func TestCachePromptIsSentExplicitlyFalse(t *testing.T) {
 	cs := newCaptureServer(t, `[]`)
-	if _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1}); err != nil {
+	if _, _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1}); err != nil {
 		t.Fatalf("IdentifyAllItems: %v", err)
 	}
 	value, present := cs.lastBody["cache_prompt"]
@@ -186,7 +186,7 @@ func TestCachePromptIsSentExplicitlyFalse(t *testing.T) {
 // failure counting.
 func TestIdentifyItemThrowsOnParseFailure(t *testing.T) {
 	cs := newCaptureServer(t, "I think that might be some sort of milk?")
-	_, err := cs.client().IdentifyItem(context.Background(), "p", []byte{1})
+	_, _, err := cs.client().IdentifyItem(context.Background(), "p", []byte{1})
 	if !errors.Is(err, ErrBadResponse) {
 		t.Fatalf("err = %v, want ErrBadResponse", err)
 	}
@@ -194,7 +194,7 @@ func TestIdentifyItemThrowsOnParseFailure(t *testing.T) {
 
 func TestIdentifyAllItemsSwallowsParseFailure(t *testing.T) {
 	cs := newCaptureServer(t, "Sorry, I cannot help with that.")
-	items, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1})
+	items, _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1})
 	if err != nil {
 		t.Fatalf("IdentifyAllItems must return no error at all on a parse failure, got %v", err)
 	}
@@ -213,7 +213,7 @@ func TestIdentifyAllItemsStillErrorsOnTransportFailure(t *testing.T) {
 	cs := newCaptureServer(t, "")
 	cs.status = http.StatusInternalServerError
 	cs.rawReply = `{"error":{"message":"context shift is disabled"}}`
-	if _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1}); err == nil {
+	if _, _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1}); err == nil {
 		t.Fatal("a 500 must be an error even though a parse failure is not")
 	}
 }
@@ -225,7 +225,7 @@ func TestIdentifyAllItemsStillErrorsOnTransportFailure(t *testing.T) {
 func TestParserSalvageRunsOnTheWireFormat(t *testing.T) {
 	reply := "analysis<channel|>```json\n[{\"name\":\"Eggs\",\"brand\":null,\"category\":\"dairy\",\"confidence\":0.71}]\n```"
 	cs := newCaptureServer(t, reply)
-	items, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1})
+	items, _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1})
 	if err != nil {
 		t.Fatalf("IdentifyAllItems: %v", err)
 	}
@@ -241,7 +241,7 @@ func TestParserSalvageRunsOnTheWireFormat(t *testing.T) {
 // not send an image part at all.
 func TestRecipesUseATextOnlyMessage(t *testing.T) {
 	cs := newCaptureServer(t, `{"makeNow":[],"almostThere":[]}`)
-	if _, err := cs.client().GenerateRecipes(context.Background(), "prompt"); err != nil {
+	if _, _, err := cs.client().GenerateRecipes(context.Background(), "prompt"); err != nil {
 		t.Fatalf("GenerateRecipes: %v", err)
 	}
 	parts := cs.lastBody["messages"].([]any)[0].(map[string]any)["content"].([]any)
@@ -255,7 +255,7 @@ func TestRecipesUseATextOnlyMessage(t *testing.T) {
 
 func TestRecipesThrowOnParseFailure(t *testing.T) {
 	cs := newCaptureServer(t, "here are some ideas: pasta, soup")
-	_, err := cs.client().GenerateRecipes(context.Background(), "prompt")
+	_, _, err := cs.client().GenerateRecipes(context.Background(), "prompt")
 	if !errors.Is(err, ErrBadResponse) {
 		t.Fatalf("err = %v, want ErrBadResponse", err)
 	}
@@ -267,7 +267,7 @@ func TestRecipesThrowOnParseFailure(t *testing.T) {
 func TestEmptyChoicesIsAnErrorNotAnEmptyAnswer(t *testing.T) {
 	cs := newCaptureServer(t, "")
 	cs.rawReply = `{"choices":[]}`
-	_, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1})
+	_, _, err := cs.client().IdentifyAllItems(context.Background(), "p", []byte{1})
 	if err == nil {
 		t.Fatal("zero choices must be an error")
 	}

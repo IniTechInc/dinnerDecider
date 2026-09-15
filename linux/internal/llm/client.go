@@ -281,19 +281,23 @@ const maxChatResponseBytes = 8 << 20
 
 // IdentifyItem asks for ONE item from one image, and THROWS on a parse failure.
 //
+// The Completion is returned alongside the item, and on failure too, so the
+// supervisor can carry llama-server's timings into /api/status and the bench
+// without a second code path that re-implements the parse.
+//
 // Matches GemmaLLMService.identifyItem: the scan loop catches this, logs
 // "[Scan] Crop i/N failed: ...", counts it as an inference failure, and
 // continues to the next crop. A scan is never aborted by it.
-func (c *Client) IdentifyItem(ctx context.Context, prompt string, imageJPEG []byte) (contract.IdentifiedItem, error) {
+func (c *Client) IdentifyItem(ctx context.Context, prompt string, imageJPEG []byte) (contract.IdentifiedItem, Completion, error) {
 	completion, err := c.Chat(ctx, []Part{ImagePart(imageJPEG), TextPart(prompt)})
 	if err != nil {
-		return contract.IdentifiedItem{}, err
+		return contract.IdentifiedItem{}, completion, err
 	}
 	item, ok := contract.DecodeIdentifiedItem(completion.Text)
 	if !ok {
-		return contract.IdentifiedItem{}, fmt.Errorf("%w: %s", ErrBadResponse, snippet([]byte(completion.Text)))
+		return contract.IdentifiedItem{}, completion, fmt.Errorf("%w: %s", ErrBadResponse, snippet([]byte(completion.Text)))
 	}
-	return item, nil
+	return item, completion, nil
 }
 
 // IdentifyAllItems asks for every item in one image, and returns an EMPTY LIST
@@ -309,16 +313,16 @@ func (c *Client) IdentifyItem(ctx context.Context, prompt string, imageJPEG []by
 // The empty slice is deliberately non-nil, mirroring the parser's rule that a
 // nil slice must never be used to mean "parse failed": "saw nothing" and "was
 // unreadable" are different outcomes and only the first one reaches here.
-func (c *Client) IdentifyAllItems(ctx context.Context, prompt string, imageJPEG []byte) ([]contract.IdentifiedItem, error) {
+func (c *Client) IdentifyAllItems(ctx context.Context, prompt string, imageJPEG []byte) ([]contract.IdentifiedItem, Completion, error) {
 	completion, err := c.Chat(ctx, []Part{ImagePart(imageJPEG), TextPart(prompt)})
 	if err != nil {
-		return nil, err
+		return nil, completion, err
 	}
 	items, ok := contract.DecodeIdentifiedItemArray(completion.Text)
 	if !ok {
-		return []contract.IdentifiedItem{}, nil
+		return []contract.IdentifiedItem{}, completion, nil
 	}
-	return items, nil
+	return items, completion, nil
 }
 
 // GenerateRecipes runs the text-only recipe call and throws on a parse failure.
@@ -326,16 +330,16 @@ func (c *Client) IdentifyAllItems(ctx context.Context, prompt string, imageJPEG 
 // The caller turns that into the exact user-facing string the contract pins:
 // "We could not read the recipe ideas this time. Please try again.", leaving the
 // existing recipes untouched.
-func (c *Client) GenerateRecipes(ctx context.Context, prompt string) (contract.RecipeBundleResponse, error) {
+func (c *Client) GenerateRecipes(ctx context.Context, prompt string) (contract.RecipeBundleResponse, Completion, error) {
 	completion, err := c.Chat(ctx, []Part{TextPart(prompt)})
 	if err != nil {
-		return contract.RecipeBundleResponse{}, err
+		return contract.RecipeBundleResponse{}, completion, err
 	}
 	bundle, ok := contract.DecodeRecipeBundle(completion.Text)
 	if !ok {
-		return contract.RecipeBundleResponse{}, fmt.Errorf("%w: %s", ErrBadResponse, snippet([]byte(completion.Text)))
+		return contract.RecipeBundleResponse{}, completion, fmt.Errorf("%w: %s", ErrBadResponse, snippet([]byte(completion.Text)))
 	}
-	return bundle, nil
+	return bundle, completion, nil
 }
 
 // Health reports whether the child is serving. llama-server answers
