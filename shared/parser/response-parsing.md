@@ -38,6 +38,48 @@ discards that decoy wholesale. Pinned by
 `testDecodesJSONWithThinkingChannelInsideCodeFence`, where a thinking preamble is
 followed by a fenced object and the extractor must return `{"name": "Omelet"}`.
 
+
+### KNOWN GAP: no fixture currently pins this order (found Sept 14 2026)
+
+The Linux port mutation-tested its parser against the suite. Two mutations were
+caught immediately -- using a nil slice to mean "parse failed" fails
+`array-empty`, and reordering the fence literals fails the fence tests. **A third
+was not: swapping to `StripReasoning(StripCodeFences(text))` passes all 27
+fixtures.**
+
+That is not a defective fixture, it is a property of the two functions.
+`StripCodeFences` never touches the `<channel|>` literal and `StripReasoning`
+never touches a fence, so for every input in the suite the two steps commute,
+and the bracket scanner skips whatever leading junk either order leaves behind.
+`object-thinking-channel-inside-code-fence` reaches the same object either way.
+
+So: the order above is still correct and still required, but **do not describe
+the fixtures as pinning it** -- they do not. A port can get the order wrong and
+go green.
+
+**Proposed 28th fixture** (not yet added -- see the sequencing note): an input
+where a fence sits *inside* a would-be marker, so only the wrong order
+assembles a real `<channel|>`:
+
+    operation: firstJSONObject
+    input:     {"name":"first"}<channel```|>{"name":"second"}
+
+- Correct order: `StripReasoning` finds no literal `<channel|>` (the raw text has
+  `<channel```|>`), so it passes through; fences are then stripped; the scanner
+  returns **the first object**.
+- Wrong order: fences are stripped first, assembling a real `<channel|>`;
+  `StripReasoning` then discards everything before it; the scanner returns
+  **the second object**.
+
+Adding it means adding the matching Swift test in the same commit (the rule in
+`shared/conformance/README.md`), and bumping the hardcoded `27` in every port's
+runner. **Deliberately deferred**: ports were mid-implementation against a
+suite of 27 when this was found, and changing the count underneath them would
+have broken runners that were correct. Do it once the ports have landed.
+
+Until then, each port should pin the order with its own local test, as the
+Linux port does.
+
 ## Step 1 — channel stripping (`stripReasoning`)
 
 The July 2026 Gemma 4 chat template wraps chain-of-thought as:
