@@ -594,15 +594,30 @@ func TestChildThatExitedIsNeverSignalled(t *testing.T) {
 // as an empty result would be "Nothing spotted" with extra steps.
 func TestEpochCrossingResponseIsDiscardedAndCounted(t *testing.T) {
 	var h *harness
+	var retired *generation
+	var retiredMu sync.Mutex
 	h = newHarness(t, harnessOptions{mutate: func(o *Options) {
 		o.hookAfterCall = func() {
 			// The generation is retired while the answer is on the wire. This
 			// is what a recovery or an operator restart does.
 			h.sup.mu.Lock()
+			gone := h.sup.cur
 			h.sup.cur = nil
 			h.sup.mu.Unlock()
+			retiredMu.Lock()
+			retired = gone
+			retiredMu.Unlock()
 		}
 	}})
+	// The supervisor no longer holds the handle, so this test owns the child's
+	// cleanup. A real retirement always stops the process it retires.
+	t.Cleanup(func() {
+		retiredMu.Lock()
+		defer retiredMu.Unlock()
+		if retired != nil {
+			h.sup.stopChild(retired, "test cleanup")
+		}
+	})
 	if err := h.sup.EnsureLoaded(context.Background()); err != nil {
 		t.Fatalf("EnsureLoaded: %v", err)
 	}
@@ -702,6 +717,8 @@ func TestTwoOverlappingSessionsNeverOverlapAtTheModel(t *testing.T) {
 func TestChildKilledBetweenGateAndBracketIsNotCounted(t *testing.T) {
 	var h *harness
 	var once sync.Once
+	var retired *generation
+	var retiredMu sync.Mutex
 	h = newHarness(t, harnessOptions{mutate: func(o *Options) {
 		o.hookAfterGate = func() {
 			once.Do(func() {
@@ -709,11 +726,22 @@ func TestChildKilledBetweenGateAndBracketIsNotCounted(t *testing.T) {
 				// bracket opening. This is the only remaining cause of a false
 				// BeginInference once the gate is held.
 				h.sup.mu.Lock()
+				gone := h.sup.cur
 				h.sup.cur = nil
 				h.sup.mu.Unlock()
+				retiredMu.Lock()
+				retired = gone
+				retiredMu.Unlock()
 			})
 		}
 	}})
+	t.Cleanup(func() {
+		retiredMu.Lock()
+		defer retiredMu.Unlock()
+		if retired != nil {
+			h.sup.stopChild(retired, "test cleanup")
+		}
+	})
 	if err := h.sup.EnsureLoaded(context.Background()); err != nil {
 		t.Fatalf("EnsureLoaded: %v", err)
 	}
