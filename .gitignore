@@ -54,3 +54,5 @@ linux/bin/
 linux/dist/
 linux/web/node_modules/
 .claude/worktrees/
+linux/.state/
+linux/internal/llm/runtime-cache/
