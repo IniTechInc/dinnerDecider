@@ -207,9 +207,14 @@ tasks.withType<Test>().configureEach {
 // libc++_shared.so) plus the JNI shim, with headroom. See docs/PORTING_NOTES.md.
 val maxNativePayloadBytes = 26L * 1024 * 1024
 
-// Budget for a single per-ABI artifact: the native payload plus Compose, ML Kit's
-// bundled models, and the DM Serif/DM Sans faces.
-val maxArtifactBytes = 60L * 1024 * 1024
+// Budget for a single RELEASE artifact: the ~19 MB native payload, ML Kit's ~22 MB of
+// bundled OCR/detection models (native, so R8 cannot shrink them), the shrunk dex and
+// the DM Serif/DM Sans faces, with headroom.
+//
+// Debug artifacts are deliberately out of scope: an unminified debug APK measures ~95 MB
+// here and is never shipped. Sizing the budget to accommodate it would make the check
+// meaningless for the artifact that actually goes to users.
+val maxArtifactBytes = 75L * 1024 * 1024
 
 val jniLibsAbiDir: File = file("src/main/jniLibs/arm64-v8a")
 val nativeVerifyScript: File = rootProject.file("native/verify.sh")
@@ -270,7 +275,7 @@ tasks.register("verifyNativeLibs") {
 
 tasks.register("checkApkSize") {
     group = "verification"
-    description = "Fails if any built APK/AAB exceeds the size budget (skips when jniLibs is empty)."
+    description = "Fails if a release APK/AAB exceeds the size budget (skips when jniLibs is empty)."
     doLast {
         if (sharedObjectsIn(jniLibsAbiDir).isEmpty()) {
             val message = "checkApkSize: ${jniLibsAbiDir.path} is empty — the artifact carries no native payload."
@@ -283,9 +288,13 @@ tasks.register("checkApkSize") {
 
         val artifacts = artifactOutputsDir.walkTopDown()
             .filter { it.isFile && (it.extension == "apk" || it.extension == "aab") }
+            .filter { it.absolutePath.contains("release", ignoreCase = true) }
             .toList()
         if (artifacts.isEmpty()) {
-            logger.warn("checkApkSize: no APK/AAB under ${artifactOutputsDir.path}; build one first.")
+            logger.warn(
+                "checkApkSize: no release APK/AAB under ${artifactOutputsDir.path}; " +
+                    "run assembleRelease or bundleRelease first."
+            )
             return@doLast
         }
         artifacts.forEach { artifact ->
