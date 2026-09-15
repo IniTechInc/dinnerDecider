@@ -1,0 +1,72 @@
+{
+  "_readme": [
+    "Pinned llama.cpp release. The port NEVER compiles llama.cpp (docs/PORTING_NOTES.md",
+    "§ Linux/IoT: DO NOT COMPILE llama.cpp); it runs an official prebuilt llama-server.",
+    "",
+    "NEVER TRUST THE NETWORK ALONE. Every asset listed here is downloaded and then",
+    "verified against the sha256 recorded below before anything is extracted or",
+    "executed. A variant with an empty sha256 is treated as UNPINNED and is refused",
+    "rather than downloaded: an unverified 170 MB binary that the service then execs is",
+    "exactly the thing this file exists to prevent.",
+    "",
+    "GOTCHA, cost us a wrong pin once: DO NOT USE /releases/latest. The GitHub API",
+    "returns the stray tag v0.4.1 for this repo (verified again 2026-09-15: the latest",
+    "endpoint answered v0.4.1 published 2026-09-14T18:27:29Z while the newest real",
+    "build was b10976). The v0.4.1 tag exists because the shared libraries carry that",
+    "soname - the tarballs ship libllama-common.so.0.4.1 - not because it is a release",
+    "anyone should run. Query the releases LIST and match tags against ^b[0-9]+$.",
+    "",
+    "How these digests were produced (2026-09-15): the releases list was queried, the",
+    "b10970 tag read, and each asset's sha256 taken from the GitHub asset `digest`",
+    "field. That field was independently checked by downloading",
+    "llama-b10970-bin-ubuntu-arm64.tar.gz in full and hashing it locally; the two",
+    "agreed. Re-verify the same way when bumping the tag (`make pin-runtime`).",
+    "",
+    "Tarball layout, verified on the arm64 asset: a single top-level directory named",
+    "after the tag (llama-b10970/) holding llama-server alongside the shared libraries",
+    "it needs (libllama.so.0, libmtmd.so.0, libggml*.so). The extractor keeps that tree",
+    "intact and the supervisor sets LD_LIBRARY_PATH to the directory the binary lives",
+    "in, because these builds do not carry an rpath."
+  ],
+  "tag": "b10970",
+  "downloadBaseURL": "https://github.com/ggml-org/llama.cpp/releases/download",
+  "releasesListURL": "https://api.github.com/repos/ggml-org/llama.cpp/releases",
+  "binaryName": "llama-server",
+  "variants": {
+    "ubuntu-arm64": {
+      "asset": "llama-b10970-bin-ubuntu-arm64.tar.gz",
+      "sha256": "91153d1a16d3b0514c3ae5891f6938f3dcce0762c1f8813143e9ca1da7afc059",
+      "sizeBytes": 13469272
+    },
+    "ubuntu-x64": {
+      "asset": "llama-b10970-bin-ubuntu-x64.tar.gz",
+      "sha256": "923d35d37e8975bac09f5fd39c73b16a69c5d5ba122ef122fb4926ff4605ea54",
+      "sizeBytes": 16845010
+    },
+    "ubuntu-s390x": {
+      "asset": "llama-b10970-bin-ubuntu-s390x.tar.gz",
+      "sha256": "6e96cfba1ef7ddd796e4b5595f771f7711c703ce9dfc5206ba16d003a13e4380",
+      "sizeBytes": 15293892
+    },
+    "cuda-12.8-x64": {
+      "asset": "llama-b10970-bin-ubuntu-cuda-12.8-x64.tar.gz",
+      "sha256": "e1189e5f5b0d58d5286aa1f16b1af6858fb6ffd9b88b8299b1ea8a12c59a270a",
+      "sizeBytes": 168837158
+    },
+    "cuda-13.3-arm64": {
+      "asset": "llama-b10970-bin-ubuntu-cuda-13.3-arm64.tar.gz",
+      "sha256": "9d4e4991667e0ff1a36592443b528d59746c46763e844c6278a7ff32bb7bc88b",
+      "sizeBytes": 144964138
+    },
+    "rocm-10.0-x64": {
+      "asset": "llama-b10970-bin-ubuntu-rocm-10.0-x64.tar.gz",
+      "sha256": "f7f6bfabd75f974564932f3f859653552f135ce0144e17bf483a23bf1250e0c9",
+      "sizeBytes": 238973025
+    },
+    "sycl-fp16-x64": {
+      "asset": "llama-b10970-bin-ubuntu-sycl-fp16-x64.tar.gz",
+      "sha256": "7db8e12e61fc1443c480d86c62a71b934c2cf857e73c051662c9788c203182e2",
+      "sizeBytes": 54742599
+    }
+  }
+}
