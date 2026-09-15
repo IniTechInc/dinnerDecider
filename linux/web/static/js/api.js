@@ -67,6 +67,32 @@ export function on(name, handler) {
   return () => document.removeEventListener(name, handler);
 }
 
+/* --------------------------------------------------------- taxonomy --- */
+
+/**
+ * The nine raw category values (shared/taxonomy/categories.md). The RAW string
+ * is what travels and what is stored, never an ordinal and never the display
+ * label, so that a future reorder cannot silently reclassify a shelf of food.
+ * Anything unrecognised falls back to `other`; nothing is ever dropped.
+ */
+export const CATEGORIES = [
+  { raw: 'produce', label: 'Produce' },
+  { raw: 'dairy', label: 'Dairy' },
+  { raw: 'meat', label: 'Meat' },
+  { raw: 'pantry', label: 'Pantry' },
+  { raw: 'snack', label: 'Snacks' },
+  { raw: 'beverage', label: 'Beverages' },
+  { raw: 'condiment', label: 'Condiments' },
+  { raw: 'frozen', label: 'Frozen' },
+  { raw: 'other', label: 'Other' },
+];
+
+export function categoryLabel(raw) {
+  const key = String(raw || '').toLowerCase();
+  const hit = CATEGORIES.find((c) => c.raw === key);
+  return hit ? hit.label : 'Other';
+}
+
 /* -------------------------------------------------------------- error --- */
 
 export class ApiError extends Error {
