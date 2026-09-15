@@ -48,6 +48,15 @@ android/local.properties
 android/.cxx/
 *.apk
 *.aab
+# Native payload: built out of tree and copied in (Android plan Step 34), never committed
+android/app/src/main/jniLibs/
+android/native/build-*/
+android/native/llama.cpp/
+# Local credentials and signing material; commit only the *.template siblings
+android/kroger.properties
+android/keystore.properties
+# NOTE: android/app/src/main/res/font/ is COMMITTED (bundled OFL DM Serif / DM Sans faces).
+# Do not add a font ignore rule here.
 
 # Go / Linux service
 linux/bin/
