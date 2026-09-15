@@ -115,11 +115,18 @@ runScan(photos):
                 scannedItems = dedupe(results)
             catch error:
                 log("[Scan] Crop {index+1}/{total} failed: {error}")
+                inferenceFailures += 1                     # counted, not silent
                 continue                                   # NEVER aborts the scan
 
     if cancelled: return
-    phase = scannedItems.isEmpty ? EMPTY : FINISHED
+    phase = terminalPhase(scannedItems.count, inferenceFailures)   # see Stage 7
 ```
+
+`inferenceFailures` is incremented at BOTH swallow sites: the whole-image pass
+above and the per-crop loop here. Only a THROWN error counts. `identifyAllItems`
+returning `[]` from an unreadable response is not a failure -- it answered, we
+just could not read it. Getting that backwards turns an unreadable-but-answered
+call into a spurious `FAILED`.
 
 `isNoise(item)` is the single filter, applied identically at all three call sites:
 
