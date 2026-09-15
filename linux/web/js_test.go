@@ -1,6 +1,7 @@
 package web
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -347,4 +348,60 @@ func codeOnly(src string) string {
 		i++
 	}
 	return out.String()
+}
+
+// TestSettingsExplainsEveryDegradedState keeps the four states the user needs
+// told about from being something they have to infer from bad results.
+func TestSettingsExplainsEveryDegradedState(t *testing.T) {
+	src := readAsset(t, "js/settings.js")
+
+	for what, probe := range map[string]string{
+		"the orange demo-mode banner":       "Demo mode (sample data)",
+		"the insufficient-memory reason":    "not enough memory here to hold the model",
+		"the OCR mode":                      "ocrMode",
+		"the runtime variant":               "runtimeVariant",
+		"the sticky CPU-fallback notice":    "runtimeFallback",
+		"the model download panel":          "api.modelAction",
+		"the secure-context camera reality": "isSecureContext",
+	} {
+		if !strings.Contains(src, probe) {
+			t.Errorf("settings.js does not surface %s (looked for %q)", what, probe)
+		}
+	}
+
+	// A download percentage IS a real measurement: the total is known up front
+	// and every byte counts the same. This is the one place a bar is honest.
+	if !strings.Contains(src, "modelFill") {
+		t.Error("settings.js shows no download progress at all")
+	}
+}
+
+// TestCameraHelpLinksTheCA pins the escape hatch for anyone who does want the
+// live preview, and keeps it pointed at the unauthenticated route.
+func TestCameraHelpLinksTheCA(t *testing.T) {
+	body := readAsset(t, "index.html")
+	if !strings.Contains(body, `href="/ca.crt"`) {
+		t.Error("the camera help panel does not link /ca.crt")
+	}
+	if !strings.Contains(body, "impersonate any site") {
+		t.Error("the camera help panel does not say what trusting the CA actually costs")
+	}
+}
+
+// TestFeatureModulesOnlyImportApi is the structural half of "feature files
+// never edit the shell": no feature module reaches into another, so each can be
+// changed, or deleted, without a second file noticing.
+func TestFeatureModulesOnlyImportApi(t *testing.T) {
+	importFrom := regexp.MustCompile(`from\s+'(\./[^']+)'`)
+	for _, module := range []string{
+		"js/shell.js", "js/capture.js", "js/scan.js",
+		"js/inventory.js", "js/recipes.js", "js/shopping.js", "js/settings.js",
+	} {
+		src := readAsset(t, module)
+		for _, m := range importFrom.FindAllStringSubmatch(src, -1) {
+			if m[1] != "./api.js" {
+				t.Errorf("%s imports %s; feature modules talk through the document bus in api.js, never to each other", module, m[1])
+			}
+		}
+	}
 }
