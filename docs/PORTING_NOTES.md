@@ -27,6 +27,26 @@ No 16GB re-download is required. Use these for every on-device/on-target test.
   VERIFIED buildx platforms: `linux/arm64`, `linux/amd64`, `linux/amd64/v2`, `linux/386`,
   so multi-arch images for Pi (arm64) and x86 boxes both build on this Mac.
 
+## Available test hardware (confirmed Sept 14, 2026)
+
+| Device | Use |
+|---|---|
+| **Samsung Galaxy XCover Pro 6** (physical, arm64) | The real Android target. Step 39's self-test, the vision smoke test, CPU latency and peak PSS all run here. Android is NOT limited to mock-mode validation. |
+| **iPhone 17 Pro** (physical) | iOS device verification. NOTE: the open TestFlight crash items #1/#4 were reported on an iPhone 16 Pro Max (8GB). A 17 Pro is a different memory envelope, so it can confirm the app runs but CANNOT by itself close a jetsam report filed against an 8GB phone. Say which device a result came from. |
+| arm64 Android emulator (Apple Silicon host) | Room, DataStore, ML Kit, CameraX, Compose UI tests. Native ABI matches the host, so this is the verified ABI. |
+| iPhone simulator (iPhone 17 Pro, UDID pinned in CLAUDE.md) | The 138-test iOS suite. Forces MockLLMService, so it proves nothing about memory. |
+| Docker + colima buildx (linux/arm64 via QEMU) | Linux port builds and functional tests only. |
+
+**No Raspberry Pi, Jetson, or physical Linux box is available.** Consequence for the
+Linux port: `linux/docs/BENCHMARKS.md` must carry `not measured` for every real-hardware
+row. The QEMU row is explicitly labelled not representative. Do not estimate Pi numbers
+from a Mac: publishing a guessed number is worse than publishing none.
+
+Check the XCover Pro 6's RAM before assuming it clears the model floor. It is a rugged
+mid-range device, and `DeviceCapabilityPolicy` (Android Step 9) may correctly route it to
+mock mode. If it does, that is the capability check working, not a bug -- but it also
+means real-inference numbers need a different phone.
+
 ## Android: llama.cpp cross-compile VERIFIED WORKING
 
 Checkout `1bc7a5af0d14b1fb72f266abbd1237b394187115` (2026-09-15) — comfortably past the
