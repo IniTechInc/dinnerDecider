@@ -153,3 +153,198 @@ func TestCaptureChecksLimitsLocally(t *testing.T) {
 		}
 	}
 }
+
+// The three terminal states, verbatim from the shipped ScanningView
+// (emptyResults / failedResults / cancelledState).
+const (
+	emptyTitle  = `Nothing spotted`
+	emptyBody   = `We could not spot anything. Try getting closer, adding more light, or filling more of the frame.`
+	emptyAction = `Try another photo`
+
+	failedStatus = `The scan could not finish.`
+	failedTitle  = `Scan could not finish`
+	failedBody   = `Something went wrong while identifying your food, so we could not read this photo. This usually clears up after closing other apps and trying again.`
+	failedAction = `Try again`
+
+	cancelledStatus = `Scan cancelled.`
+	cancelledTitle  = `Scan cancelled`
+	cancelledBody   = `No items were saved. You can start again whenever you like.`
+)
+
+// TestTerminalStatesStayDistinct is the load-bearing test of step 69.
+//
+// `empty` means the model answered every call and genuinely saw no food, so
+// advice about light and framing is honest. `failed` means the calls themselves
+// failed and we do not know what was in the photo, so the same advice blames
+// the user's photo for our failure. Collapsing the two back together is the
+// exact bug the ScanOutcome split exists to fix, and it would look perfectly
+// reasonable in a diff.
+func TestTerminalStatesStayDistinct(t *testing.T) {
+	src := readAsset(t, "js/scan.js")
+
+	if emptyBody == failedBody {
+		t.Fatal("the test constants themselves are equal; the fixture is wrong")
+	}
+	if !strings.Contains(src, emptyBody) {
+		t.Errorf("scan.js is missing the empty-phase body:\n\t%s", emptyBody)
+	}
+	if !strings.Contains(src, failedBody) {
+		t.Errorf("scan.js is missing the failed-phase body:\n\t%s", failedBody)
+	}
+	if strings.Count(src, emptyBody) > 1 || strings.Count(src, failedBody) > 1 {
+		t.Error("a terminal body appears more than once; there must be exactly one copy of each")
+	}
+
+	// Each phase must carry its own body, not a shared one.
+	empty := blockFor(t, src, "  empty: {")
+	failed := blockFor(t, src, "  failed: {")
+	cancelled := blockFor(t, src, "  cancelled: {")
+
+	if strings.Contains(failed, emptyBody) {
+		t.Error("the failed phase reuses the empty copy, which blames the user's photo for our failure")
+	}
+	if strings.Contains(empty, failedBody) {
+		t.Error("the empty phase reuses the failed copy")
+	}
+	if strings.Contains(cancelled, emptyBody) || strings.Contains(cancelled, failedBody) {
+		t.Error("the cancelled phase reuses another phase's copy")
+	}
+}
+
+// TestTerminalCopyIsVerbatim pins every string in the table, not only the two
+// bodies, so a well-meaning reword of a title or a button label also fails.
+func TestTerminalCopyIsVerbatim(t *testing.T) {
+	src := readAsset(t, "js/scan.js")
+
+	empty := blockFor(t, src, "  empty: {")
+	failed := blockFor(t, src, "  failed: {")
+	cancelled := blockFor(t, src, "  cancelled: {")
+
+	for _, c := range []struct {
+		phase string
+		block string
+		want  []string
+	}{
+		{"empty", empty, []string{emptyTitle, emptyBody, emptyAction}},
+		{"failed", failed, []string{failedStatus, failedTitle, failedBody, failedAction}},
+		{"cancelled", cancelled, []string{cancelledStatus, cancelledTitle, cancelledBody}},
+	} {
+		for _, want := range c.want {
+			if !strings.Contains(c.block, want) {
+				t.Errorf("the %s phase is missing the verbatim string %q", c.phase, want)
+			}
+		}
+	}
+
+	// The empty phase has no status line at all; the table's dash is literal.
+	if strings.Contains(empty, "status: 'We could not spot anything to add.'") {
+		t.Error("the empty phase carries a status line; the contract table leaves it blank")
+	}
+
+	// insufficient_memory appends the service's own detail, because on a box at
+	// the memory floor the "close other apps" advice is literally correct.
+	if !strings.Contains(src, `state.abortReason === 'insufficient_memory'`) {
+		t.Error("scan.js does not append the service detail when the abort reason is insufficient_memory")
+	}
+	if !strings.Contains(src, "state.abortDetail") {
+		t.Error("scan.js never reads the abort detail string")
+	}
+}
+
+// TestScanShowsNoFabricatedProgress pins the honesty rules: no percentage bar,
+// and no ETA unless something measured one on hardware like this.
+func TestScanShowsNoFabricatedProgress(t *testing.T) {
+	src := readAsset(t, "js/scan.js")
+
+	if !strings.Contains(src, "state.estimateMeasured && state.estimateSeconds > 0") {
+		t.Error("scan.js shows an ETA without requiring a measurement for this hardware class")
+	}
+	if !strings.Contains(src, "scanEstimateMeasured === true") {
+		t.Error("scan.js does not require the service to claim the estimate was measured")
+	}
+
+	// The running screen must not drive a percentage fill. The indeterminate
+	// pulse in app.css is a motion cue and is driven entirely by CSS.
+	//
+	// Checked against code with the comments removed, so the doc comment that
+	// explains WHY there is no percentage bar does not trip its own rule.
+	code := codeOnly(src)
+	for _, forbidden := range []string{"progress__fill", "style.width", "percent"} {
+		if strings.Contains(code, forbidden) {
+			t.Errorf("scan.js references %q; the running screen must not render a percentage of a scan whose calls are not equal in length", forbidden)
+		}
+	}
+
+	for _, want := range []string{"Call ", "Elapsed ", "this call "} {
+		if !strings.Contains(src, want) {
+			t.Errorf("scan.js does not show %q, which is one of the three facts it has to offer instead of a fake percentage", want)
+		}
+	}
+}
+
+// TestScanReattachesOnLoad pins the property that makes a four-minute scan
+// survive a locked phone, a closed tab, or a Wi-Fi handover.
+func TestScanReattachesOnLoad(t *testing.T) {
+	src := readAsset(t, "js/scan.js")
+
+	for _, want := range []string{"reattachOnLoad", "activeScanID", "EventStream", "LAST_SCAN_KEY"} {
+		if !strings.Contains(src, want) {
+			t.Errorf("scan.js is missing %q, so a page reload cannot rejoin a scan in flight", want)
+		}
+	}
+	if !strings.Contains(src, "api.cancelScan") {
+		t.Error("scan.js offers no way to cancel a running scan")
+	}
+}
+
+// blockFor returns the object literal that starts at `opening`, by brace
+// counting. The terminal table deliberately keeps braces out of its strings.
+func blockFor(t *testing.T, src, opening string) string {
+	t.Helper()
+	start := strings.Index(src, opening)
+	if start < 0 {
+		t.Fatalf("cannot find %q in scan.js", strings.TrimSpace(opening))
+	}
+	open := strings.Index(src[start:], "{") + start
+	depth := 0
+	for i := open; i < len(src); i++ {
+		switch src[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return src[open : i+1]
+			}
+		}
+	}
+	t.Fatalf("unbalanced braces after %q", strings.TrimSpace(opening))
+	return ""
+}
+
+// codeOnly strips JavaScript comments so a rule can be asserted against what
+// the file DOES rather than what it says about itself.
+func codeOnly(src string) string {
+	var out strings.Builder
+	for i := 0; i < len(src); {
+		if strings.HasPrefix(src[i:], "/*") {
+			end := strings.Index(src[i+2:], "*/")
+			if end < 0 {
+				break
+			}
+			i += 2 + end + 2
+			continue
+		}
+		if strings.HasPrefix(src[i:], "//") {
+			end := strings.IndexByte(src[i:], '\n')
+			if end < 0 {
+				break
+			}
+			i += end
+			continue
+		}
+		out.WriteByte(src[i])
+		i++
+	}
+	return out.String()
+}
