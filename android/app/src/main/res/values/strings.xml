@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CONVENTION (plan §4): this file holds ONLY the app name and permission rationales.
+  Every screen's copy lives in a per-feature Kotlin `object XCopy` inside that screen's
+  own file, mirroring iOS. That is what keeps the fourteen screen tasks partitionable —
+  do not add screen strings here.
+-->
+<resources>
+    <string name="app_name">DinnerDecider</string>
+
+    <string name="permission_camera_rationale">DinnerDecider needs the camera to photograph what is in your fridge. Photos are analyzed on this device and never uploaded.</string>
+    <string name="permission_camera_denied_title">Camera access is off</string>
+    <string name="permission_camera_denied_message">Turn camera access on in Settings to photograph your fridge. You can still add photos from your library.</string>
+    <string name="permission_notifications_rationale">Notifications show the progress of the one-time model download so you can leave the app while it finishes.</string>
+</resources>

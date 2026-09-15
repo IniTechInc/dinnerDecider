@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  API 31+ backup/transfer rules (android:dataExtractionRules).
+
+  <cloud-backup>: excludes only, so everything else is still backed up. The three
+  exclusions are the allergy-bearing taste profile, the Kroger OAuth token store, and the
+  multi-GB model directory. See backup_rules.xml for the full rationale and for the file
+  names this pins as a contract.
+
+  <device-transfer>: includes only, so ONLY the listed paths move to a new device. A
+  device transfer is a same-user, physically-adjacent handoff, so the inventory and
+  shopping-list database is fine to carry over; credentials and allergies are not.
+  Database name is a contract for plan Step 30.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/taste_profile.preferences_pb" />
+        <exclude domain="file" path="datastore/kroger_tokens.preferences_pb" />
+        <exclude domain="file" path="kroger_tokens.bin" />
+        <exclude domain="file" path="models" />
+    </cloud-backup>
+
+    <device-transfer>
+        <include domain="database" path="dinnerdecider.db" />
+    </device-transfer>
+</data-extraction-rules>
