@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Without viewport-fit=cover the safe-area insets below are always zero and
+     the bottom tab bar sits under the home indicator on a notched phone. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FFF6E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1F1D1B" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Photograph your fridge. Everything is recognised on this device.">
+<title>DinnerDecider</title>
+
+<!-- Stylesheets: every one the app will ever load, listed here. A feature file
+     never edits this shell. -->
+<link rel="stylesheet" href="app.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div class="app-shell">
+
+  <header class="topbar">
+    <span class="topbar__brand">
+      <img class="topbar__mark" src="icon.svg" alt="" width="28" height="28">
+      <span class="topbar__title">DinnerDecider</span>
+    </span>
+    <span class="topbar__spacer"></span>
+    <span class="badge badge--demo" id="shell-demo-badge" hidden>Demo mode</span>
+    <button class="iconbtn" id="shell-pair-button" type="button" aria-haspopup="dialog">
+      <span class="iconbtn__label">Pair</span>
+    </button>
+  </header>
+
+  <!-- Four views, mirroring the four iOS tabs in RootView.swift. -->
+  <nav class="tabbar" id="shell-tabs" aria-label="Main sections">
+    <a class="tab" href="#scan" data-tab="scan">
+      <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8a2 2 0 0 1 2-2h2l1.2-2h5.6L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+      <span class="tab__label">Scan</span>
+    </a>
+    <a class="tab" href="#inventory" data-tab="inventory">
+      <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span class="tab__label">Inventory</span>
+    </a>
+    <a class="tab" href="#recipes" data-tab="recipes">
+      <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M18 3c-1.6 1.4-2.5 3.3-2.5 5.5S16.4 12.6 18 14zM18 14v7"/></svg>
+      <span class="tab__label">Recipes</span>
+    </a>
+    <a class="tab" href="#settings" data-tab="settings">
+      <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/></svg>
+      <span class="tab__label">Settings</span>
+    </a>
+  </nav>
+
+  <main class="main" id="main" tabindex="-1">
+
+    <!-- ============================ SCAN ============================ -->
+    <section class="view" id="view-scan" data-view="scan" aria-labelledby="scan-heading">
+      <h1 class="view__title" id="scan-heading">Scan</h1>
+
+      <!-- capture.js owns everything inside #capture-panel -->
+      <!-- Source order puts the buttons last on purpose. On a phone the panel
+           fills the screen and `margin-top: auto` drops this row into the lower
+           third, within one-handed reach, and the focus order follows the same
+           path the thumb does. -->
+      <div class="panel" id="capture-panel">
+        <p class="panel__lede">Point the camera at an open fridge, a shelf, or the counter. Everything is recognised on this device.</p>
+
+        <p class="hint" id="capture-hint">The camera button opens your phone camera app. No certificate needed.</p>
+        <p class="alert alert--error" id="capture-error" role="alert" hidden></p>
+
+        <ul class="thumbs" id="capture-thumbs" aria-label="Selected photos"></ul>
+
+        <div class="capture-actions capture-actions--primary">
+          <button class="btn btn--primary btn--shutter" id="capture-take" type="button">Take a photo</button>
+          <button class="btn btn--ghost" id="capture-choose" type="button">Choose photos</button>
+          <button class="btn btn--ghost" id="capture-live" type="button" hidden>Use live camera</button>
+        </div>
+
+        <div class="capture-submit" id="capture-submit" hidden>
+          <button class="btn btn--primary" id="capture-scan" type="button">Scan photos</button>
+          <button class="btn btn--quiet" id="capture-clear" type="button">Clear</button>
+        </div>
+      </div>
+
+      <!-- Live preview, progressive enhancement only. See capture.js. -->
+      <div class="panel panel--live" id="capture-live-panel" hidden>
+        <div class="live">
+          <video class="live__video" id="capture-video" playsinline muted></video>
+          <div class="live__guides" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="capture-actions capture-actions--live">
+          <button class="btn btn--primary btn--shutter" id="capture-shoot" type="button">Capture</button>
+          <button class="btn btn--quiet" id="capture-live-close" type="button">Close camera</button>
+        </div>
+      </div>
+
+      <!-- scan.js owns everything inside #scan-panel -->
+      <div class="panel" id="scan-panel" hidden>
+        <p class="scan__status" id="scan-status" role="status" aria-live="polite"></p>
+
+        <div class="scan__meter" id="scan-meter">
+          <span class="scan__call" id="scan-call"></span>
+          <span class="scan__elapsed" id="scan-elapsed"></span>
+          <span class="scan__eta" id="scan-eta" hidden></span>
+        </div>
+        <div class="scan__pulse" id="scan-pulse" aria-hidden="true"><span></span></div>
+
+        <ul class="cards" id="scan-items" aria-label="Found so far"></ul>
+
+        <div class="scan__foot">
+          <button class="btn btn--danger-quiet btn--wide" id="scan-cancel" type="button">Cancel scan</button>
+        </div>
+      </div>
+
+      <!-- Terminal states. scan.js fills these; the three treatments stay distinct. -->
+      <div class="panel panel--terminal" id="scan-terminal" hidden>
+        <div class="terminal">
+          <div class="terminal__icon" id="terminal-icon" aria-hidden="true"></div>
+          <h2 class="terminal__title" id="terminal-title"></h2>
+          <p class="terminal__body" id="terminal-body"></p>
+          <p class="terminal__detail" id="terminal-detail" hidden></p>
+          <div class="terminal__actions" id="terminal-actions"></div>
+        </div>
+      </div>
+
+      <!-- Review + confirm, scan.js -->
+      <div class="panel" id="scan-review" hidden>
+        <h2 class="panel__title" id="review-heading">Review</h2>
+        <p class="hint">Fix a name or category before saving, then add everything to your inventory.</p>
+        <ul class="cards cards--review" id="review-items"></ul>
+        <div class="scan__foot">
+          <button class="btn btn--primary btn--wide" id="review-confirm" type="button">Add to inventory</button>
+          <button class="btn btn--quiet btn--wide" id="review-discard" type="button">Discard</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= INVENTORY ========================== -->
+    <section class="view" id="view-inventory" data-view="inventory" aria-labelledby="inventory-heading" hidden>
+      <h1 class="view__title" id="inventory-heading">Inventory</h1>
+
+      <div class="panel" id="inventory-panel">
+        <form class="row-form" id="inventory-add-form">
+          <label class="field">
+            <span class="field__label">Add an item</span>
+            <input class="field__input" id="inventory-add-name" type="text" autocomplete="off" placeholder="Whole milk">
+          </label>
+          <label class="field field--compact">
+            <span class="field__label">Category</span>
+            <select class="field__input" id="inventory-add-category"></select>
+          </label>
+          <button class="btn btn--primary" id="inventory-add" type="submit">Add</button>
+        </form>
+
+        <div class="listbar">
+          <label class="field field--compact">
+            <span class="field__label">Sort</span>
+            <select class="field__input" id="inventory-sort">
+              <option value="name">Name</option>
+              <option value="category">Category</option>
+              <option value="dateAdded">Date added</option>
+            </select>
+          </label>
+          <span class="listbar__count" id="inventory-count"></span>
+        </div>
+
+        <p class="alert alert--error" id="inventory-error" role="alert" hidden></p>
+        <ul class="cards" id="inventory-items" aria-label="Inventory"></ul>
+        <p class="empty" id="inventory-empty" hidden>Nothing in your inventory yet. Scan a shelf to fill it.</p>
+
+        <details class="staples" id="inventory-staples-wrap">
+          <summary class="staples__summary">Staples <span class="staples__count" id="inventory-staples-count"></span></summary>
+          <ul class="cards" id="inventory-staples" aria-label="Staples"></ul>
+        </details>
+      </div>
+    </section>
+
+    <!-- ========================== RECIPES =========================== -->
+    <section class="view" id="view-recipes" data-view="recipes" aria-labelledby="recipes-heading" hidden>
+      <h1 class="view__title" id="recipes-heading">Recipes</h1>
+
+      <div class="panel" id="recipes-panel">
+        <p class="panel__lede">Ideas built from what is actually on your shelves.</p>
+        <button class="btn btn--primary btn--wide" id="recipes-generate" type="button">Suggest dinners</button>
+        <p class="hint" id="recipes-hint" hidden>This runs the model on this device, so it can take a while.</p>
+        <p class="alert alert--error" id="recipes-error" role="alert" hidden></p>
+
+        <section class="bucket" id="recipes-makenow-wrap" hidden aria-labelledby="recipes-makenow-heading">
+          <h2 class="bucket__title" id="recipes-makenow-heading">Make now</h2>
+          <ul class="cards cards--recipes" id="recipes-makenow"></ul>
+        </section>
+
+        <section class="bucket" id="recipes-almost-wrap" hidden aria-labelledby="recipes-almost-heading">
+          <h2 class="bucket__title" id="recipes-almost-heading">Almost there</h2>
+          <ul class="cards cards--recipes" id="recipes-almost"></ul>
+        </section>
+      </div>
+
+      <!-- shopping.js owns everything inside #shopping-panel -->
+      <div class="panel" id="shopping-panel" aria-labelledby="shopping-heading">
+        <h2 class="panel__title" id="shopping-heading">Shopping list</h2>
+        <form class="row-form" id="shopping-add-form">
+          <label class="field">
+            <span class="field__label">Add a line</span>
+            <input class="field__input" id="shopping-add-name" type="text" autocomplete="off" placeholder="Olive oil">
+          </label>
+          <button class="btn btn--primary" id="shopping-add" type="submit">Add</button>
+        </form>
+        <p class="alert alert--error" id="shopping-error" role="alert" hidden></p>
+        <ul class="cards cards--check" id="shopping-items" aria-label="Shopping list"></ul>
+        <p class="empty" id="shopping-empty" hidden>Your shopping list is empty.</p>
+        <div class="listbar">
+          <button class="btn btn--quiet" id="shopping-clear-checked" type="button">Clear checked</button>
+          <a class="btn btn--quiet" id="shopping-export" href="/api/shopping/export" download="shopping-list.txt">Export</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================== SETTINGS ========================== -->
+    <section class="view" id="view-settings" data-view="settings" aria-labelledby="settings-heading" hidden>
+      <h1 class="view__title" id="settings-heading">Settings</h1>
+
+      <div class="panel" id="settings-demo-panel" hidden>
+        <p class="alert alert--demo" id="settings-demo" role="status"></p>
+      </div>
+
+      <div class="panel" id="settings-model-panel" aria-labelledby="model-heading">
+        <h2 class="panel__title" id="model-heading">Model</h2>
+        <p class="hint" id="model-summary"></p>
+        <div class="progress" id="model-progress" hidden>
+          <div class="progress__track"><div class="progress__fill" id="model-progress-fill"></div></div>
+          <p class="progress__label" id="model-progress-label"></p>
+        </div>
+        <p class="alert alert--error" id="model-error" role="alert" hidden></p>
+        <div class="capture-actions">
+          <button class="btn btn--primary" id="model-start" type="button">Download model</button>
+          <button class="btn btn--ghost" id="model-pause" type="button" hidden>Pause</button>
+          <button class="btn btn--ghost" id="model-resume" type="button" hidden>Resume</button>
+          <button class="btn btn--ghost" id="model-retry" type="button" hidden>Retry</button>
+        </div>
+        <p class="alert alert--warn" id="model-memory" role="status" hidden></p>
+      </div>
+
+      <div class="panel" id="settings-runtime-panel" aria-labelledby="runtime-heading">
+        <h2 class="panel__title" id="runtime-heading">This device</h2>
+        <dl class="kv" id="runtime-kv"></dl>
+        <p class="alert alert--warn" id="runtime-fallback" role="status" hidden></p>
+      </div>
+
+      <div class="panel" id="settings-household-panel" aria-labelledby="household-heading">
+        <h2 class="panel__title" id="household-heading">Household</h2>
+        <form class="row-form" id="settings-form">
+          <label class="field field--compact">
+            <span class="field__label">People at the table</span>
+            <input class="field__input" id="settings-household" type="number" min="1" max="12" step="1" inputmode="numeric">
+          </label>
+          <label class="field">
+            <span class="field__label">Diet</span>
+            <input class="field__input" id="settings-diet" type="text" autocomplete="off" placeholder="No restrictions">
+          </label>
+          <label class="field">
+            <span class="field__label">Allergies</span>
+            <input class="field__input" id="settings-allergies" type="text" autocomplete="off" placeholder="Peanuts, shellfish">
+          </label>
+          <button class="btn btn--primary" id="settings-save" type="submit">Save</button>
+        </form>
+        <p class="alert alert--error" id="settings-error" role="alert" hidden></p>
+      </div>
+
+      <div class="panel" id="settings-camera-panel" aria-labelledby="camera-heading">
+        <h2 class="panel__title" id="camera-heading">Camera and TLS</h2>
+        <p class="hint" id="camera-state"></p>
+        <p class="hint">The photo button opens your phone camera app over plain HTTP, so most people never need a certificate. The live preview needs a secure page, which a LAN address is not.</p>
+        <p class="hint">To unlock the live preview, install this server's certificate authority on the device and trust it fully. A certificate authority whose private key sits on a Raspberry Pi can impersonate any site to that device: a fair homelab trade, a poor one for a work phone.</p>
+        <p><a class="btn btn--ghost" id="camera-ca" href="/ca.crt" download="dinnerdecider-ca.crt">Download the CA certificate</a></p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<dialog class="dialog" id="pair-dialog" aria-labelledby="pair-heading">
+  <form method="dialog" class="dialog__form" id="pair-form">
+    <h2 class="dialog__title" id="pair-heading">Pair this browser</h2>
+    <p class="hint">The service prints a pairing token on the console and in the install output. Paste it once per browser.</p>
+    <label class="field">
+      <span class="field__label">Pairing token</span>
+      <input class="field__input" id="pair-token" type="text" autocomplete="off" spellcheck="false">
+    </label>
+    <p class="alert alert--error" id="pair-error" role="alert" hidden></p>
+    <div class="dialog__actions">
+      <button class="btn btn--quiet" id="pair-cancel" type="button">Not now</button>
+      <button class="btn btn--primary" id="pair-submit" type="button">Pair</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toaster" id="shell-toaster" role="status" aria-live="polite"></div>
+
+<!-- Every module, listed up front. Feature files never edit this shell. -->
+<script type="module" src="js/api.js"></script>
+<script type="module" src="js/shell.js"></script>
+<script type="module" src="js/capture.js"></script>
+<script type="module" src="js/scan.js"></script>
+<script type="module" src="js/inventory.js"></script>
+<script type="module" src="js/recipes.js"></script>
+<script type="module" src="js/shopping.js"></script>
+<script type="module" src="js/settings.js"></script>
+</body>
+</html>
