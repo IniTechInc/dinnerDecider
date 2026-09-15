@@ -5,18 +5,73 @@
   "description": "The user's taste preferences, collected by the first-launch wizard and editable from Settings. PERSISTED AS JSON: Swift encodes it with JSONEncoder and stores the blob in UserDefaults under the key \"tasteProfile\" (TasteProfile.swift:38-49), so unlike the SwiftData models this schema IS the real on-disk shape. Source of record: DinnerDecider/Models/TasteProfile.swift:8-34. Each category is a list of tapped pills plus a free-text \"other\" field.",
   "type": "object",
   "properties": {
-    "favoriteFoods": { "type": "array", "items": { "type": "string" }, "default": [] },
-    "favoriteFoodsOther": { "type": "string", "default": "" },
-    "dislikedFoods": { "type": "array", "items": { "type": "string" }, "default": [] },
-    "dislikedFoodsOther": { "type": "string", "default": "" },
-    "cuisinesLoved": { "type": "array", "items": { "type": "string" }, "default": [] },
-    "cuisinesLovedOther": { "type": "string", "default": "" },
-    "cuisinesAvoided": { "type": "array", "items": { "type": "string" }, "default": [] },
-    "cuisinesAvoidedOther": { "type": "string", "default": "" },
-    "allergies": { "type": "array", "items": { "type": "string" }, "default": [], "description": "SAFETY-RELEVANT. Rendered as \"Allergies: X. Never include these.\" in the prompt fragment." },
-    "allergiesOther": { "type": "string", "default": "" },
-    "texturesAvoided": { "type": "array", "items": { "type": "string" }, "default": [] },
-    "texturesAvoidedOther": { "type": "string", "default": "" },
+    "favoriteFoods": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "favoriteFoodsOther": {
+      "type": "string",
+      "default": ""
+    },
+    "dislikedFoods": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "dislikedFoodsOther": {
+      "type": "string",
+      "default": ""
+    },
+    "cuisinesLoved": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "cuisinesLovedOther": {
+      "type": "string",
+      "default": ""
+    },
+    "cuisinesAvoided": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "cuisinesAvoidedOther": {
+      "type": "string",
+      "default": ""
+    },
+    "allergies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "SAFETY-RELEVANT. Rendered as \"Allergies: X. Never include these.\" in the prompt fragment."
+    },
+    "allergiesOther": {
+      "type": "string",
+      "default": ""
+    },
+    "texturesAvoided": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "texturesAvoidedOther": {
+      "type": "string",
+      "default": ""
+    },
     "spiceLevel": {
       "type": "integer",
       "default": 3,
@@ -24,14 +79,20 @@
     }
   },
   "required": [
-    "favoriteFoods", "favoriteFoodsOther",
-    "dislikedFoods", "dislikedFoodsOther",
-    "cuisinesLoved", "cuisinesLovedOther",
-    "cuisinesAvoided", "cuisinesAvoidedOther",
-    "allergies", "allergiesOther",
-    "texturesAvoided", "texturesAvoidedOther",
+    "favoriteFoods",
+    "favoriteFoodsOther",
+    "dislikedFoods",
+    "dislikedFoodsOther",
+    "cuisinesLoved",
+    "cuisinesLovedOther",
+    "cuisinesAvoided",
+    "cuisinesAvoidedOther",
+    "allergies",
+    "allergiesOther",
+    "texturesAvoided",
+    "texturesAvoidedOther",
     "spiceLevel"
   ],
   "additionalProperties": true,
-  "$comment": "Every key is listed as required because Swift's synthesized Decodable init does NOT fall back to a property's default value for a missing key on a non-optional property: a blob written by an older/partial writer fails to decode entirely, and `TasteProfile.load()` returns nil (try? swallows the error), silently losing the profile including allergies. A port that tolerates missing keys is more forgiving than iOS, which is safe in the direction that matters; a port that WRITES partial blobs would break iOS. Always write all 13 keys. The `hasContent` gate (any of the 6 pill lists non-empty, OR any of the 6 other-fields non-blank after trimming) decides whether the profile reaches the prompt at all - see shared/prompts/recipes.md."
+  "$comment": "Every key is listed as required because Swift's synthesized Decodable init does NOT fall back to a property's default value for a missing key on a non-optional property: a blob written by an older/partial writer fails to decode entirely, and `TasteProfile.load()` returns nil (try? swallows the error), silently losing the profile including allergies. A port that tolerates missing keys is more forgiving than iOS, which is safe in the direction that matters; a port that WRITES partial blobs would break iOS. Always write all 13 keys. The `hasContent` gate (any of the 6 pill lists non-empty, OR any of the 6 other-fields non-blank after trimming) decides whether the profile reaches the prompt at all - see shared/prompts/recipes.md.\n\nSECOND TRAP, same consequence, different cause (found porting to Go, Sept 14 2026): the six list properties are `\"type\": \"array\"`, so JSON `null` is a schema violation, AND Swift decodes them into non-optional `[String]`, so a null fails the synthesized Decodable init exactly as a missing key does -- the whole profile is lost, allergies included. This matters because in Go a nil slice marshals to `null`, not `[]`. A Go writer that never initializes the six lists produces a blob that passes its own round-trip and is unreadable by iOS. Every writer MUST emit `[]` for an empty list, never null. Test it with a zero-value struct, which is the case that gets this wrong."
 }
