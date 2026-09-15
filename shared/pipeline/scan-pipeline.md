@@ -408,22 +408,41 @@ Guarantees a port must reproduce:
 | `IDLE` | Nothing running |
 | `SCANNING(progress)` | Running; carries photoIndex, photoCount, itemsDone, itemsTotal, stage (`CROPPING` \| `IDENTIFYING`) |
 | `FINISHED` | Done, at least one item survived the filters |
-| `EMPTY` | Done, nothing survived |
+| `EMPTY` | Done, every model call answered, none of them saw food |
+| `FAILED` | Done, nothing found because the model calls themselves failed |
 | `CANCELLED` | User cancelled part way |
 
 `EMPTY` is the state that rendered as **"Nothing spotted"** in TestFlight
 feedback #2 while the real cause was the model being freed mid-scan. The scan
-loop swallows per-crop errors by design, so systemic failure and genuine emptiness
-look identical from here. Two obligations for a port:
+loop swallows per-crop errors by design, so for a long time systemic failure and
+genuine emptiness looked identical from here. Two obligations for a port:
 
 1. Implement the lifecycle session rules so the systemic case cannot happen
    (`model-lifecycle.md`).
-2. The tracked P2 follow-up, still open: distinguish "every identify threw" from
-   "nothing recognized" and say *something went wrong* instead of "Nothing
-   spotted". `TODO(unresolved): the Swift does not implement this distinction
-   today (AppModel.swift:399 sets EMPTY purely on scannedItems.isEmpty, and
-   caught errors are only printed, never counted). A port is free to count
-   failures, but there is no shipped behavior to copy.`
+2. Distinguish "every identify threw" from "nothing recognized". **This is now
+   shipped iOS behavior, not an open follow-up** (commit `b9268ef`,
+   Sept 14 2026). There IS behavior to copy, and a port must copy it:
+
+   - Count every inference that throws. Both swallow sites count: the
+     whole-image pass and the per-crop loop. They still log; they are no
+     longer silent.
+   - The terminal phase is chosen by a pure function,
+     `ScanOutcome.terminalPhase(itemsFound:inferenceFailures:)`
+     (`AppModel.swift`), so it is testable without standing up a scan:
+     - `itemsFound > 0` -> `FINISHED`, regardless of how many calls failed.
+       A partial success shows what was found rather than discarding it.
+     - otherwise `inferenceFailures > 0` -> `FAILED`
+     - otherwise -> `EMPTY`
+   - `FAILED` gets its own user-facing state. `EMPTY` keeps the photo advice
+     ("get closer, add more light") because that advice is only honest when
+     the model actually answered and saw nothing. `FAILED` says the scan could
+     not finish and suggests closing other apps. Reusing the `EMPTY` copy for
+     `FAILED` blames the user's photo for our failure, which is the whole
+     substance of the P2 report.
+
+   Covered by `ScanOutcomeTests.swift` (6 tests). A port should mirror those
+   cases, including the boundary one: a single failure is enough to make
+   "Nothing spotted" a lie.
 
 ## Stage 8 — confirm into inventory
 
