@@ -54,6 +54,7 @@ function gib(bytes) {
 function setRows(rows) {
   if (!ui.runtimeKV) return;
   ui.runtimeKV.textContent = '';
+  let written = 0;
   for (const [term, value] of rows) {
     if (value == null || value === '') continue;
     const dt = document.createElement('dt');
@@ -61,7 +62,11 @@ function setRows(rows) {
     const dd = document.createElement('dd');
     dd.textContent = value;
     ui.runtimeKV.append(dt, dd);
+    written += 1;
   }
+  // A card with nothing but a heading reads as broken rather than as empty.
+  const panel = el('settings-runtime-panel');
+  if (panel) panel.dataset.ready = written > 0 ? 'true' : 'false';
 }
 
 function notice(node, message) {

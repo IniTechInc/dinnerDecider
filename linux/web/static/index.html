@@ -62,19 +62,23 @@
       <h1 class="view__title" id="scan-heading">Scan</h1>
 
       <!-- capture.js owns everything inside #capture-panel -->
+      <!-- Source order puts the buttons last on purpose. On a phone the panel
+           fills the screen and `margin-top: auto` drops this row into the lower
+           third, within one-handed reach, and the focus order follows the same
+           path the thumb does. -->
       <div class="panel" id="capture-panel">
         <p class="panel__lede">Point the camera at an open fridge, a shelf, or the counter. Everything is recognised on this device.</p>
-
-        <div class="capture-actions">
-          <button class="btn btn--primary btn--shutter" id="capture-take" type="button">Take a photo</button>
-          <button class="btn btn--ghost" id="capture-choose" type="button">Choose photos</button>
-          <button class="btn btn--ghost" id="capture-live" type="button" hidden>Use live camera</button>
-        </div>
 
         <p class="hint" id="capture-hint">The camera button opens your phone camera app. No certificate needed.</p>
         <p class="alert alert--error" id="capture-error" role="alert" hidden></p>
 
         <ul class="thumbs" id="capture-thumbs" aria-label="Selected photos"></ul>
+
+        <div class="capture-actions capture-actions--primary">
+          <button class="btn btn--primary btn--shutter" id="capture-take" type="button">Take a photo</button>
+          <button class="btn btn--ghost" id="capture-choose" type="button">Choose photos</button>
+          <button class="btn btn--ghost" id="capture-live" type="button" hidden>Use live camera</button>
+        </div>
 
         <div class="capture-submit" id="capture-submit" hidden>
           <button class="btn btn--primary" id="capture-scan" type="button">Scan photos</button>

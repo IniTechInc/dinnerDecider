@@ -477,8 +477,30 @@ textarea {
   min-width: 0;
 }
 
-/* One-handed reach: on the phone the shutter and the scan Cancel sit in the
-   lower third, pinned just above the tab bar rather than scrolling away. */
+/* One-handed reach, phone case.
+
+   A short page does not scroll, so `position: sticky` alone would leave the
+   shutter sitting near the top where a thumb cannot get to it. These two panels
+   therefore grow to fill what is left of the viewport and push their primary
+   action row to the end with `margin-top: auto`, which puts it in the lower
+   third whether the content is one line or twenty. Once the content IS long
+   enough to scroll, the sticky rules below take over and the action stays put.
+
+   The subtraction is the top bar plus the view title plus the tab bar and its
+   safe area. It does not have to be exact; it only has to leave the row low. */
+#capture-panel,
+#scan-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--tabbar-h) - var(--safe-b) - var(--safe-t) - 200px);
+}
+
+.capture-actions--primary,
+#scan-panel .scan__foot {
+  margin-top: auto;
+}
+
+/* Sticky once there is enough content to scroll. */
 .capture-submit,
 .scan__foot {
   position: sticky;
@@ -1207,4 +1229,10 @@ textarea {
   .scan__foot {
     display: none !important;
   }
+}
+
+/* A panel whose only content is a heading reads as broken, so `This device`
+   stays hidden until settings.js has rows to put in it. */
+#settings-runtime-panel:not([data-ready="true"]) {
+  display: none;
 }
