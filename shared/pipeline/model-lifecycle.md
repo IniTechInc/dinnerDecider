@@ -15,7 +15,7 @@ Sources of record:
 `DinnerDecider/Services/ModelLifecycle.swift` (the pure machine),
 `DinnerDecider/Services/AppModel.swift:110-268` (the adapter that turns its
 decisions into real load/unload calls), and
-`DinnerDeciderTests/ModelLifecycleTests.swift` (**the specification** — 16 tests,
+`DinnerDeciderTests/ModelLifecycleTests.swift` (**the specification** — 17 tests,
 several written as explicit crash repros).
 
 ## Why a state machine at all
