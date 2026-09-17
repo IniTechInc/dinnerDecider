@@ -65,3 +65,5 @@ linux/web/node_modules/
 .claude/worktrees/
 linux/.state/
 linux/internal/llm/runtime-cache/
+# `go build ./...` drops the main package's binary in the module root.
+linux/dinnerdecider
